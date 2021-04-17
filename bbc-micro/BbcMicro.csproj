@@ -6,4 +6,8 @@
     <RootNamespace>BbcMicro</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Cpu\Cpu.csproj" />
+  </ItemGroup>
+
 </Project>

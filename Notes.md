@@ -1,0 +1,1 @@
+On reset, the processor will read address $FFFC and $FFFD (called the reset vector) and load the program counter (PC) with their content. 

@@ -3,9 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bbc-micro", "bbc-micro\bbc-micro.csproj", "{3F3A8854-62E5-4263-A0F4-C1773A38EF2C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BbcMicro", "bbc-micro\BbcMicro.csproj", "{3F3A8854-62E5-4263-A0F4-C1773A38EF2C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cpu", "Cpu\Cpu.csproj", "{56C1F1E6-3743-4E5A-8486-B7259FC0CC81}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildConfig", "BuildConfig", "{CAA12B3D-D1E4-4C8D-80C6-8B11E8CE9471}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{7A60722D-B40E-4461-831F-B1BFFBB20F94}"
+	ProjectSection(SolutionItems) = preProject
+		Notes.md = Notes.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

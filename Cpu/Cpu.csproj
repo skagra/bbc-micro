@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>BbcMicro.Cpu</RootNamespace>
     <AssemblyName>BbcMicroCpu</AssemblyName>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
 </Project>
