@@ -8,11 +8,16 @@ namespace BbcMicro
         private static void Main(string[] args)
         {
             var cpu = new CPU();
-
-            cpu.PSet(CPU.PFlags.C);
-            cpu.A = 15;
-
             var addressSpace = new FlatAddressSpace();
+
+            byte a;
+
+            a = 20;
+
+            short b = (short)(a - 121);
+            Console.WriteLine(b);
+
+            Console.WriteLine(b & 0b10000000);
 
             Console.WriteLine(cpu);
         }

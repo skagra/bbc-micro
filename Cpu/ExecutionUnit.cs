@@ -15,19 +15,19 @@ namespace BbcMicro.Cpu
             _memory = memory ?? throw new ArgumentNullException(nameof(memory));
         }
 
-        private (ushort calculatedAddress, byte pcDelta) GetAddressFromMemory(ushort address, AddressingMode addressingMode)
+        private ushort GetAddressFromMemory(ushort address, AddressingMode addressingMode)
         {
             return addressingMode switch
             {
-                AddressingMode.Immediate => (calculatedAddress: address, pcDelta: 1),
-                AddressingMode.Absolute => (calculatedAddress: _memory.GetWord(address), pcDelta: 2),
-                AddressingMode.AbsoluteIndexedByX => (calculatedAddress: (ushort)(_memory.GetWord(address) + _cpu.X), pcDelta: 2),
-                AddressingMode.AbsoluteIndexedByY => (calculatedAddress: (ushort)(_memory.GetWord(address) + _cpu.Y), pcDelta: 2),
-                AddressingMode.ZeroPage => (calculatedAddress: _memory.GetByte(address), pcDelta: 1),
-                AddressingMode.ZeroPageIndexedByX => (calculatedAddress: (ushort)(_memory.GetByte(address) + _cpu.X), pcDelta: 1),
-                AddressingMode.ZeroPageIndexedByY => (calculatedAddress: (ushort)(_memory.GetByte(address) + _cpu.Y), pcDelta: 1),
-                AddressingMode.ZeroPageIndexedByXThenIndirect => (calculatedAddress: _memory.GetWord((ushort)(_memory.GetByte(address) + _cpu.X)), pcDelta: 1),
-                AddressingMode.ZeroPageIndirectThenIndexedByY => (calculatedAddress: (ushort)(_memory.GetByte(_memory.GetByte(address)) + _cpu.Y), pcDelta: 1),
+                AddressingMode.Immediate => address,
+                AddressingMode.Absolute => _memory.GetWord(address),
+                AddressingMode.AbsoluteIndexedByX => (ushort)(_memory.GetWord(address) + _cpu.X),
+                AddressingMode.AbsoluteIndexedByY => (ushort)(_memory.GetWord(address) + _cpu.Y),
+                AddressingMode.ZeroPage => _memory.GetByte(address),
+                AddressingMode.ZeroPageIndexedByX => (ushort)(_memory.GetByte(address) + _cpu.X),
+                AddressingMode.ZeroPageIndexedByY => (ushort)(_memory.GetByte(address) + _cpu.Y),
+                AddressingMode.ZeroPageIndexedByXThenIndirect => _memory.GetWord((ushort)(_memory.GetByte(address) + _cpu.X)),
+                AddressingMode.ZeroPageIndirectThenIndexedByY => (ushort)(_memory.GetByte(_memory.GetByte(address)) + _cpu.Y),
                 _ => throw new Exception($"Invalid addressing mode '{addressingMode}'")
             };
         }
@@ -45,8 +45,11 @@ namespace BbcMicro.Cpu
             }
         }
 
-        // Group 1 op codes
+        private const byte FULL_OPCODE_BRK = 0x0;
 
+        /*
+         * Group 1 op codes
+         */
         private const byte OPCODE_ORA = 0b000;
         private const byte OPCODE_AND = 0b001;
         private const byte OPCODE_EOR = 0b010;
@@ -55,6 +58,18 @@ namespace BbcMicro.Cpu
         private const byte OPCODE_LDA = 0b101;
         private const byte OPCODE_CMP = 0b110;
         private const byte OPCODE_SBC = 0b111;
+
+        /*
+         * Group 2 op codes
+         */
+        private const byte OPCODE_ASL = 0b000;
+        private const byte OPCODE_ROL = 0b001;
+        private const byte OPCODE_LSR = 0b010;
+        private const byte OPCODE_ROR = 0b011;
+        private const byte OPCODE_STX = 0b100;
+        private const byte OPCODE_LDX = 0b101;
+        private const byte OPCODE_DEC = 0b110;
+        private const byte OPCODE_INC = 0b111;
 
         private void ExecuteNextGroup1Instruction(byte opCode, byte rawAddressingMode)
         {
@@ -65,7 +80,7 @@ namespace BbcMicro.Cpu
             var addressingMode = _groupOneAddressModeMap[rawAddressingMode];  // TODO: Exception on invalid mode
 
             // Grab the address indicated by the operand and addressing mode
-            (var calculatedAddress, var pcDelta) = GetAddressFromMemory(operandAddress, addressingMode);
+            var calculatedAddress = GetAddressFromMemory(operandAddress, addressingMode);
 
             switch (opCode)
             {
@@ -84,16 +99,18 @@ namespace BbcMicro.Cpu
                     UpdateFlags(_cpu.A, PFlags.N | PFlags.Z);
                     break;
 
+                // TODO: BCD
                 case OPCODE_ADC: // Add with carry
-                    ushort addWithCarryResult = (ushort)(_cpu.A + _memory.GetByte(calculatedAddress) + (_cpu.PIsSet(PFlags.C) ? 1 : 0));
-                    UpdateFlags(_cpu.A, PFlags.N | PFlags.Z);
-                    _cpu.PSet(PFlags.C, addWithCarryResult > 0xFF);
-                    _cpu.PSet(PFlags.V, ((_cpu.A ^ addWithCarryResult) & 0x80) != 0); // Overflow if bit 7 was changed
+                    byte adcOperandByte = _memory.GetByte(calculatedAddress);
+                    short addWithCarryResult = (short)(_cpu.A + adcOperandByte + (_cpu.PIsSet(PFlags.C) ? 1 : 0));
+                    _cpu.PSet(PFlags.C, addWithCarryResult > 0xFF); // Set carry if we have results did not fit in 8 bits
+                    _cpu.PSet(PFlags.V, ((_cpu.A ^ addWithCarryResult) & (adcOperandByte ^ addWithCarryResult) & 0x80) != 0);
                     _cpu.A = (byte)addWithCarryResult;
+                    UpdateFlags(_cpu.A, PFlags.N | PFlags.Z);
                     break;
 
                 case OPCODE_STA: // Store accumulator in memory
-                    _memory.Set(_cpu.A, calculatedAddress);
+                    _memory.SetByte(_cpu.A, calculatedAddress);
                     break;
 
                 case OPCODE_LDA: // Load accumulator from memory
@@ -101,25 +118,115 @@ namespace BbcMicro.Cpu
                     UpdateFlags(_cpu.A, PFlags.N | PFlags.Z);
                     break;
 
-                // TODO: Is BCD mode relevant here ?
-                case OPCODE_CMP: // Compare value to accumulator
+                case OPCODE_CMP: // Compare value to accumulator // TODO!
                     var valueToCompareTo = _memory.GetByte(calculatedAddress);
-                    _cpu.PSet(PFlags.N, _cpu.A < valueToCompareTo); // TODO: Check this seems to disagree with the reference, maybe do the subtraction and look at bit 7?
+                    _cpu.PSet(PFlags.N, _cpu.A < valueToCompareTo);
                     _cpu.PSet(PFlags.C, _cpu.A >= valueToCompareTo);
                     _cpu.PSet(PFlags.Z, _cpu.A == valueToCompareTo);
                     break;
 
-                case OPCODE_SBC: // Subtract with carry // TODO: Check it all!
-                    ushort subtractWithCarryResult = (ushort)(_cpu.A - _memory.GetByte(calculatedAddress) - (_cpu.PIsSet(PFlags.C) ? 1 : 0));
-                    UpdateFlags(_cpu.A, PFlags.N | PFlags.Z);
+                // TODO: BCD
+                case OPCODE_SBC: // Subtract with carry
+                    byte sbcOperandByte = _memory.GetByte(calculatedAddress);
+                    short subtractWithCarryResult = (short)(_cpu.A - _memory.GetByte(calculatedAddress) - (_cpu.PIsSet(PFlags.C) ? 0 : 1));
                     _cpu.PSet(PFlags.C, subtractWithCarryResult >= 0);
-                    _cpu.PSet(PFlags.V, ((_cpu.A ^ subtractWithCarryResult) & 0x80) != 0); // Overflow if bit 7 was changed
+                    _cpu.PSet(PFlags.V, ((_cpu.A ^ subtractWithCarryResult) & (sbcOperandByte ^ subtractWithCarryResult) & 0x80) != 0);
                     _cpu.A = (byte)subtractWithCarryResult;
+                    UpdateFlags(_cpu.A, PFlags.N | PFlags.Z);
                     break;
             }
 
             // Update program counter
-            _cpu.PC += (ushort)(operandAddress + pcDelta);
+            _cpu.PC += (ushort)(operandAddress + _addressingModeToPCDelta[addressingMode]);
+        }
+
+        private void ExecuteNextGroup2Instruction(byte opCode, byte rawAddressingMode)
+        {
+            // Operand follows immediately after the op code
+            var operandAddress = (ushort)(_cpu.PC + 1);
+
+            // Decode the addressing mode
+            var addressingMode = _groupTwoAddressModeMap[rawAddressingMode];  // TODO: Exception on invalid mode
+
+            // Grab the address indicated by the operand and addressing mode
+            ushort calculatedAddress = 0;
+            if (addressingMode != AddressingMode.Accumulator)
+            {
+                calculatedAddress = GetAddressFromMemory(operandAddress, addressingMode);
+            }
+
+            byte operand = 0;
+            // Not storing into memory
+            if (opCode != OPCODE_STX)
+            {
+                if (addressingMode == AddressingMode.Accumulator)
+                {
+                    operand = _cpu.A;
+                }
+                else
+                {
+                    operand = _memory.GetByte(calculatedAddress);
+                }
+            }
+
+            // TODO: Some instructions support only a subset of addressing modes
+            switch (opCode)
+            {
+                // ASL shifts all bits left one position. 0 is shifted into bit 0 and the original bit 7 is shifted into the Carry.
+                case OPCODE_ASL:
+                    _cpu.A = (byte)(operand << 1);
+                    _cpu.PSet(PFlags.C, (operand & 0b1000_0000) != 0);
+                    UpdateFlags(_cpu.A, PFlags.N | PFlags.Z);
+                    break;
+
+                // ROL shifts all bits left one position. The Carry is shifted into bit 0 and the original bit 7 is shifted into the Carry.
+                case OPCODE_ROL:
+                    _cpu.A = (byte)((byte)(operand << 1) | (byte)(_cpu.PIsSet(PFlags.C) ? 0b0000_0001 : 0b0000_0000));
+                    _cpu.PSet(PFlags.C, (operand & 0b1000_0000) != 0);
+                    UpdateFlags(_cpu.A, PFlags.N | PFlags.Z);
+                    break;
+
+                // LSR shifts all bits right one position. 0 is shifted into bit 7 and the original bit 0 is shifted into the Carry.
+                case OPCODE_LSR:
+                    _cpu.A = (byte)(operand >> 1);
+                    _cpu.PSet(PFlags.C, (operand & 00000_0001) != 0);
+                    UpdateFlags(_cpu.A, PFlags.N | PFlags.Z);
+                    break;
+
+                // ROR shifts all bits right one position. The Carry is shifted into bit 7 and the original bit 0 is shifted into the Carry.
+                case OPCODE_ROR:
+                    _cpu.A = (byte)((byte)(operand >> 1) | (byte)(_cpu.PIsSet(PFlags.C) ? 0b1000_0000 : 0b0000_000));
+                    _cpu.PSet(PFlags.C, (operand & 0b0000_0001) != 0);
+                    UpdateFlags(_cpu.A, PFlags.N | PFlags.Z);
+                    break;
+
+                // Store X register BUG - zero page, X => zero page,Y and absolute, X becomes absolute, Y
+                case OPCODE_STX:
+                    _memory.SetByte(_cpu.X, calculatedAddress);
+                    break;
+
+                // Load X register
+                case OPCODE_LDX:
+                    _cpu.X = operand;
+                    break;
+
+                // Decrement memory
+                case OPCODE_DEC:
+                    byte decResult = (byte)(operand - 1);
+                    _memory.SetByte(decResult, calculatedAddress);
+                    UpdateFlags(decResult, PFlags.N | PFlags.Z);
+                    break;
+
+                // Increment memory
+                case OPCODE_INC:
+                    byte incResult = (byte)(operand + 1);
+                    _memory.SetByte(incResult, calculatedAddress);
+                    UpdateFlags(incResult, PFlags.N | PFlags.Z);
+                    break;
+            }
+
+            // Update program counter
+            _cpu.PC += (ushort)(operandAddress + +_addressingModeToPCDelta[addressingMode]);
         }
 
         public void ExecuteNextInstruction()
@@ -130,8 +237,8 @@ namespace BbcMicro.Cpu
 
             // Split out the parts of the op code
             var opCodeGroup = (byte)(fullOpCode & 0b00000011);
-            var addressingMode = (byte)(fullOpCode & 0b00011100 >> 2);
-            var opCode = (byte)(fullOpCode & 0b11100000 >> 5);
+            var addressingMode = (byte)((fullOpCode & 0b00011100) >> 2);
+            var opCode = (byte)((fullOpCode & 0b11100000) >> 5);
 
             switch (opCodeGroup)
             {
@@ -144,7 +251,7 @@ namespace BbcMicro.Cpu
                     break;
 
                 case 0b010:
-                    throw new NotImplementedException();
+                    ExecuteNextGroup2Instruction(opCode, addressingMode);
                     break;
 
                 case 0b011:
@@ -153,7 +260,14 @@ namespace BbcMicro.Cpu
             }
         }
 
-        // TODO - Might need to add accumulator addressing mode in here?
+        public void ExecuteToBrk()
+        {
+            while (_memory.GetByte(_cpu.PC) != FULL_OPCODE_BRK)
+            {
+                ExecuteNextInstruction();
+            }
+        }
+
         // All possible addressing modes
         public enum AddressingMode : ushort
         {
@@ -166,18 +280,43 @@ namespace BbcMicro.Cpu
             ZeroPageIndexedByY = 6, // 8 bit zero page address stored in next byte + Y
             ZeroPageIndexedByXThenIndirect = 7, // (8 bit zero page address in next byte + X)
             ZeroPageIndirectThenIndexedByY = 8, // (8 bit zero page address stored in next byte) + Y
-            Size = 9
+            Accumulator = 9 // Accumulator addressing
         }
+
+        // Delta's to PC added by each address mode
+        public readonly Dictionary<AddressingMode, byte> _addressingModeToPCDelta = new Dictionary<AddressingMode, byte>
+        {
+            { AddressingMode.Immediate, 1 },
+            { AddressingMode.Absolute, 2 },
+            { AddressingMode.AbsoluteIndexedByX, 2 },
+            { AddressingMode.AbsoluteIndexedByY, 2 },
+            { AddressingMode.ZeroPage, 1 },
+            { AddressingMode.ZeroPageIndexedByX, 1 },
+            { AddressingMode.ZeroPageIndexedByY, 1 },
+            { AddressingMode.ZeroPageIndexedByXThenIndirect, 1 },
+            { AddressingMode.ZeroPageIndirectThenIndexedByY, 1 },
+            { AddressingMode.Accumulator, 0 },
+        };
 
         private readonly Dictionary<byte, AddressingMode> _groupOneAddressModeMap = new Dictionary<byte, AddressingMode>
         {
             { 0b000, AddressingMode.ZeroPageIndexedByXThenIndirect },
-            { 0b001, AddressingMode.ZeroPage  },
+            { 0b001, AddressingMode.ZeroPage },
             { 0b010, AddressingMode.Immediate },
-            { 0b011, AddressingMode.Absolute  },
-            { 0b100, AddressingMode.ZeroPageIndirectThenIndexedByY  },
-            { 0b101, AddressingMode.ZeroPageIndexedByX  },
-            { 0b110, AddressingMode.AbsoluteIndexedByY  },
+            { 0b011, AddressingMode.Absolute },
+            { 0b100, AddressingMode.ZeroPageIndirectThenIndexedByY },
+            { 0b101, AddressingMode.ZeroPageIndexedByX },
+            { 0b110, AddressingMode.AbsoluteIndexedByY },
+            { 0b111, AddressingMode.AbsoluteIndexedByX }
+        };
+
+        private readonly Dictionary<byte, AddressingMode> _groupTwoAddressModeMap = new Dictionary<byte, AddressingMode>
+        {
+            { 0b000, AddressingMode.ZeroPageIndexedByXThenIndirect },
+            { 0b001, AddressingMode.ZeroPage },
+            { 0b010, AddressingMode.Accumulator },
+            { 0b011, AddressingMode.Absolute },
+            { 0b101, AddressingMode.ZeroPageIndexedByX },
             { 0b111, AddressingMode.AbsoluteIndexedByX }
         };
     }

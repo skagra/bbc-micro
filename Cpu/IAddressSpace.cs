@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace BbcMicro.Cpu
+﻿namespace BbcMicro.Cpu
 {
     public interface IAddressSpace
     {
-        void Set(byte value, ushort address);
+        void SetByte(byte value, ushort address);
 
         byte GetByte(ushort address);
 
         ushort GetWord(ushort address);
+
+        void Flush();
     }
 }

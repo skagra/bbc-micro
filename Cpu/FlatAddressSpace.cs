@@ -1,4 +1,6 @@
-﻿namespace BbcMicro.Cpu
+﻿using System;
+
+namespace BbcMicro.Cpu
 {
     public sealed class FlatAddressSpace : IAddressSpace
     {
@@ -9,14 +11,20 @@
             return _memory[address];
         }
 
-        public void Set(byte value, ushort address)
+        public void SetByte(byte value, ushort address)
         {
             _memory[address] = value;
         }
 
+        // The little endian values in memory are converted a C# ushort representation
         public ushort GetWord(ushort address)
         {
-            return (ushort)(_memory[address] << 8 + _memory[address + 1]);
+            return (ushort)(_memory[address] + _memory[address + 1] << 8);
+        }
+
+        public void Flush()
+        {
+            Array.Clear(_memory, 0, _memory.Length);
         }
     }
 }
