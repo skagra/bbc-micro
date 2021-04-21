@@ -15,19 +15,19 @@ namespace BbcMicro.Cpu
             _memory = memory ?? throw new ArgumentNullException(nameof(memory));
         }
 
-        private ushort GetAddressFromMemory(ushort address, AddressingMode addressingMode)
+        private ushort GeEffectiveAddress(ushort operandAddress, AddressingMode addressingMode)
         {
             return addressingMode switch
             {
-                AddressingMode.Immediate => address,
-                AddressingMode.Absolute => _memory.GetWord(address),
-                AddressingMode.AbsoluteIndexedByX => (ushort)(_memory.GetWord(address) + _cpu.X),
-                AddressingMode.AbsoluteIndexedByY => (ushort)(_memory.GetWord(address) + _cpu.Y),
-                AddressingMode.ZeroPage => _memory.GetByte(address),
-                AddressingMode.ZeroPageIndexedByX => (ushort)(_memory.GetByte(address) + _cpu.X),
-                AddressingMode.ZeroPageIndexedByY => (ushort)(_memory.GetByte(address) + _cpu.Y),
-                AddressingMode.ZeroPageIndexedByXThenIndirect => _memory.GetWord((ushort)(_memory.GetByte(address) + _cpu.X)),
-                AddressingMode.ZeroPageIndirectThenIndexedByY => (ushort)(_memory.GetByte(_memory.GetByte(address)) + _cpu.Y),
+                AddressingMode.Immediate => operandAddress,
+                AddressingMode.Absolute => _memory.GetWord(operandAddress),
+                AddressingMode.AbsoluteIndexedByX => (ushort)(_memory.GetWord(operandAddress) + _cpu.X),
+                AddressingMode.AbsoluteIndexedByY => (ushort)(_memory.GetWord(operandAddress) + _cpu.Y),
+                AddressingMode.ZeroPage => _memory.GetByte(operandAddress),
+                AddressingMode.ZeroPageIndexedByX => (ushort)(_memory.GetByte(operandAddress) + _cpu.X),
+                AddressingMode.ZeroPageIndexedByY => (ushort)(_memory.GetByte(operandAddress) + _cpu.Y),
+                AddressingMode.ZeroPageIndexedByXThenIndirect => _memory.GetWord((ushort)(_memory.GetByte(operandAddress) + _cpu.X)),
+                AddressingMode.ZeroPageIndirectThenIndexedByY => (ushort)(_memory.GetByte(_memory.GetByte(operandAddress)) + _cpu.Y),
                 _ => throw new Exception($"Invalid addressing mode '{addressingMode}'")
             };
         }
@@ -46,6 +46,17 @@ namespace BbcMicro.Cpu
         }
 
         private const byte FULL_OPCODE_BRK = 0x0;
+
+        /*
+         * Group 0 op codes
+         */
+	    private const byte OPCODE_BIT = 0b001;
+	    private const byte OPCODE_JMP = 0b010;
+	    private const byte OPCODE_JMP_ABS = 0b011;
+	    private const byte OPCODE_STY = 0b100;
+	    private const byte OPCODE_LDY = 0b101;
+	    private const byte OPCODE_CPY = 0b110;
+	    private const byte OPCODE_CPX = 0b111;
 
         /*
          * Group 1 op codes
@@ -71,7 +82,71 @@ namespace BbcMicro.Cpu
         private const byte OPCODE_DEC = 0b110;
         private const byte OPCODE_INC = 0b111;
 
-        private void ExecuteNextGroup1Instruction(byte opCode, byte rawAddressingMode)
+        private void ExecuteNextGroupZeroInstruction(byte opCode, byte rawAddressingMode)
+        {
+            // Operand follows immediately after the op code
+            var operandAddress = (ushort)(_cpu.PC + 1);
+
+            // Decode the addressing mode
+            var addressingMode = _groupZeroAddressModeMap[rawAddressingMode];  // TODO: Exception on invalid mode
+
+            // Grab the address indicated by the operand and addressing mode
+            ushort calculatedAddress = 0;
+            if (opCode != OPCODE_JMP && opCode != OPCODE_JMP_ABS)
+            {
+                GeEffectiveAddress(operandAddress, addressingMode);
+            }
+            
+            byte operand = 0;
+            if (opCode != OPCODE_STY)
+            {
+                operand = _memory.GetByte(calculatedAddress);
+            }
+
+            // TODO: Some instructions support only a subset of addressing modes
+            switch (opCode)
+            {
+                // BIT sets the Z flag as though the value in the address tested were ANDed with the accumulator.
+                // The N and V flags are set to match bits 7 and 6 respectively in the value stored at the tested address.
+                case OPCODE_BIT:
+                    _cpu.PSet(PFlags.Z, (_cpu.A & operand) == 0);
+                    _cpu.PSet(PFlags.N, (operand & 0b1000_0000) != 0);
+                    _cpu.PSet(PFlags.V, (operand & 0b0100_0000) != 0);
+                    break;
+                case OPCODE_JMP:
+                    _cpu.PC = _memory.GetWord(_memory.GetWord(operandAddress));
+                    break;
+                case OPCODE_JMP_ABS:
+                    _cpu.PC = _memory.GetWord(operandAddress);
+                    break;
+                case OPCODE_STY:
+                    _memory.SetByte(_cpu.Y, calculatedAddress);
+                    break;
+                case OPCODE_LDY:
+                    _cpu.Y = operand;
+                    UpdateFlags(operand, PFlags.N | PFlags.Z);
+                    break;
+                // ComPare Y register
+                case OPCODE_CPY:
+                    var valueToCompareYTo = _memory.GetByte(calculatedAddress);
+                    _cpu.PSet(PFlags.N, _cpu.Y < valueToCompareYTo);
+                    _cpu.PSet(PFlags.C, _cpu.Y >= valueToCompareYTo);
+                    _cpu.PSet(PFlags.Z, _cpu.Y == valueToCompareYTo);
+                    break;
+                // ComPare X register
+                case OPCODE_CPX:
+                    var valueToCompareXTo = _memory.GetByte(calculatedAddress);
+                    _cpu.PSet(PFlags.N, _cpu.Y < valueToCompareXTo);
+                    _cpu.PSet(PFlags.C, _cpu.Y >= valueToCompareXTo);
+                    _cpu.PSet(PFlags.Z, _cpu.Y == valueToCompareXTo);
+                    break;
+            }
+
+            // Update program counter
+            _cpu.PC += (ushort)(operandAddress + +_addressingModeToPCDelta[addressingMode]);
+        }
+
+        private void ExecuteNextGroupOneInstruction(byte opCode, byte rawAddressingMode)
         {
             // Operand follows immediately after the op code
             var operandAddress = (ushort)(_cpu.PC + 1);
@@ -80,7 +155,7 @@ namespace BbcMicro.Cpu
             var addressingMode = _groupOneAddressModeMap[rawAddressingMode];  // TODO: Exception on invalid mode
 
             // Grab the address indicated by the operand and addressing mode
-            var calculatedAddress = GetAddressFromMemory(operandAddress, addressingMode);
+            var calculatedAddress = GeEffectiveAddress(operandAddress, addressingMode);
 
             switch (opCode)
             {
@@ -140,7 +215,7 @@ namespace BbcMicro.Cpu
             _cpu.PC += (ushort)(operandAddress + _addressingModeToPCDelta[addressingMode]);
         }
 
-        private void ExecuteNextGroup2Instruction(byte opCode, byte rawAddressingMode)
+        private void ExecuteNextGroupTwoInstruction(byte opCode, byte rawAddressingMode)
         {
             // Operand follows immediately after the op code
             var operandAddress = (ushort)(_cpu.PC + 1);
@@ -148,14 +223,28 @@ namespace BbcMicro.Cpu
             // Decode the addressing mode
             var addressingMode = _groupTwoAddressModeMap[rawAddressingMode];  // TODO: Exception on invalid mode
 
+            // If we are processing LDX and STX the we index by Y instead of the general decoding to index by X 
+            if (opCode==OPCODE_LDX || opCode == OPCODE_STX)
+            {
+                if (addressingMode==AddressingMode.ZeroPageIndexedByX)
+                {
+                    addressingMode = AddressingMode.ZeroPageIndexedByY;
+                }
+                else if (addressingMode == AddressingMode.AbsoluteIndexedByX)
+                {
+                    addressingMode = AddressingMode.AbsoluteIndexedByY;
+                }
+            }
+
             // Grab the address indicated by the operand and addressing mode
             ushort calculatedAddress = 0;
             if (addressingMode != AddressingMode.Accumulator)
             {
-                calculatedAddress = GetAddressFromMemory(operandAddress, addressingMode);
+                calculatedAddress = GeEffectiveAddress(operandAddress, addressingMode);
             }
 
             byte operand = 0;
+
             // Not storing into memory
             if (opCode != OPCODE_STX)
             {
@@ -208,6 +297,7 @@ namespace BbcMicro.Cpu
                 // Load X register
                 case OPCODE_LDX:
                     _cpu.X = operand;
+                    UpdateFlags(operand, PFlags.N | PFlags.Z);
                     break;
 
                 // Decrement memory
@@ -243,19 +333,15 @@ namespace BbcMicro.Cpu
             switch (opCodeGroup)
             {
                 case 0b000:
-                    throw new NotImplementedException();
+                    ExecuteNextGroupZeroInstruction(opCode, addressingMode);
                     break;
 
                 case 0b001:
-                    ExecuteNextGroup1Instruction(opCode, addressingMode);
+                    ExecuteNextGroupOneInstruction(opCode, addressingMode);
                     break;
 
                 case 0b010:
-                    ExecuteNextGroup2Instruction(opCode, addressingMode);
-                    break;
-
-                case 0b011:
-                    throw new NotImplementedException();
+                    ExecuteNextGroupTwoInstruction(opCode, addressingMode);
                     break;
             }
         }
@@ -298,6 +384,14 @@ namespace BbcMicro.Cpu
             { AddressingMode.Accumulator, 0 },
         };
 
+        private readonly Dictionary<byte, AddressingMode> _groupZeroAddressModeMap = new Dictionary<byte, AddressingMode> {
+            { 0b000, AddressingMode.Immediate },
+            { 0b001, AddressingMode.ZeroPage },
+            { 0b011, AddressingMode.Absolute },
+            { 0b101, AddressingMode.ZeroPageIndexedByX },
+            { 0b111, AddressingMode.AbsoluteIndexedByX }
+        };
+
         private readonly Dictionary<byte, AddressingMode> _groupOneAddressModeMap = new Dictionary<byte, AddressingMode>
         {
             { 0b000, AddressingMode.ZeroPageIndexedByXThenIndirect },
@@ -312,7 +406,7 @@ namespace BbcMicro.Cpu
 
         private readonly Dictionary<byte, AddressingMode> _groupTwoAddressModeMap = new Dictionary<byte, AddressingMode>
         {
-            { 0b000, AddressingMode.ZeroPageIndexedByXThenIndirect },
+            { 0b000, AddressingMode.Immediate },
             { 0b001, AddressingMode.ZeroPage },
             { 0b010, AddressingMode.Accumulator },
             { 0b011, AddressingMode.Absolute },

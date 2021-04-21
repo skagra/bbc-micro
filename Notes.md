@@ -15,7 +15,7 @@ On reset, the processor will read address $FFFC and $FFFD (called the reset vect
 
 ### Addressing Modes
 
-* [Bit patters for addressing modes](https://llx.com/Neil/a2/opcodes.html)
+* [Bit patterns for addressing modes](https://llx.com/Neil/a2/opcodes.html)
 
 ### The Overflow Flag
 
