@@ -9,5 +9,7 @@
         ushort GetWord(ushort address);
 
         void Flush();
+
+        string ToString(ushort start, ushort length);
     }
 }

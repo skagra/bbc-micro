@@ -15,7 +15,6 @@ namespace CpuTests
 
         private readonly CPU _cpu;
         private readonly IAddressSpace _addressSpace;
-        private readonly ExecutionUnit _executionUnit;
 
         private const byte LDA_IMMEDIATE = 0xA9;
         private const byte ADC_IMMEDIATE = 0x69;
@@ -32,9 +31,8 @@ namespace CpuTests
         public Arithmetic(ITestOutputHelper stdOut)
         {
             _stdOut = stdOut;
-            _cpu = new CPU();
             _addressSpace = new FlatAddressSpace();
-            _executionUnit = new ExecutionUnit(_cpu, _addressSpace);
+            _cpu = new CPU(_addressSpace);
         }
 
         [Theory]
@@ -49,7 +47,7 @@ namespace CpuTests
             SetMem(ADC_IMMEDIATE);
             SetMem(inImmediate);
 
-            _executionUnit.ExecuteToBrk();
+            _cpu.ExecuteToBrk();
 
             Assert.Equal(outA, _cpu.A);
             Assert.Equal(outC, _cpu.PIsSet(CPU.PFlags.C));
@@ -71,7 +69,7 @@ namespace CpuTests
             SetMem(ADC_IMMEDIATE);
             SetMem((byte)inImmediate);
 
-            _executionUnit.ExecuteToBrk();
+            _cpu.ExecuteToBrk();
 
             Assert.Equal(outA, _cpu.A);
             Assert.Equal(outC, _cpu.PIsSet(CPU.PFlags.C));
@@ -80,22 +78,22 @@ namespace CpuTests
             Assert.Equal(outZ, _cpu.PIsSet(CPU.PFlags.Z));
         }
 
-        [Theory]
-        [InlineData(0b0000_0101, 0b0000_0011, true, 0b0000_0010, true)] // (2.13) 5 - 3 = 2   (carry set as no borrow)
-        [InlineData(0b0000_0101, 0b0000_0110, true, 0b1111_1111, false)] // (2.14) 5 - 6 = -1 (carry not set as borrow?)
-        public void UnsignedSubtraction(byte inA, byte inImmediate, bool inC, byte outA, bool outC)
-        {
-            _cpu.PSet(CPU.PFlags.C, inC);
+        //[Theory]
+        //[InlineData(0b0000_0101, 0b0000_0011, true, 0b0000_0010, true)] // (2.13) 5 - 3 = 2   (carry set as no borrow)
+        //[InlineData(0b0000_0101, 0b0000_0110, true, 0b1111_1111, false)] // (2.14) 5 - 6 = -1 (carry not set as borrow?)
+        //public void UnsignedSubtraction(byte inA, byte inImmediate, bool inC, byte outA, bool outC)
+        //{
+        //    _cpu.PSet(CPU.PFlags.C, inC);
 
-            SetMem(LDA_IMMEDIATE);
-            SetMem(inA);
-            SetMem(SBC_IMMEDIATE);
-            SetMem(inImmediate);
+        //    SetMem(LDA_IMMEDIATE);
+        //    SetMem(inA);
+        //    SetMem(SBC_IMMEDIATE);
+        //    SetMem(inImmediate);
 
-            _executionUnit.ExecuteToBrk();
+        //    _cpu.ExecuteToBrk();
 
-            Assert.Equal(outA, _cpu.A);
-            Assert.Equal(outC, _cpu.PIsSet(CPU.PFlags.C));
-        }
+        //    Assert.Equal(outA, _cpu.A);
+        //    Assert.Equal(outC, _cpu.PIsSet(CPU.PFlags.C));
+        //}
     }
 }

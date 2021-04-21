@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 
 namespace BbcMicro.Cpu
 {
@@ -25,6 +26,27 @@ namespace BbcMicro.Cpu
         public void Flush()
         {
             Array.Clear(_memory, 0, _memory.Length);
+        }
+
+        public string ToString(ushort start, ushort length)
+        {
+            var result = new StringBuilder();
+
+            var address = start;
+            var count = 0;
+
+            while (address < _memory.Length && count < length)
+            {
+                result.Append($"0x{address:X4} 0x{_memory[address]:X2}\n");
+                count++;
+            }
+
+            while (count < length)
+            {
+                result.Append($"------ ----");
+            }
+
+            return result.ToString();
         }
     }
 }
