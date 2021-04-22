@@ -7,14 +7,16 @@ namespace BbcMicro
     {
         private static void Main(string[] args)
         {
-            ushort PC = 10;
+            // Create CPU and address space
+            var addressSpace = new FlatAddressSpace();
+            var cpu = new CPU(addressSpace);
 
-            byte operand = 0b1000_0010;
+            // Load programme from file
 
-            Console.WriteLine(PC + operand);
-            Console.WriteLine(PC + (sbyte)operand);
+            // Set PC to start of programme
 
-
+            // Run the programme
+            cpu.ExecuteToBrk();
         }
     }
 }
