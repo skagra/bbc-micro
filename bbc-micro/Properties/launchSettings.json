@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BbcMicro": {
+      "commandName": "Project",
+      "commandLineArgs": "..\\..\\..\\a.out"
+    }
+  }
+}

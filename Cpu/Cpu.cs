@@ -7,21 +7,25 @@ namespace BbcMicro.Cpu
     public sealed class CPU
     {
         #region Configuration
+
         /*
          * Set up
         */
+
         private sealed class ExecutionDefinition
         {
-            private readonly Action<ushort, AddressingMode> _implementation;
             private readonly List<(byte opCode, AddressingMode addressingMode)> _codeAndMode;
 
-            public ExecutionDefinition(Action<ushort, AddressingMode> implementation, List<(byte opCode, AddressingMode addressingMode)> codeAndMode)
+            public ExecutionDefinition(OpCode opCode, Action<ushort, AddressingMode> implementation, List<(byte opCode, AddressingMode addressingMode)> codeAndMode)
             {
-                _implementation = implementation;
+                OpCode = opCode;
+                Impl = implementation;
                 _codeAndMode = codeAndMode;
             }
 
-            public Action<ushort, AddressingMode> Impl { get { return _implementation; } }
+            public OpCode OpCode { get; }
+
+            public Action<ushort, AddressingMode> Impl { get; }
 
             public IReadOnlyList<(byte opCode, AddressingMode addressingMode)> CodeAndMode
             {
@@ -32,7 +36,9 @@ namespace BbcMicro.Cpu
             }
         }
 
-        private (Action<ushort, AddressingMode> impl, AddressingMode addressingMode)[] _decoder = new (Action<ushort, AddressingMode>, AddressingMode)[256];
+        private (OpCode opCode, Action<ushort, AddressingMode> impl, AddressingMode addressingMode)[] _decoder =
+            new (OpCode opCode, Action<ushort, AddressingMode>, AddressingMode)[256];
+
         private bool[] _opcodeIsValid = new bool[256];
 
         private void PopulateDecoder()
@@ -43,17 +49,18 @@ namespace BbcMicro.Cpu
                 {
                     if (_opcodeIsValid[codeAndMode.opCode])
                     {
-                        throw new Exception("Seen it before"); // TODO
+                        throw new Exception($"Duplicate op code {executionDefinition.OpCode} 0x{codeAndMode.opCode:X2}"); // TODO
                     }
                     else
                     {
                         _opcodeIsValid[codeAndMode.opCode] = true;
                     }
-                    _decoder[codeAndMode.opCode] = (impl: executionDefinition.Impl, addressingMode: codeAndMode.addressingMode);
+                    _decoder[codeAndMode.opCode] = (opCode: executionDefinition.OpCode, impl: executionDefinition.Impl, addressingMode: codeAndMode.addressingMode);
                 }
             }
         }
-        #endregion
+
+        #endregion Configuration
 
         private readonly List<ExecutionDefinition> _executionDefinitions;
 
@@ -62,9 +69,10 @@ namespace BbcMicro.Cpu
             Memory = addressSpace ?? throw new ArgumentNullException(nameof(addressSpace));
 
             #region Op code mappings
+
             _executionDefinitions = new List<ExecutionDefinition>()
             {
-                new ExecutionDefinition(ADC,
+                new ExecutionDefinition(OpCode.ADC, ADC,
                     new List<(byte, AddressingMode)> {
                         (0x69, AddressingMode.Immediate),
                         (0x65, AddressingMode.ZeroPage),
@@ -75,7 +83,7 @@ namespace BbcMicro.Cpu
                         (0x61, AddressingMode.IndexedXIndirect),
                         (0x71, AddressingMode.IndirectIndexedY),
                     }),
-                new ExecutionDefinition(AND,
+                new ExecutionDefinition(OpCode.AND, AND,
                     new List<(byte, AddressingMode)> {
                         (0x29, AddressingMode.Immediate),
                         (0x25, AddressingMode.ZeroPage),
@@ -86,7 +94,7 @@ namespace BbcMicro.Cpu
                         (0x21, AddressingMode.IndexedXIndirect),
                         (0x31, AddressingMode.IndirectIndexedY),
                     }),
-                new ExecutionDefinition(ASL,
+                new ExecutionDefinition(OpCode.ASL, ASL,
                     new List<(byte, AddressingMode)> {
                         (0x0A, AddressingMode.Accumulator),
                         (0x06, AddressingMode.ZeroPage),
@@ -94,64 +102,64 @@ namespace BbcMicro.Cpu
                         (0x0E, AddressingMode.Absolute),
                         (0x1E, AddressingMode.AbsoluteIndexedX)
                     }),
-                new ExecutionDefinition(BCC,
+                new ExecutionDefinition(OpCode.BCC, BCC,
                     new List<(byte, AddressingMode)> {
                         (0x90, AddressingMode.Relative)
                     }),
-                new ExecutionDefinition(BCS,
+                new ExecutionDefinition(OpCode.BCS, BCS,
                     new List<(byte, AddressingMode)> {
                         (0xB0, AddressingMode.Relative)
                     }),
-                new ExecutionDefinition(BEQ,
+                new ExecutionDefinition(OpCode.BEQ, BEQ,
                     new List<(byte, AddressingMode)> {
                         (0xF0, AddressingMode.Relative)
                     }),
-                 new ExecutionDefinition(BIT,
+                 new ExecutionDefinition(OpCode.BIT, BIT,
                     new List<(byte, AddressingMode)> {
                         (0x24, AddressingMode.ZeroPage),
                         (0x2C, AddressingMode.Absolute)
                     }),
-                new ExecutionDefinition(BMI,
+                new ExecutionDefinition(OpCode.BMI, BMI,
                     new List<(byte, AddressingMode)> {
                         (0x30, AddressingMode.Relative)
                     }),
-                new ExecutionDefinition(BNE,
+                new ExecutionDefinition(OpCode.BNE, BNE,
                     new List<(byte, AddressingMode)> {
                         (0xD0, AddressingMode.Relative)
                     }),
-                new ExecutionDefinition(BPL,
+                new ExecutionDefinition(OpCode.BPL, BPL,
                     new List<(byte, AddressingMode)> {
                         (0x10, AddressingMode.Relative)
                     }),
-                new ExecutionDefinition(BRK,
+                new ExecutionDefinition(OpCode.BRK, BRK,
                     new List<(byte, AddressingMode)> {
                         (0x00, AddressingMode.Implied)
                     }),
-                new ExecutionDefinition(BVC,
+                new ExecutionDefinition(OpCode.BVC, BVC,
                     new List<(byte, AddressingMode)> {
                         (0x50, AddressingMode.Relative)
                     }),
-                new ExecutionDefinition(BVS,
+                new ExecutionDefinition(OpCode.BVS, BVS,
                     new List<(byte, AddressingMode)> {
-                        (0x50, AddressingMode.Relative)
+                        (0x70, AddressingMode.Relative)
                     }),
-                new ExecutionDefinition(CLC,
+                new ExecutionDefinition(OpCode.CLC, CLC,
                     new List<(byte, AddressingMode)> {
                         (0x18, AddressingMode.Implied)
                     }),
-                new ExecutionDefinition(CLD,
+                new ExecutionDefinition(OpCode.CLD, CLD,
                     new List<(byte, AddressingMode)> {
                         (0xD8, AddressingMode.Implied)
                     }),
-                new ExecutionDefinition(CLI,
+                new ExecutionDefinition(OpCode.CLI, CLI,
                     new List<(byte, AddressingMode)> {
                         (0x58, AddressingMode.Implied)
                     }),
-                new ExecutionDefinition(CLV,
+                new ExecutionDefinition(OpCode.CLV, CLV,
                     new List<(byte, AddressingMode)> {
                         (0xB8, AddressingMode.Implied)
                     }),
-                new ExecutionDefinition(CMP,
+                new ExecutionDefinition(OpCode.CMP, CMP,
                     new List<(byte, AddressingMode)> {
                         (0xC9, AddressingMode.Immediate),
                         (0xC5, AddressingMode.ZeroPage),
@@ -162,34 +170,34 @@ namespace BbcMicro.Cpu
                         (0xC1, AddressingMode.IndexedXIndirect),
                         (0xD1, AddressingMode.IndirectIndexedY)
                     }),
-                new ExecutionDefinition(CPX,
+                new ExecutionDefinition(OpCode.CPX, CPX,
                     new List<(byte, AddressingMode)> {
                         (0xE0, AddressingMode.Immediate),
                         (0xE4, AddressingMode.ZeroPage),
                         (0xEC, AddressingMode.Absolute)
                 }),
-                new ExecutionDefinition(CPY,
+                new ExecutionDefinition(OpCode.CPY, CPY,
                     new List<(byte, AddressingMode)> {
                         (0xC0, AddressingMode.Immediate),
                         (0xC4, AddressingMode.ZeroPage),
                         (0xCC, AddressingMode.Absolute)
                 }),
-                new ExecutionDefinition(DEC,
+                new ExecutionDefinition(OpCode.DEC, DEC,
                     new List<(byte, AddressingMode)> {
                         (0xC6, AddressingMode.ZeroPage),
                         (0xD6, AddressingMode.ZeroPageIndexedX),
                         (0xCE, AddressingMode.Absolute),
                         (0xDE, AddressingMode.AbsoluteIndexedX)
                 }),
-                new ExecutionDefinition(DEX,
+                new ExecutionDefinition(OpCode.DEX, DEX,
                     new List<(byte, AddressingMode)> {
                         (0xCA, AddressingMode.Implied)
                     }),
-                new ExecutionDefinition(DEY,
+                new ExecutionDefinition(OpCode.DEY, DEY,
                     new List<(byte, AddressingMode)> {
                         (0x88, AddressingMode.Implied)
                     }),
-                new ExecutionDefinition(EOR,
+                new ExecutionDefinition(OpCode.EOR, EOR,
                     new List<(byte, AddressingMode)> {
                         (0x49, AddressingMode.Immediate),
                         (0x45, AddressingMode.ZeroPage),
@@ -200,31 +208,31 @@ namespace BbcMicro.Cpu
                         (0x41, AddressingMode.IndexedXIndirect),
                         (0x51, AddressingMode.IndirectIndexedY)
                     }),
-                new ExecutionDefinition(INC,
+                new ExecutionDefinition(OpCode.INC, INC,
                     new List<(byte, AddressingMode)> {
                         (0xE6, AddressingMode.ZeroPage),
                         (0xF6, AddressingMode.ZeroPageIndexedX),
                         (0xEE, AddressingMode.Absolute),
                         (0xFE, AddressingMode.AbsoluteIndexedX)
                     }),
-                new ExecutionDefinition(INX,
+                new ExecutionDefinition(OpCode.INX, INX,
                     new List<(byte, AddressingMode)> {
                         (0xE8, AddressingMode.Implied)
                     }),
-                new ExecutionDefinition(INY,
+                new ExecutionDefinition(OpCode.INY, INY,
                     new List<(byte, AddressingMode)> {
                         (0xC8, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(JMP,
+                 new ExecutionDefinition(OpCode.JMP, JMP,
                     new List<(byte, AddressingMode)> {
                         (0x4C, AddressingMode.Absolute),
                         (0x6C, AddressingMode.Indirect)
                     }),
-                new ExecutionDefinition(JSR,
+                new ExecutionDefinition(OpCode.JSR, JSR,
                     new List<(byte, AddressingMode)> {
                         (0x20, AddressingMode.Absolute)
                     }),
-                new ExecutionDefinition(LDA,
+                new ExecutionDefinition(OpCode.LDA, LDA,
                     new List<(byte, AddressingMode)> {
                         (0xA9, AddressingMode.Immediate),
                         (0xA5, AddressingMode.ZeroPage),
@@ -235,7 +243,7 @@ namespace BbcMicro.Cpu
                         (0xA1, AddressingMode.IndexedXIndirect),
                         (0xB1, AddressingMode.IndirectIndexedY)
                     }),
-                new ExecutionDefinition(LDX,
+                new ExecutionDefinition(OpCode.LDX, LDX,
                     new List<(byte, AddressingMode)> {
                         (0xA2, AddressingMode.Immediate),
                         (0xA6, AddressingMode.ZeroPage),
@@ -243,7 +251,7 @@ namespace BbcMicro.Cpu
                         (0xAE, AddressingMode.Absolute),
                         (0xBE, AddressingMode.AbsoluteIndexedY)
                     }),
-                new ExecutionDefinition(LDY,
+                new ExecutionDefinition(OpCode.LDY, LDY,
                     new List<(byte, AddressingMode)> {
                         (0xA0, AddressingMode.Immediate),
                         (0xA4, AddressingMode.ZeroPage),
@@ -251,7 +259,7 @@ namespace BbcMicro.Cpu
                         (0xAC, AddressingMode.Absolute),
                         (0xBC, AddressingMode.AbsoluteIndexedX)
                     }),
-                new ExecutionDefinition(LSR,
+                new ExecutionDefinition(OpCode.LSR, LSR,
                     new List<(byte, AddressingMode)> {
                         (0x4A, AddressingMode.Accumulator),
                         (0x46, AddressingMode.ZeroPage),
@@ -259,11 +267,11 @@ namespace BbcMicro.Cpu
                         (0x4E, AddressingMode.Absolute),
                         (0x5E, AddressingMode.AbsoluteIndexedX)
                     }),
-                new ExecutionDefinition(NOP,
+                new ExecutionDefinition(OpCode.NOP, NOP,
                     new List<(byte, AddressingMode)> {
                         (0xEA, AddressingMode.Implied)
                     }),
-                new ExecutionDefinition(ORA,
+                new ExecutionDefinition(OpCode.ORA, ORA,
                     new List<(byte, AddressingMode)> {
                         (0x09, AddressingMode.Immediate),
                         (0x05, AddressingMode.ZeroPage),
@@ -274,23 +282,23 @@ namespace BbcMicro.Cpu
                         (0x01, AddressingMode.IndexedXIndirect),
                         (0x11, AddressingMode.IndirectIndexedY)
                     }),
-                 new ExecutionDefinition(PHA,
+                 new ExecutionDefinition(OpCode.PHA, PHA,
                     new List<(byte, AddressingMode)> {
                         (0x48, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(PHP,
+                 new ExecutionDefinition(OpCode.PHP, PHP,
                     new List<(byte, AddressingMode)> {
                         (0x08, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(PLA,
+                 new ExecutionDefinition(OpCode.PLA, PLA,
                     new List<(byte, AddressingMode)> {
                         (0x68, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(PLP,
+                 new ExecutionDefinition(OpCode.PLP, PLP,
                     new List<(byte, AddressingMode)> {
                         (0x28, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(ROL,
+                 new ExecutionDefinition(OpCode.ROL, ROL,
                     new List<(byte, AddressingMode)> {
                         (0x2A, AddressingMode.Accumulator),
                         (0x26, AddressingMode.ZeroPage),
@@ -298,7 +306,7 @@ namespace BbcMicro.Cpu
                         (0x2E, AddressingMode.Absolute),
                         (0x3E, AddressingMode.AbsoluteIndexedX)
                     }),
-                 new ExecutionDefinition(ROR,
+                 new ExecutionDefinition(OpCode.ROR, ROR,
                     new List<(byte, AddressingMode)> {
                         (0x6A, AddressingMode.Accumulator),
                         (0x66, AddressingMode.ZeroPage),
@@ -306,15 +314,15 @@ namespace BbcMicro.Cpu
                         (0x6E, AddressingMode.Absolute),
                         (0x7E, AddressingMode.AbsoluteIndexedX)
                     }),
-                 new ExecutionDefinition(RTI,
+                 new ExecutionDefinition(OpCode.RTI, RTI,
                     new List<(byte, AddressingMode)> {
                         (0x40, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(RTS,
+                 new ExecutionDefinition(OpCode.RTS, RTS,
                     new List<(byte, AddressingMode)> {
                         (0x60, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(SBC,
+                 new ExecutionDefinition(OpCode.SBC, SBC,
                     new List<(byte, AddressingMode)> {
                         (0xE9, AddressingMode.Immediate),
                         (0xE5, AddressingMode.ZeroPage),
@@ -325,19 +333,19 @@ namespace BbcMicro.Cpu
                         (0xE1, AddressingMode.IndexedXIndirect),
                         (0xF1, AddressingMode.IndirectIndexedY),
                     }),
-                 new ExecutionDefinition(SEC,
+                 new ExecutionDefinition(OpCode.SEC, SEC,
                     new List<(byte, AddressingMode)> {
                         (0x38, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(SED,
+                 new ExecutionDefinition(OpCode.SED, SED,
                     new List<(byte, AddressingMode)> {
                         (0xF8, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(SEI,
+                 new ExecutionDefinition(OpCode.SEI, SEI,
                     new List<(byte, AddressingMode)> {
                         (0x78, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(STA,
+                 new ExecutionDefinition(OpCode.STA, STA,
                     new List<(byte, AddressingMode)> {
                         (0x85, AddressingMode.ZeroPage),
                         (0x95, AddressingMode.ZeroPageIndexedX),
@@ -347,44 +355,45 @@ namespace BbcMicro.Cpu
                         (0x81, AddressingMode.IndexedXIndirect),
                         (0x91, AddressingMode.IndirectIndexedY)
                     }),
-                 new ExecutionDefinition(STX,
+                 new ExecutionDefinition(OpCode.STX, STX,
                     new List<(byte, AddressingMode)> {
                         (0x86, AddressingMode.ZeroPage),
                         (0x96, AddressingMode.ZeroPageIndexedY),
                         (0x8E, AddressingMode.Absolute)
                     }),
-                 new ExecutionDefinition(STY,
+                 new ExecutionDefinition(OpCode.STY, STY,
                     new List<(byte, AddressingMode)> {
                         (0x84, AddressingMode.ZeroPage),
                         (0x94, AddressingMode.ZeroPageIndexedX),
                         (0x8C, AddressingMode.Absolute)
                     }),
-                 new ExecutionDefinition(TAX,
+                 new ExecutionDefinition(OpCode.TAX, TAX,
                     new List<(byte, AddressingMode)> {
                         (0xAA, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(TAY,
+                 new ExecutionDefinition(OpCode.TAY, TAY,
                     new List<(byte, AddressingMode)> {
                         (0xA8, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(TSX,
+                 new ExecutionDefinition(OpCode.TSX, TSX,
                     new List<(byte, AddressingMode)> {
                         (0xBA, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(TXA,
+                 new ExecutionDefinition(OpCode.TXA, TXA,
                     new List<(byte, AddressingMode)> {
                         (0x8A, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(TXS,
+                 new ExecutionDefinition(OpCode.TXS, TXS,
                     new List<(byte, AddressingMode)> {
                         (0x9A, AddressingMode.Implied)
                     }),
-                 new ExecutionDefinition(TYA,
+                 new ExecutionDefinition(OpCode.TYA, TYA,
                     new List<(byte, AddressingMode)> {
                         (0x98, AddressingMode.Implied)
                     })
             };
-            #endregion
+
+            #endregion Op code mappings
 
             PopulateDecoder();
         }
@@ -395,25 +404,29 @@ namespace BbcMicro.Cpu
          * Callbacks
          */
 
-        private readonly List<Action<CPU>> _preExecutionCallbacks = new List<Action<CPU>>();
-        private readonly List<Action<CPU>> _postExecutionCallbacks = new List<Action<CPU>>();
+        private Func<CPU, OpCode, AddressingMode, ushort, bool> _interceptionCallback =
+            (cpu, opcode, addressingMode, resolvedAddress) => true;
+
+        private readonly List<Action<CPU, OpCode, AddressingMode, ushort>> _preExecutionCallbacks = new List<Action<CPU, OpCode, AddressingMode, ushort>>();
+
         private Action<string, CPU> _errorCallback = null;
 
-        public void AddPreExecutionCallback(Action<CPU> callback)
+        public void SetInterceptionCallback(Func<CPU, OpCode, AddressingMode, ushort, bool> callback)
         {
-            _preExecutionCallbacks.Add(callback);
+            _interceptionCallback = callback;
         }
 
-        public void AddPostExecutionCallback(Action<CPU> callback)
+        public void AddPreExecutionCallback(Action<CPU, OpCode, AddressingMode, ushort> callback)
         {
-            _postExecutionCallbacks.Add(callback);
+            _preExecutionCallbacks.Add(callback);
         }
 
         public void SetErrorCallback(Action<string, CPU> callback)
         {
             _errorCallback = callback;
         }
-        #endregion
+
+        #endregion Callbacks
 
         #region Execution
 
@@ -431,26 +444,28 @@ namespace BbcMicro.Cpu
             // Is this a valid op code?
             if (_opcodeIsValid[opCode])
             {
-                // Call any pre-execution callbacks
-                _preExecutionCallbacks.ForEach(cb => cb(this));
-
                 // Find the decoder entry for the instruction
                 var decoded = _decoder[opCode];
+
+                _preExecutionCallbacks.ForEach(pec => pec(this, decoded.opCode, decoded.addressingMode, PC));
 
                 // Opcode operand follows immediately after the op code, skip forward one
                 var operandAddress = PC++;
 
-                // Calculate the address of the target value based on the addressing mode
-                var resolvedAddress = ResolveAddress(PC, decoded.addressingMode);
+                // Calculate the actual operand using the addressing mode
+                var resolvedOperand = ResolveOperand(PC, decoded.addressingMode);
 
                 // Move the PC forward based on the addressing mode
                 PC += _addressingModeToPCDelta[(ushort)decoded.addressingMode];
 
-                // Interpret the instruction
-                decoded.impl(resolvedAddress, decoded.addressingMode);
-
+                // Interception callback
+                if (_interceptionCallback(this, decoded.opCode, decoded.addressingMode, resolvedOperand))
+                {
+                    // Interpret the instruction
+                    decoded.impl(resolvedOperand, decoded.addressingMode);
+                }
                 // Call any post-execution callbacks
-                _postExecutionCallbacks.ForEach(cb => cb(this));
+                //_postExecutionCallbacks.ForEach(cb => cb(this));
             }
             else
             {
@@ -474,12 +489,14 @@ namespace BbcMicro.Cpu
                 }
             }
         }
-        #endregion
+
+        #endregion Execution
 
         #region Opcode implementations
+
         /*
          * Op code implementations
-         * 
+         *
          * Definitions are taken from http://www.obelisk.me.uk/6502/reference.html
          */
 
@@ -498,42 +515,46 @@ namespace BbcMicro.Cpu
 
         /*
          * Add with carry
-         * 
-         * This instruction adds the contents of a memory location to the accumulator 
-         * together with the carry bit. If overflow occurs the carry bit is set, 
+         *
+         * This instruction adds the contents of a memory location to the accumulator
+         * together with the carry bit. If overflow occurs the carry bit is set,
          * this enables multiple byte addition to be performed.
          */
-        private void ADC(ushort operandAddress, AddressingMode addressingMode)
+
+        private void ADC(ushort operand, AddressingMode addressingMode)
         {
-            byte operand = Memory.GetByte(operandAddress);
-            short result = (short)(A + operand + (PIsSet(PFlags.C) ? 1 : 0));
+            byte operandValue = GetByteValue(operand, addressingMode);
+            short result = (short)(A + operandValue + (PIsSet(PFlags.C) ? 1 : 0));
             PSet(PFlags.C, result > 0xFF);
-            PSet(PFlags.V, ((A ^ result) & (operand ^ result) & 0x80) != 0);
+            PSet(PFlags.V, ((A ^ result) & (operandValue ^ result) & 0x80) != 0);
             A = (byte)result;
             UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
         /*
          * Logical and
-         * 
-         * A logical AND is performed, bit by bit, on the accumulator contents 
+         *
+         * A logical AND is performed, bit by bit, on the accumulator contents
          * using the contents of a byte of memory.
          */
-        private void AND(ushort operandAddress, AddressingMode addressingMode) {
-            A &= Memory.GetByte(operandAddress);
+
+        private void AND(ushort operand, AddressingMode addressingMode)
+        {
+            A &= GetByteValue(operand, addressingMode);
             UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
         /*
          * Arithmetic shift left
-         * 
+         *
          * This operation shifts all the bits of the accumulator or memory contents one
-         * bit left. Bit 0 is set to 0 and bit 7 is placed in the carry flag. The 
-         * effect of this operation is to multiply the memory contents by 2 
-         * (ignoring 2's complement considerations), setting the carry if the result 
+         * bit left. Bit 0 is set to 0 and bit 7 is placed in the carry flag. The
+         * effect of this operation is to multiply the memory contents by 2
+         * (ignoring 2's complement considerations), setting the carry if the result
          * will not fit in 8 bits.
          */
-        private void ASL(ushort operandAddress, AddressingMode addressingMode)
+
+        private void ASL(ushort operand, AddressingMode addressingMode)
         {
             if (addressingMode == AddressingMode.Accumulator)
             {
@@ -543,133 +564,141 @@ namespace BbcMicro.Cpu
             }
             else
             {
-                byte operand = Memory.GetByte(operandAddress);
-                Memory.SetByte((byte)(operand << 1), operandAddress);
-                PSet(PFlags.C, (operand & 0b1000_0000) != 0);
-                UpdateFlags(operand, PFlags.N | PFlags.Z);
+                var operandValue = GetByteValue(operand, addressingMode);
+                Memory.SetByte((byte)(operandValue << 1), operand);
+                PSet(PFlags.C, (operandValue & 0b1000_0000) != 0);
+                UpdateFlags(operandValue, PFlags.N | PFlags.Z);
             }
         }
 
         /*
          * Branch if carry clear
-         * 
-         * If the carry flag is clear then add the relative displacement to the 
+         *
+         * If the carry flag is clear then add the relative displacement to the
          * program counter to cause a branch to a new location.
          */
-        private void BCC(ushort operandAddress, AddressingMode addressingMode)
+
+        private void BCC(ushort operand, AddressingMode addressingMode)
         {
             if (!PIsSet(PFlags.C))
             {
                 // Cast to sbyte as the offset is signed
-                PC = (ushort)(PC + (sbyte)Memory.GetByte(operandAddress));
+                PC = (ushort)(PC + (sbyte)GetByteValue(operand, addressingMode));
             }
         }
 
         /*
          * Branch if carry set
-         * 
-         * If the carry flag is set then add the relative displacement to the 
+         *
+         * If the carry flag is set then add the relative displacement to the
          * program counter to cause a branch to a new location.
          */
-        private void BCS(ushort operandAddress, AddressingMode addressingMode)
+
+        private void BCS(ushort operand, AddressingMode addressingMode)
         {
             if (PIsSet(PFlags.C))
             {
                 // Cast to sbyte as the offset is signed
-                PC = (ushort)(PC + (sbyte)Memory.GetByte(operandAddress));
+                PC = (ushort)(PC + (sbyte)GetByteValue(operand, addressingMode));
             }
         }
 
         /*
          * Branch if equal
-         * 
-         * If the zero flag is set then add the relative displacement to 
+         *
+         * If the zero flag is set then add the relative displacement to
          * the program counter to cause a branch to a new location.
          */
-        private void BEQ(ushort operandAddress, AddressingMode addressingMode)
+
+        private void BEQ(ushort operand, AddressingMode addressingMode)
         {
             if (PIsSet(PFlags.Z))
             {
                 // Cast to sbyte as the offset is signed
-                PC = (ushort)(PC + (sbyte)Memory.GetByte(operandAddress));
+                PC = (ushort)(PC + (sbyte)GetByteValue(operand, addressingMode));
             }
         }
 
         /*
          * Bit test
-         * 
+         *
          * This instructions is used to test if one or more bits are set
-         * in a target memory location. The mask pattern in A is ANDed with 
+         * in a target memory location. The mask pattern in A is ANDed with
          * the value in memory to set or clear the zero flag, but the result
-         * is not kept. Bits 7 and 6 of the value from memory are copied into 
+         * is not kept. Bits 7 and 6 of the value from memory are copied into
          * the N and V flags.
          */
-        private void BIT(ushort operandAddress, AddressingMode addressingMode)
+
+        private void BIT(ushort operand, AddressingMode addressingMode)
         {
-            byte operand = Memory.GetByte(operandAddress);
-            PSet(PFlags.Z, (A & operand) == 0);
-            PSet(PFlags.V, (operand & 0b0100_0000) != 0);
-            PSet(PFlags.N, (operand & 0b1000_0000) != 0);
+            byte operandValue = GetByteValue(operand, addressingMode);
+            PSet(PFlags.Z, (A & operandValue) == 0);
+            PSet(PFlags.V, (operandValue & 0b0100_0000) != 0);
+            PSet(PFlags.N, (operandValue & 0b1000_0000) != 0);
         }
 
         /*
          * Branch if minus
-         * 
-         * If the negative flag is set then add the relative displacement to 
+         *
+         * If the negative flag is set then add the relative displacement to
          * the program counter to cause a branch to a new location.
          */
-        private void BMI(ushort operandAddress, AddressingMode addressingMode)
+
+        private void BMI(ushort operand, AddressingMode addressingMode)
         {
             if (PIsSet(PFlags.N))
             {
                 // Cast to sbyte as the offset is signed
-                PC = (ushort)(PC + (sbyte)Memory.GetByte(operandAddress));
+                PC = (ushort)(PC + (sbyte)GetByteValue(operand, addressingMode));
             }
         }
 
         /*
          * Branch if not equal
-         * 
-         * If the zero flag is clear then add the relative displacement 
+         *
+         * If the zero flag is clear then add the relative displacement
          * to the program counter to cause a branch to a new location.
          */
-        private void BNE(ushort operandAddress, AddressingMode addressingMode)
+
+        private void BNE(ushort operand, AddressingMode addressingMode)
         {
             if (!PIsSet(PFlags.Z))
             {
                 // Cast to sbyte as the offset is signed
-                PC = (ushort)(PC + (sbyte)Memory.GetByte(operandAddress));
+                PC = (ushort)(PC + (sbyte)GetByteValue(operand, addressingMode));
             }
         }
 
         /*
          * Branch if positive
-         * 
+         *
          * If the negative flag is clear then add the relative displacement
          * to the program counter to cause a branch to a new location.
          */
-        private void BPL(ushort operandAddress, AddressingMode addressingMode)
+
+        private void BPL(ushort operand, AddressingMode addressingMode)
         {
             if (!PIsSet(PFlags.N))
             {
                 // Cast to sbyte as the offset is signed
-                PC = (ushort)(PC + (sbyte)Memory.GetByte(operandAddress));
+                PC = (ushort)(PC + (sbyte)GetByteValue(operand, addressingMode));
             }
         }
 
         /*
          * Force Interrupt
-         * 
-         * The BRK instruction forces the generation of an interrupt request. 
-         * The program counter and processor status are pushed on the stack then 
-         * the IRQ interrupt vector at $FFFE/F is loaded into the PC and the break 
+         *
+         * The BRK instruction forces the generation of an interrupt request.
+         * The program counter and processor status are pushed on the stack then
+         * the IRQ interrupt vector at $FFFE/F is loaded into the PC and the break
          * flag in the status set to one.
-         * 
-         * The interpretation of a BRK depends on the operating system. On the BBC 
-         * Microcomputer it is used by language ROMs to signal run time errors but 
-         * it could be used for other purposes (e.g. calling operating system 
+         *
+         * The interpretation of a BRK depends on the operating system. On the BBC
+         * Microcomputer it is used by language ROMs to signal run time errors but
+         * it could be used for other purposes (e.g. calling operating system
          * functions, etc.).
          */
+
         private void BRK(ushort operandAddress, AddressingMode addressingMode)
         {
             // TODO
@@ -678,37 +707,40 @@ namespace BbcMicro.Cpu
 
         /*
          * Branch if overflow clear
-         * 
-         * If the overflow flag is clear then add the relative displacement to 
+         *
+         * If the overflow flag is clear then add the relative displacement to
          * the program counter to cause a branch to a new location.
          */
-        private void BVC(ushort operandAddress, AddressingMode addressingMode)
+
+        private void BVC(ushort operand, AddressingMode addressingMode)
         {
             if (!PIsSet(PFlags.V))
             {
                 // Cast to sbyte as the offset is signed
-                PC = (ushort)(PC + (sbyte)Memory.GetByte(operandAddress));
+                PC = (ushort)(PC + (sbyte)GetByteValue(operand, addressingMode));
             }
         }
 
         /*
          * Branch if overflow set
-         * 
-         * If the overflow flag is set then add the relative displacement to 
+         *
+         * If the overflow flag is set then add the relative displacement to
          * the program counter to cause a branch to a new location.
          */
-        private void BVS(ushort operandAddress, AddressingMode addressingMode)
+
+        private void BVS(ushort operand, AddressingMode addressingMode)
         {
             if (PIsSet(PFlags.V))
             {
                 // Cast to sbyte as the offset is signed
-                PC = (ushort)(PC + (sbyte)Memory.GetByte(operandAddress));
+                PC = (ushort)(PC + (sbyte)GetByteValue(operand, addressingMode));
             }
         }
 
         /*
          * Clear carry
-         */ 
+         */
+
         private void CLC(ushort operandAddress, AddressingMode addressingMode)
         {
             PReset(PFlags.C);
@@ -717,6 +749,7 @@ namespace BbcMicro.Cpu
         /*
          * Clear decimal mode
          */
+
         private void CLD(ushort operandAddress, AddressingMode addressingMode)
         {
             PReset(PFlags.D);
@@ -724,10 +757,11 @@ namespace BbcMicro.Cpu
 
         /*
          * Clear interrupt disable
-         * 
+         *
          * Clears the interrupt disable flag allowing normal interrupt requests
          * to be serviced.
          */
+
         private void CLI(ushort operandAddress, AddressingMode addressingMode)
         {
             PReset(PFlags.I);
@@ -735,7 +769,8 @@ namespace BbcMicro.Cpu
 
         /*
          * Clear overflow flag
-         */ 
+         */
+
         private void CLV(ushort operandAddress, AddressingMode addressingMode)
         {
             PReset(PFlags.V);
@@ -743,66 +778,71 @@ namespace BbcMicro.Cpu
 
         /*
          * Compare
-         * 
+         *
          * This instruction compares the contents of the accumulator with another
          * memory held value and sets the zero and carry flags as appropriate.
          */
-        private void CMP(ushort operandAddress, AddressingMode addressingMode)
+
+        private void CMP(ushort operand, AddressingMode addressingMode)
         {
-            byte operand = Memory.GetByte(operandAddress);
-            PSet(PFlags.N, A < operandAddress);
-            PSet(PFlags.C, A >= operandAddress);
-            PSet(PFlags.Z, A == operandAddress);
+            byte operandValue = GetByteValue(operand, addressingMode);
+            PSet(PFlags.N, A < operandValue);
+            PSet(PFlags.C, A >= operandValue);
+            PSet(PFlags.Z, A == operandValue);
         }
 
-       /*
-        * Compare X register
-        * 
-        * This instruction compares the contents of the X register with another 
-        * memory held value and sets the zero and carry flags as appropriate.
-        */
-        private void CPX(ushort operandAddress, AddressingMode addressingMode)
+        /*
+         * Compare X register
+         *
+         * This instruction compares the contents of the X register with another
+         * memory held value and sets the zero and carry flags as appropriate.
+         */
+
+        private void CPX(ushort operand, AddressingMode addressingMode)
         {
-            byte operand = Memory.GetByte(operandAddress);
-            PSet(PFlags.N, X < operandAddress);
-            PSet(PFlags.C, X >= operandAddress);
-            PSet(PFlags.Z, X == operandAddress);
+            byte operandValue = GetByteValue(operand, addressingMode);
+            PSet(PFlags.N, X < operandValue);
+            PSet(PFlags.C, X >= operandValue);
+            PSet(PFlags.Z, X == operandValue);
         }
 
         /*
          * Compare Y register
-         * 
+         *
          * This instruction compares the contents of the Y register with another
          * memory held value and sets the zero and carry flags as appropriate.
          */
-        private void CPY(ushort operandAddress, AddressingMode addressingMode)
+
+        private void CPY(ushort operand, AddressingMode addressingMode)
         {
-            byte operand = Memory.GetByte(operandAddress);
-            PSet(PFlags.N, Y < operandAddress);
-            PSet(PFlags.C, Y >= operandAddress);
-            PSet(PFlags.Z, Y == operandAddress);
+            byte operandValue = GetByteValue(operand, addressingMode);
+            PSet(PFlags.N, Y < operandValue);
+            PSet(PFlags.C, Y >= operandValue);
+            PSet(PFlags.Z, Y == operandValue);
         }
 
         /*
          * Decrement memory
-         * 
-         * Subtracts one from the value held at a specified memory location 
+         *
+         * Subtracts one from the value held at a specified memory location
          * setting the zero and negative flags as appropriate.
          */
-        private void DEC(ushort operandAddress, AddressingMode addressingMode)
+
+        private void DEC(ushort operand, AddressingMode addressingMode)
         {
-            byte operand = Memory.GetByte(operandAddress);
-            byte result = (byte)(operand - 1);
-            Memory.SetByte(result, operandAddress);
+            byte operandValue = GetByteValue(operand, addressingMode);
+            byte result = (byte)(operandValue - 1);
+            Memory.SetByte(result, operand);
             UpdateFlags(result, PFlags.N | PFlags.Z);
         }
 
         /*
          * Decrement X register
-         * 
-         * Subtracts one from the X register setting the zero and negative 
+         *
+         * Subtracts one from the X register setting the zero and negative
          * flags as appropriate.
          */
+
         private void DEX(ushort operandAddress, AddressingMode addressingMode)
         {
             X -= 1;
@@ -811,10 +851,11 @@ namespace BbcMicro.Cpu
 
         /*
          * Decrement Y register
-         * 
-         * Subtracts one from the Y register setting the zero and negative 
+         *
+         * Subtracts one from the Y register setting the zero and negative
          * flags as appropriate.
          */
+
         private void DEY(ushort operandAddress, AddressingMode addressingMode)
         {
             Y -= 1;
@@ -823,51 +864,54 @@ namespace BbcMicro.Cpu
 
         /*
          * Exclusive or
-         * 
-         * An exclusive OR is performed, bit by bit, on the accumulator 
+         *
+         * An exclusive OR is performed, bit by bit, on the accumulator
          * contents using the contents of a byte of memory.
          */
-        private void EOR(ushort operandAddress, AddressingMode addressingMode)
+
+        private void EOR(ushort operand, AddressingMode addressingMode)
         {
-            byte operand = Memory.GetByte(operandAddress);
-            A ^= operand;
+            byte operandValue = GetByteValue(operand, addressingMode);
+            A ^= operandValue;
             UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
         /*
          * Increment memory
-         * 
-         * Adds one to the value held at a specified memory location 
+         *
+         * Adds one to the value held at a specified memory location
          * setting the zero and negative flags as appropriate.
          */
-        private void INC(ushort operandAddress, AddressingMode addressingMode)
+
+        private void INC(ushort operand, AddressingMode addressingMode)
         {
-            byte operand = Memory.GetByte(operandAddress);
-            operand++;
-            Memory.SetByte(operand, operandAddress);
-            UpdateFlags(operand, PFlags.N | PFlags.Z);
+            byte operandValue = GetByteValue(operand, addressingMode);
+            operandValue++;
+            Memory.SetByte(operandValue, operand);
+            UpdateFlags(operandValue, PFlags.N | PFlags.Z);
         }
 
         /*
          * Increment X register
-         * 
-         * Adds one to the X register setting the zero and negative flags 
+         *
+         * Adds one to the X register setting the zero and negative flags
          * as appropriate.
          */
-        private void INX(ushort operandAddress, AddressingMode addressingMode)
+
+        private void INX(ushort operand, AddressingMode addressingMode)
         {
             X++;
             UpdateFlags(X, PFlags.N | PFlags.Z);
-
         }
 
         /*
          * Increment Y register
-         * 
-         * Adds one to the X register setting the zero and negative flags 
+         *
+         * Adds one to the X register setting the zero and negative flags
          * as appropriate.
          */
-        private void INY(ushort operandAddress, AddressingMode addressingMode)
+
+        private void INY(ushort operand, AddressingMode addressingMode)
         {
             Y++;
             UpdateFlags(Y, PFlags.N | PFlags.Z);
@@ -875,39 +919,39 @@ namespace BbcMicro.Cpu
 
         /*
          * Jump
-         * 
+         *
          * Sets the program counter to the address specified by the operand.
-         * 
-         * An original 6502 has does not correctly fetch the target address if 
-         * the indirect vector falls on a page boundary (e.g. $xxFF where xx is 
-         * any value from $00 to $FF). In this case fetches the LSB from $xxFF 
-         * as expected but takes the MSB from $xx00. This is fixed in some later 
-         * chips like the 65SC02 so for compatibility always ensure the indirect 
+         *
+         * An original 6502 has does not correctly fetch the target address if
+         * the indirect vector falls on a page boundary (e.g. $xxFF where xx is
+         * any value from $00 to $FF). In this case fetches the LSB from $xxFF
+         * as expected but takes the MSB from $xx00. This is fixed in some later
+         * chips like the 65SC02 so for compatibility always ensure the indirect
          * vector is not at the end of the page.
          */
-        private void JMP(ushort operandAddress, AddressingMode addressingMode)
+
+        private void JMP(ushort operand, AddressingMode addressingMode)
         {
-            PC = Memory.GetWord(operandAddress);
+            PC = operand;
         }
 
         /*
          * Jump to Subroutine
-         * 
+         *
          * The JSR instruction pushes the address (minus one) of the return point
          * on to the stack and then sets the program counter to the target memory
          * address.
          */
-        private void JSR(ushort operandAddress, AddressingMode addressingMode)
-        {
-            // Target address in host byte order
-            ushort operand = Memory.GetByte(operandAddress);
 
-            // This will be in host machine byte order
-            ushort addressToPush = (ushort)(PC - 1); // This is what the 6502 does! 
+        private void JSR(ushort operand, AddressingMode addressingMode)
+        {
+            // Operand is in host machine byte order, it is always the absolute address to target
+            ushort addressToPush = (ushort)(PC - 1); // This is what the 6502 does!
             byte operandLSB = (byte)addressToPush;
             byte operandMSB = (byte)(addressToPush >> 8);
 
             // Push the return address onto the stack
+            // MSB first to match little endian byte order as the stack grows downwards
             PushByte(operandMSB);
             PushByte(operandLSB);
 
@@ -916,47 +960,51 @@ namespace BbcMicro.Cpu
 
         /*
          * Load accumulator
-         * 
-         * Loads a byte of memory into the accumulator setting the 
+         *
+         * Loads a byte of memory into the accumulator setting the
          * zero and negative flags as appropriate.
          */
-        private void LDA(ushort operandAddress, AddressingMode addressingMode)
+
+        private void LDA(ushort operand, AddressingMode addressingMode)
         {
-            A = Memory.GetByte(operandAddress);
+            A = GetByteValue(operand, addressingMode);
             UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
         /*
          * Load X register
-         * 
-         * Loads a byte of memory into the X register setting the zero 
+         *
+         * Loads a byte of memory into the X register setting the zero
          * and negative flags as appropriate.
          */
-        private void LDX(ushort operandAddress, AddressingMode addressingMode)
+
+        private void LDX(ushort operand, AddressingMode addressingMode)
         {
-            X = Memory.GetByte(operandAddress);
+            X = GetByteValue(operand, addressingMode);
             UpdateFlags(X, PFlags.N | PFlags.Z);
         }
 
         /*
          * Load Y register
-         * 
-         * Loads a byte of memory into the Y register setting the zero 
+         *
+         * Loads a byte of memory into the Y register setting the zero
          * and negative flags as appropriate.
          */
-        private void LDY(ushort operandAddress, AddressingMode addressingMode)
+
+        private void LDY(ushort operand, AddressingMode addressingMode)
         {
-            Y = Memory.GetByte(operandAddress);
+            Y = GetByteValue(operand, addressingMode);
             UpdateFlags(Y, PFlags.N | PFlags.Z);
         }
 
         /*
          * Logical shift right
-         * 
-         * Each of the bits in A or M is shift one place to the right. The 
-         * bit that was in bit 0 is shifted into the carry flag. Bit 7 is set 
+         *
+         * Each of the bits in A or M is shift one place to the right. The
+         * bit that was in bit 0 is shifted into the carry flag. Bit 7 is set
          * to zero.
          */
+
         private void LSR(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -964,11 +1012,12 @@ namespace BbcMicro.Cpu
 
         /*
          * No operation
-         * 
-         * The NOP instruction causes no changes to the processor other 
-         * than the normal incrementing of the program counter to the next 
+         *
+         * The NOP instruction causes no changes to the processor other
+         * than the normal incrementing of the program counter to the next
          * instruction.
          */
+
         private void NOP(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -976,10 +1025,11 @@ namespace BbcMicro.Cpu
 
         /*
          * Logical inclusive or
-         * 
-         * An inclusive OR is performed, bit by bit, on the accumulator 
+         *
+         * An inclusive OR is performed, bit by bit, on the accumulator
          * contents using the contents of a byte of memory.
          */
+
         private void ORA(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -987,9 +1037,10 @@ namespace BbcMicro.Cpu
 
         /*
          * Push accumulator
-         * 
+         *
          * Pushes a copy of the accumulator on to the stack.
          */
+
         private void PHA(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -997,9 +1048,10 @@ namespace BbcMicro.Cpu
 
         /*
          * Push processor status
-         * 
+         *
          * Pushes a copy of the status flags on to the stack.
          */
+
         private void PHP(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1007,10 +1059,11 @@ namespace BbcMicro.Cpu
 
         /*
          * Pull accumulator
-         * 
-         * Pulls an 8 bit value from the stack and into the accumulator. 
+         *
+         * Pulls an 8 bit value from the stack and into the accumulator.
          * The zero and negative flags are set as appropriate.
          */
+
         private void PLA(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1018,10 +1071,11 @@ namespace BbcMicro.Cpu
 
         /*
          * Pull processor status
-         * 
-         * Pulls an 8 bit value from the stack and into the processor flags. 
+         *
+         * Pulls an 8 bit value from the stack and into the processor flags.
          * The flags will take on new states as determined by the value pulled.
          */
+
         private void PLP(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1029,11 +1083,12 @@ namespace BbcMicro.Cpu
 
         /*
          * Rotate left
-         * 
+         *
          * Move each of the bits in either A or M one place to the left. Bit 0
-         * is filled with the current value of the carry flag whilst the old 
+         * is filled with the current value of the carry flag whilst the old
          * bit 7 becomes the new carry flag value.
          */
+
         private void ROL(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1041,11 +1096,12 @@ namespace BbcMicro.Cpu
 
         /*
          * Rotate right
-         * 
+         *
          * Move each of the bits in either A or M one place to the right. Bit 7
-         * is filled with the current value of the carry flag whilst the old 
+         * is filled with the current value of the carry flag whilst the old
          * bit 0 becomes the new carry flag value.
          */
+
         private void ROR(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1053,11 +1109,12 @@ namespace BbcMicro.Cpu
 
         /*
          * Return from interrupt
-         * 
-         * The RTI instruction is used at the end of an interrupt processing 
-         * routine. It pulls the processor flags from the stack followed by 
+         *
+         * The RTI instruction is used at the end of an interrupt processing
+         * routine. It pulls the processor flags from the stack followed by
          * the program counter.
          */
+
         private void RTI(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1065,10 +1122,11 @@ namespace BbcMicro.Cpu
 
         /*
          * Return from subroutine
-         * 
-         * The RTS instruction is used at the end of a subroutine to return 
+         *
+         * The RTS instruction is used at the end of a subroutine to return
          * to the calling routine. It pulls the program counter (minus one) from the stack.
          */
+
         private void RTS(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1076,12 +1134,13 @@ namespace BbcMicro.Cpu
 
         /*
          * Subtract with carry
-         * 
-         * This instruction subtracts the contents of a memory location to the 
-         * accumulator together with the not of the carry bit. If overflow occurs 
+         *
+         * This instruction subtracts the contents of a memory location to the
+         * accumulator together with the not of the carry bit. If overflow occurs
          * the carry bit is clear, this enables multiple byte subtraction to be
          * performed.
          */
+
         private void SBC(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1089,7 +1148,8 @@ namespace BbcMicro.Cpu
 
         /*
          * Set carry flag
-         */ 
+         */
+
         private void SEC(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1098,6 +1158,7 @@ namespace BbcMicro.Cpu
         /*
          * Set decimal flag
          */
+
         private void SED(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1106,6 +1167,7 @@ namespace BbcMicro.Cpu
         /*
          * Set interrupt disable
          */
+
         private void SEI(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1113,9 +1175,10 @@ namespace BbcMicro.Cpu
 
         /*
          * Store accumulator
-         * 
+         *
          * Stores the contents of the accumulator into memory.
          */
+
         private void STA(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1123,9 +1186,10 @@ namespace BbcMicro.Cpu
 
         /*
          * Store X register
-         * 
+         *
          * Stores the contents of the X register into memory.
          */
+
         private void STX(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1133,9 +1197,10 @@ namespace BbcMicro.Cpu
 
         /*
          * Store Y register
-         * 
+         *
          * Stores the contents of the Y register into memory.
          */
+
         private void STY(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1143,10 +1208,11 @@ namespace BbcMicro.Cpu
 
         /*
          * Transfer accumulator to X
-         * 
-         * Copies the current contents of the accumulator into the X 
+         *
+         * Copies the current contents of the accumulator into the X
          * register and sets the zero and negative flags as appropriate.
          */
+
         private void TAX(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1154,10 +1220,11 @@ namespace BbcMicro.Cpu
 
         /*
          * Transfer accumulator to Y
-         * 
+         *
          * Copies the current contents of the accumulator into the Y
          * register and sets the zero and negative flags as appropriate.
          */
+
         private void TAY(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1165,10 +1232,11 @@ namespace BbcMicro.Cpu
 
         /*
          * Transfer stack pointer to X
-         * 
-         * Copies the current contents of the stack register into 
+         *
+         * Copies the current contents of the stack register into
          * the X register and sets the zero and negative flags as appropriate.
          */
+
         private void TSX(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1176,10 +1244,11 @@ namespace BbcMicro.Cpu
 
         /*
          * Transfer X to accumulator
-         * 
-         * Copies the current contents of the X register into the 
+         *
+         * Copies the current contents of the X register into the
          * accumulator and sets the zero and negative flags as appropriate.
          */
+
         private void TXA(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1187,9 +1256,10 @@ namespace BbcMicro.Cpu
 
         /*
          * Transfer X to stack pointer
-         * 
+         *
          * Copies the current contents of the X register into the stack register.
          */
+
         private void TXS(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
@@ -1197,19 +1267,21 @@ namespace BbcMicro.Cpu
 
         /*
          * Transfer to accumulator
-         * 
+         *
          * Copies the current contents of the Y register into the accumulator
          * and sets the zero and negative flags as appropriate.
          */
+
         private void TYA(ushort operandAddress, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
         }
-        #endregion
+
+        #endregion Opcode implementations
 
         #region CPU state
 
-        /* 
+        /*
          * CPU state
          */
 
@@ -1276,7 +1348,7 @@ namespace BbcMicro.Cpu
 
         public void PushByte(byte value)
         {
-            if (S==0)
+            if (S == 0)
             {
                 // TODO
                 throw new Exception("Stack overflow");
@@ -1287,7 +1359,7 @@ namespace BbcMicro.Cpu
 
         public byte PopByte()
         {
-            if (S==0xFF)
+            if (S == 0xFF)
             {
                 // TODO
                 throw new Exception("Stack underflow");
@@ -1298,13 +1370,14 @@ namespace BbcMicro.Cpu
 
         public IAddressSpace Memory { get; }
 
-        #endregion
+        #endregion CPU state
 
         #region Addressing modes
 
         /*
          * Addressing modes
          */
+
         private readonly byte[] _addressingModeToPCDelta = new byte[]
         {
             0, // Accumulator,
@@ -1322,19 +1395,44 @@ namespace BbcMicro.Cpu
             1, // IndirectIndexedY
         };
 
-        private ushort ResolveAddress(ushort operandAddress, AddressingMode addressingMode)
+        // Follows a value returned by ResolveOperand() to the actual value to process
+        private byte GetByteValue(ushort operand, AddressingMode addressingMode)
         {
             return addressingMode switch
             {
-                AddressingMode.Accumulator => 0,
-                AddressingMode.Immediate => operandAddress,
+                AddressingMode.Accumulator => A,
+                AddressingMode.Immediate => (byte)operand,
                 AddressingMode.Implied => 0,
-                AddressingMode.Relative => operandAddress,
-                AddressingMode.Absolute => Memory.GetWord(operandAddress),
-                AddressingMode.ZeroPage => Memory.GetByte(operandAddress),
-                AddressingMode.Indirect => Memory.GetWord(Memory.GetWord(operandAddress)),
-                AddressingMode.AbsoluteIndexedX => (ushort)(Memory.GetWord(operandAddress) + X),
-                AddressingMode.AbsoluteIndexedY => (ushort)(Memory.GetWord(operandAddress) + Y),
+                AddressingMode.Relative => (byte)operand,
+                AddressingMode.Absolute => Memory.GetByte(operand),
+                AddressingMode.ZeroPage => Memory.GetByte(operand),
+                AddressingMode.Indirect => Memory.GetByte(operand),
+                AddressingMode.AbsoluteIndexedX => Memory.GetByte(operand),
+                AddressingMode.AbsoluteIndexedY => Memory.GetByte(operand),
+                AddressingMode.ZeroPageIndexedX => Memory.GetByte(operand),
+                AddressingMode.ZeroPageIndexedY => Memory.GetByte(operand),
+                AddressingMode.IndexedXIndirect => Memory.GetByte(operand),
+                AddressingMode.IndirectIndexedY => Memory.GetByte(operand),
+                _ => throw new Exception($"Invalid addressing mode '{addressingMode}'") // TODO
+            };
+        }
+
+        // Resolves the address of the operand to the actual operand value that an instruction would process.
+        // Results are always in host byte order (which may or may not match 6502 byte ordering)
+        // When the operand is byte it is returned in the least significant byte of the result
+        private ushort ResolveOperand(ushort operandAddress, AddressingMode addressingMode)
+        {
+            return addressingMode switch
+            {
+                AddressingMode.Accumulator => 0, // Operand ignored
+                AddressingMode.Immediate => Memory.GetByte(operandAddress), // Operand is the byte following the op code
+                AddressingMode.Implied => 0, // Operand ignored
+                AddressingMode.Relative => Memory.GetByte(operandAddress), // Operand is the byte following the op code
+                AddressingMode.Absolute => Memory.GetWord(operandAddress), // Operand is the word following the op code
+                AddressingMode.ZeroPage => Memory.GetByte(operandAddress), // Operand is the byte following the op code
+                AddressingMode.Indirect => Memory.GetWord(Memory.GetWord(operandAddress)), // Operand is pointed to by the word following the op code
+                AddressingMode.AbsoluteIndexedX => (ushort)(Memory.GetWord(operandAddress) + X), // Operand is the word following the op code + X
+                AddressingMode.AbsoluteIndexedY => (ushort)(Memory.GetWord(operandAddress) + Y), // Operand is the word following the op code + Y
                 AddressingMode.ZeroPageIndexedX => (byte)(Memory.GetByte(operandAddress) + X), // Cast to byte to wrap to zero page
                 AddressingMode.ZeroPageIndexedY => (byte)(Memory.GetByte(operandAddress) + Y), // Cast to byte to wrap to zero page
                 AddressingMode.IndexedXIndirect => Memory.GetWord((byte)(Memory.GetByte(operandAddress) + X)), // Cast to byte to wrap to zero page
@@ -1342,7 +1440,8 @@ namespace BbcMicro.Cpu
                 _ => throw new Exception($"Invalid addressing mode '{addressingMode}'") // TODO
             };
         }
-        #endregion
+
+        #endregion Addressing modes
 
         public override string ToString()
         {
