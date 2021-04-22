@@ -10,5 +10,4 @@ loop:		LDA			hello,X
 end:		BRK
 
 hello:		DC			"Hi"
-			DC			$0D
 			BYTE		0

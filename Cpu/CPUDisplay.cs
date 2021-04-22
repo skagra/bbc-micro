@@ -64,7 +64,7 @@ namespace BbcMicro.Cpu
             RenderString($"${value:X4}", changed);
         }
 
-        public void Render(OpCode opCode, AddressingMode addressingMode, ushort operand)
+        public void Render(OpCode opCode, AddressingMode addressingMode)
         {
             var pcChanged = _cpu.PC != _oldState.PC;
             var sChanged = _cpu.S != _oldState.S;

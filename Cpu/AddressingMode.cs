@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace BbcMicro.Cpu
+﻿namespace BbcMicro.Cpu
 {
     public enum AddressingMode : ushort
     {

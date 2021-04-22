@@ -13,7 +13,7 @@ namespace BbcMicro
             {
                 if (operand == 0xFFFE)
                 {
-                    Console.Write((char)cpu.A);
+                    Console.Write($"Output: '{(char)cpu.A}'");
                     runImpl = false;
                 }
             }
@@ -27,9 +27,9 @@ namespace BbcMicro
             Console.WriteLine(_dis.Disassemble(opCode, addressingMode, cpu.PC, cpu));
         }
 
-        private static void DisplayCallback(CPU cpu, OpCode opCode, AddressingMode addressingMode, ushort operand)
+        private static void DisplayCallback(CPU cpu, OpCode opCode, AddressingMode addressingMode)
         {
-            _cpuDisplay.Render(opCode, addressingMode, operand);
+            _cpuDisplay.Render(opCode, addressingMode);
         }
 
         private static CPUDisplay _cpuDisplay;
@@ -60,9 +60,10 @@ namespace BbcMicro
 
             // Run the programme
             cpu.PC = entryPoint;
-            while (true)
+            var con=true;
+            while (con)
             {
-                cpu.ExecuteNextInstruction();
+                con=cpu.ExecuteNextInstruction();
                 Console.ReadLine();
             }
             //cpu.ExecuteToBrk();
