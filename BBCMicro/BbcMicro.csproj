@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="mkdir $(ProjectDir)bin\Asm&#xD;&#xA;dasm $(ProjectDir)Asm\HelloWorld.asm -f1 -o$(ProjectDir)bin\Asm\HelloWorld.out -l$(ProjectDir)bin\Asm\HelloWorld.txt" />
+    <Exec Command="mkdir $(ProjectDir)bin\Asm&#xD;&#xA;dasm $(ProjectDir)Asm\HelloWorld.asm -f1 -o$(ProjectDir)bin\Asm\HelloWorld.out -l$(ProjectDir)bin\Asm\HelloWorld.txt&#xD;&#xA;dasm $(ProjectDir)Asm\HelloName.asm -f1 -o$(ProjectDir)bin\Asm\HelloName.out -l$(ProjectDir)bin\Asm\HelloName.txt" />
   </Target>
 
 </Project>
