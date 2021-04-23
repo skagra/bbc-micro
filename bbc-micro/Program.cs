@@ -29,7 +29,7 @@ namespace BbcMicro
 
         private static void DisplayCallback(CPU cpu, OpCode opCode, AddressingMode addressingMode)
         {
-            _cpuDisplay.Render(opCode, addressingMode);
+            _cpuDisplay.Render();
         }
 
         private static CPUDisplay _cpuDisplay;

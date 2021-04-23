@@ -64,8 +64,12 @@ namespace BbcMicro.Cpu
             RenderString($"${value:X4}", changed);
         }
 
-        public void Render(OpCode opCode, AddressingMode addressingMode)
+        private readonly Decoder _decoder = new Decoder();
+
+        public void Render()
         {
+            (var opCode, var addressingMode)=_decoder.Decode(_cpu.Memory.GetByte(_cpu.PC));
+
             var pcChanged = _cpu.PC != _oldState.PC;
             var sChanged = _cpu.S != _oldState.S;
             var aChanged = _cpu.A != _oldState.A;
