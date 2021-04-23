@@ -1,19 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using BbcMicro.Cpu.Memory.Abstractions;
+using System;
 using System.Text;
 
 namespace BbcMicro.Cpu
 {
     public sealed class Disassembler
     {
-        public string Disassemble(OpCode opCode, AddressingMode addressingMode, ushort address, CPU cpu)
+        private static Decoder _decoder = new Decoder();
+
+        public string Disassemble(ushort address, IAddressSpace memory)
         {
+            (var opCode, var addressingMode) = _decoder.Decode(memory.GetByte(address));
+
             var result = new StringBuilder();
 
             result.Append($"{opCode} ");
 
-            var memory = cpu.Memory;
-            ushort operandAddress = (ushort)(cpu.PC + 1);
+            ushort operandAddress = (ushort)(address + 1);
             result.Append(addressingMode switch
             {
                 AddressingMode.Accumulator => "",
@@ -33,6 +36,11 @@ namespace BbcMicro.Cpu
             });
 
             return result.ToString();
+        }
+
+        public string Disassemble(CPU cpu)
+        {
+            return Disassemble(cpu.PC, cpu.Memory);
         }
     }
 }

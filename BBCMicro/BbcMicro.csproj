@@ -8,6 +8,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
+    <ProjectReference Include="..\OS\OS.csproj" />
   </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="mkdir $(ProjectDir)bin\Asm&#xD;&#xA;dasm $(ProjectDir)Asm\HelloWorld.asm -f1 -o$(ProjectDir)bin\Asm\HelloWorld.out -l$(ProjectDir)bin\Asm\HelloWorld.txt" />
+  </Target>
 
 </Project>

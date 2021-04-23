@@ -36,6 +36,9 @@ msbuild.wrn
 # Visual Studio 2015
 .vs/
 
-# Binary files
+# Binary and core files
 a.out
+core.bin
+cpu.txt
+
 

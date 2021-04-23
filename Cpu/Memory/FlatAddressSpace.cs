@@ -1,7 +1,8 @@
-﻿using System;
+﻿using BbcMicro.Cpu.Memory.Abstractions;
+using System;
 using System.Text;
 
-namespace BbcMicro.Cpu
+namespace BbcMicro.Cpu.Memory
 {
     public sealed class FlatAddressSpace : IAddressSpace
     {
@@ -35,9 +36,10 @@ namespace BbcMicro.Cpu
             var address = start;
             var count = 0;
 
-            while (address < _memory.Length && count < length)
+            while (address + count < _memory.Length && count < length)
             {
-                result.Append($"0x{address:X4} 0x{_memory[address]:X2}\n");
+                var currentAddr = address + count;
+                result.Append($"0x{currentAddr:X4} 0x{_memory[currentAddr]:X2}\n");
                 count++;
             }
 

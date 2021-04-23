@@ -1,4 +1,4 @@
-﻿namespace BbcMicro.Cpu
+﻿namespace BbcMicro.Cpu.Memory.Abstractions
 {
     public interface IAddressSpace
     {

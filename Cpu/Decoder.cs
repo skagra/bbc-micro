@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BbcMicro.Cpu.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,7 +7,7 @@ namespace BbcMicro.Cpu
 {
     public sealed class Decoder
     {
-        private readonly byte[] _addressingModeToPCDelta = new byte[]
+        private static readonly byte[] _addressingModeToPCDelta = new byte[]
         {
             0, // Accumulator,
             1, // Immediate,
@@ -36,10 +37,9 @@ namespace BbcMicro.Cpu
             public Action<ushort, AddressingMode> Impl { get; }
 
             public List<(byte opCode, AddressingMode addressingMode)> CodesAndModes { get; }
-
         }
 
-        private readonly List<DecoderDefinition> _decoderDefinitions =  new List<DecoderDefinition>()
+        private static readonly List<DecoderDefinition> _decoderDefinitions = new List<DecoderDefinition>()
             {
                 new DecoderDefinition(OpCode.ADC,
                     new List<(byte, AddressingMode)> {
@@ -362,10 +362,10 @@ namespace BbcMicro.Cpu
                     })
             };
 
-        private readonly bool[] _opcodeIsValid = new bool[256];
-        private readonly (OpCode opCode,  AddressingMode addressingMode)[] _decoder =  new (OpCode opCode, AddressingMode)[256];
+        private static readonly bool[] _opcodeIsValid = new bool[256];
+        private static readonly (OpCode opCode, AddressingMode addressingMode)[] _decoder = new (OpCode opCode, AddressingMode)[256];
 
-        private void PopulateDecoder()
+        private static void PopulateDecoder()
         {
             foreach (var decoderDefinition in _decoderDefinitions)
             {
@@ -373,7 +373,7 @@ namespace BbcMicro.Cpu
                 {
                     if (_opcodeIsValid[codeAndMode.opCode])
                     {
-                        throw new Exception($"Duplicate op code {decoderDefinition.OpCode} 0x{codeAndMode.opCode:X2}"); // TODO
+                        throw new CPUException($"Duplicate op code '{decoderDefinition.OpCode}' for  instruction '0x{codeAndMode.opCode:X2}'.");
                     }
                     else
                     {
@@ -384,9 +384,13 @@ namespace BbcMicro.Cpu
             }
         }
 
-        public Decoder()
+        static Decoder()
         {
             PopulateDecoder();
+        }
+
+        public Decoder()
+        {
         }
 
         public byte GetAddressingModePCDelta(AddressingMode addressingMode)
@@ -401,7 +405,14 @@ namespace BbcMicro.Cpu
 
         public (OpCode opCode, AddressingMode addressingMode) Decode(byte opCodeByte)
         {
-            return _decoder[opCodeByte];
+            if (IsValid(opCodeByte))
+            {
+                return _decoder[opCodeByte];
+            }
+            else
+            {
+                throw new CPUException($"Invalid instruction '{opCodeByte:X2}'.");
+            }
         }
     }
 }

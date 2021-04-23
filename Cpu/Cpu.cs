@@ -1,4 +1,6 @@
-﻿using System;
+﻿using BbcMicro.Cpu.Exceptions;
+using BbcMicro.Cpu.Memory.Abstractions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,18 +8,26 @@ namespace BbcMicro.Cpu
 {
     public sealed class CPU
     {
-        private Func<CPU, OpCode, AddressingMode, ushort, bool> _interceptionCallback =
-            (cpu, opcode, addressingMode, resolvedAddress) => true;
+        // Trap calls, optionally replacing their operation - useful for patching in OS routines
+        // Processing stops when the first callback returns true to indicate it has handled the operation
+        private List<Func<CPU, OpCode, AddressingMode, ushort, bool>> _interceptionCallbacks = new List<Func<CPU, OpCode, AddressingMode, ushort, bool>>();
 
+        // Called before each instruction is executed
         private readonly List<Action<CPU, OpCode, AddressingMode>> _preExecutionCallbacks = new List<Action<CPU, OpCode, AddressingMode>>();
 
+        // Called after each instruction is executed
+        private readonly List<Action<CPU, OpCode, AddressingMode>> _postExecutionCallbacks = new List<Action<CPU, OpCode, AddressingMode>>();
+
+        // Implementations of each op code, passed the resolved operand and the addressing mode
         private readonly Action<ushort, AddressingMode>[] _implementations;
 
+        // Decodes op code bytes into op code symbol and addressing mode
         private readonly Decoder _decoder = new Decoder();
 
+        // Mapping of op code enum to implementations
         public CPU(IAddressSpace addressSpace)
         {
-            Memory = addressSpace;
+            Memory = addressSpace ?? throw new ArgumentNullException(nameof(addressSpace));
 
             _implementations = new Action<ushort, AddressingMode>[]
             {
@@ -31,9 +41,9 @@ namespace BbcMicro.Cpu
             };
         }
 
-        public void SetInterceptionCallback(Func<CPU, OpCode, AddressingMode, ushort, bool> callback)
+        public void AddInterceptionCallback(Func<CPU, OpCode, AddressingMode, ushort, bool> callback)
         {
-            _interceptionCallback = callback;
+            _interceptionCallbacks.Add(callback);
         }
 
         public void AddPreExecutionCallback(Action<CPU, OpCode, AddressingMode> callback)
@@ -41,70 +51,78 @@ namespace BbcMicro.Cpu
             _preExecutionCallbacks.Add(callback);
         }
 
-        public bool ExecuteNextInstruction()
+        public void AddPostExecutionCallback(Action<CPU, OpCode, AddressingMode> callback)
         {
-            var result = true;
+            _postExecutionCallbacks.Add(callback);
+        }
 
-            // Grab to opCode at PC
-            byte opCode = Memory.GetByte(PC);
-
+        public void ExecuteNextInstruction()
+        {
             // Is this a valid op code?
-            if (_decoder.IsValid(opCode))
+            try
             {
+                // Grab to opCode at PC
+                byte opCode = Memory.GetByte(PC);
+
                 // Find the decoder entry for the instruction
                 var decoded = _decoder.Decode(opCode);
 
                 // Calculate the actual operand using the addressing mode
-                var resolvedOperand = ResolveOperand((ushort)(PC+1), decoded.addressingMode);
+                var resolvedOperand = ResolveOperand((ushort)(PC + 1), decoded.addressingMode);
 
-                // Run all the pre-execution callbacks
-                _preExecutionCallbacks.ForEach(pec => pec(this, decoded.opCode, decoded.addressingMode));
+                // Run pre-execution callbacks
+                _preExecutionCallbacks.ForEach(callback => callback(this, decoded.opCode, decoded.addressingMode));
 
                 // Keep a record of the current PC
                 var oldPC = PC;
+
+                // Calculate how many the current instruction and operand occupy
                 var pcDelta = (byte)(_decoder.GetAddressingModePCDelta(decoded.addressingMode) + 1);
 
-                // Interception callback
-                if (_interceptionCallback(this, decoded.opCode, decoded.addressingMode, resolvedOperand))
+                // Interception callbacks
+                var intercepted = false;
+                foreach (var interceptionCallback in _interceptionCallbacks)
                 {
+                    // Run interception callbacks until first indicates it has been handled
+                    intercepted = interceptionCallback(this, decoded.opCode, decoded.addressingMode, resolvedOperand);
+                    if (intercepted)
+                    {
+                        break;
+                    }
+                }
+
+                // Was processing intercepted?
+                if (!intercepted)
+                {
+                    // No - then run standard instruction implementation
                     PC += pcDelta;
                     _implementations[(byte)decoded.opCode](resolvedOperand, decoded.addressingMode);
                 }
                 else
                 {
-                    if (oldPC==PC)
+                    // If the interception routine did not modify the PC, then skip past the current instruction
+                    if (oldPC == PC)
                     {
                         PC += pcDelta;
                     }
                 }
 
-                // Call any post-execution callbacks
-                //_postExecutionCallbacks.ForEach(cb => cb(this));
+                // Call post-execution callbacks
+                _postExecutionCallbacks.ForEach(callback => callback(this, decoded.opCode, decoded.addressingMode));
             }
-            else
+            catch (Exception e)
             {
-                result = false;                
+                throw new CPUStatefulException(this, "Error processing instruction", e, true);
             }
-
-            return result;
         }
 
         public void ExecuteToBrk()
         {
             while (Memory.GetByte(PC) != 0x00)
             {
-                if (!ExecuteNextInstruction())
-                {
-                    throw new CPUException(this);
-                }
+                ExecuteNextInstruction();
             }
         }
-
-        /*
-         * Op code implementations
-         *
-         * Definitions are taken from http://www.obelisk.me.uk/6502/reference.html
-         */
 
         private void UpdateFlags(byte accordingToValue, PFlags flagsToUpdate)
         {
@@ -118,6 +136,12 @@ namespace BbcMicro.Cpu
                 PSet(PFlags.N, (accordingToValue & 0b10000000) != 0);
             }
         }
+
+        /*
+         * Op code implementations
+         *
+         * Definitions are taken from http://www.obelisk.me.uk/6502/reference.html
+         */
 
         /*
          * Add with carry
@@ -946,14 +970,12 @@ namespace BbcMicro.Cpu
         }
 
         private const ushort STACK_BASE_ADRESS = 0x100;
-        private const ushort STACK_SIZE = 0X1000;
 
         public void PushByte(byte value)
         {
             if (S == 0)
             {
-                // TODO
-                throw new Exception("Stack overflow");
+                throw new CPUStatefulException(this, "Stack overflow", true);
             }
             Memory.SetByte(value, (ushort)(STACK_BASE_ADRESS + S));
             S--;
@@ -963,8 +985,7 @@ namespace BbcMicro.Cpu
         {
             if (S == 0xFF)
             {
-                // TODO
-                throw new Exception("Stack underflow");
+                throw new CPUStatefulException(this, "Stack underflow", true);
             }
             S++;
             return Memory.GetByte((ushort)(STACK_BASE_ADRESS + S));
@@ -976,10 +997,15 @@ namespace BbcMicro.Cpu
          * Addressing modes
          */
 
-        // Follows a value returned by ResolveOperand() to the actual value to process
+        /*
+         * Follows a value returned by ResolveOperand() to the actual value to process
+         */
+
         private byte GetByteValue(ushort operand, AddressingMode addressingMode)
         {
+#pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
             return addressingMode switch
+#pragma warning restore CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
             {
                 AddressingMode.Accumulator => A,
                 AddressingMode.Immediate => (byte)operand,
@@ -993,17 +1019,21 @@ namespace BbcMicro.Cpu
                 AddressingMode.ZeroPageIndexedX => Memory.GetByte(operand),
                 AddressingMode.ZeroPageIndexedY => Memory.GetByte(operand),
                 AddressingMode.IndexedXIndirect => Memory.GetByte(operand),
-                AddressingMode.IndirectIndexedY => Memory.GetByte(operand),
-                _ => throw new Exception($"Invalid addressing mode '{addressingMode}'") // TODO
+                AddressingMode.IndirectIndexedY => Memory.GetByte(operand)
             };
         }
 
-        // Resolves the address of the operand to the actual operand value that an instruction would process.
-        // Results are always in host byte order (which may or may not match 6502 byte ordering)
-        // When the operand is byte it is returned in the least significant byte of the result
+        /*
+         * Resolves the address of the operand to the actual operand value that an instruction would process.
+         * Results are always in host byte order (which may or may not match 6502 byte ordering)
+         * When the operand is byte it is returned in the least significant byte of the result
+         */
+
         private ushort ResolveOperand(ushort operandAddress, AddressingMode addressingMode)
         {
+#pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
             return addressingMode switch
+#pragma warning restore CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
             {
                 AddressingMode.Accumulator => 0, // Operand ignored
                 AddressingMode.Immediate => Memory.GetByte(operandAddress), // Operand is the byte following the op code
@@ -1018,14 +1048,13 @@ namespace BbcMicro.Cpu
                 AddressingMode.ZeroPageIndexedY => (byte)(Memory.GetByte(operandAddress) + Y), // Cast to byte to wrap to zero page
                 AddressingMode.IndexedXIndirect => Memory.GetWord((byte)(Memory.GetByte(operandAddress) + X)), // Cast to byte to wrap to zero page
                 AddressingMode.IndirectIndexedY => (ushort)(Memory.GetWord(Memory.GetByte(operandAddress)) + Y),
-                _ => throw new Exception($"Invalid addressing mode '{addressingMode}'") // TODO
             };
         }
 
         public override string ToString()
         {
             return $"PC=0x{PC:X4}, S=0x{S:X2} A=0x{A:X2}, X=0x{X:X2}, Y=0x{Y:X2}, " +
-                $"P=0x{P:X2} ({string.Join("", ((PFlags[])Enum.GetValues(typeof(PFlags))).ToList().Select(flag => ((PIsSet(flag)) ? flag.ToString() : flag.ToString().ToLower())).Reverse())})";
+                $"P=0x{P:X2} ({string.Join("", ((PFlags[])Enum.GetValues(typeof(PFlags))).ToList().Select(flag => (PIsSet(flag) ? flag.ToString() : flag.ToString().ToLower())).Reverse())})";
         }
     }
 }

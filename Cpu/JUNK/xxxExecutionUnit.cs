@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BbcMicro.Cpu.Memory.Abstractions;
+using System;
 using System.Collections.Generic;
 using static BbcMicro.Cpu.CPU;
 
@@ -50,13 +51,13 @@ namespace BbcMicro.Cpu
         /*
          * Group 0 op codes
          */
-	    private const byte OPCODE_BIT = 0b001;
-	    private const byte OPCODE_JMP = 0b010;
-	    private const byte OPCODE_JMP_ABS = 0b011;
-	    private const byte OPCODE_STY = 0b100;
-	    private const byte OPCODE_LDY = 0b101;
-	    private const byte OPCODE_CPY = 0b110;
-	    private const byte OPCODE_CPX = 0b111;
+        private const byte OPCODE_BIT = 0b001;
+        private const byte OPCODE_JMP = 0b010;
+        private const byte OPCODE_JMP_ABS = 0b011;
+        private const byte OPCODE_STY = 0b100;
+        private const byte OPCODE_LDY = 0b101;
+        private const byte OPCODE_CPY = 0b110;
+        private const byte OPCODE_CPX = 0b111;
 
         /*
          * Group 1 op codes
@@ -96,7 +97,7 @@ namespace BbcMicro.Cpu
             {
                 GeEffectiveAddress(operandAddress, addressingMode);
             }
-            
+
             byte operand = 0;
             if (opCode != OPCODE_STY)
             {
@@ -113,15 +114,19 @@ namespace BbcMicro.Cpu
                     _cpu.PSet(PFlags.N, (operand & 0b1000_0000) != 0);
                     _cpu.PSet(PFlags.V, (operand & 0b0100_0000) != 0);
                     break;
+
                 case OPCODE_JMP:
                     _cpu.PC = _memory.GetWord(_memory.GetWord(operandAddress));
                     break;
+
                 case OPCODE_JMP_ABS:
                     _cpu.PC = _memory.GetWord(operandAddress);
                     break;
+
                 case OPCODE_STY:
                     _memory.SetByte(_cpu.Y, calculatedAddress);
                     break;
+
                 case OPCODE_LDY:
                     _cpu.Y = operand;
                     UpdateFlags(operand, PFlags.N | PFlags.Z);
@@ -223,10 +228,10 @@ namespace BbcMicro.Cpu
             // Decode the addressing mode
             var addressingMode = _groupTwoAddressModeMap[rawAddressingMode];  // TODO: Exception on invalid mode
 
-            // If we are processing LDX and STX the we index by Y instead of the general decoding to index by X 
-            if (opCode==OPCODE_LDX || opCode == OPCODE_STX)
+            // If we are processing LDX and STX the we index by Y instead of the general decoding to index by X
+            if (opCode == OPCODE_LDX || opCode == OPCODE_STX)
             {
-                if (addressingMode==AddressingMode.ZeroPageIndexedByX)
+                if (addressingMode == AddressingMode.ZeroPageIndexedByX)
                 {
                     addressingMode = AddressingMode.ZeroPageIndexedByY;
                 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace BbcMicro.Cpu
+namespace BbcMicro.Cpu.Diagnostics
 {
     public sealed class CPUDisplay
     {
@@ -68,7 +68,7 @@ namespace BbcMicro.Cpu
 
         public void Render()
         {
-            (var opCode, var addressingMode)=_decoder.Decode(_cpu.Memory.GetByte(_cpu.PC));
+            (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(_cpu.PC));
 
             var pcChanged = _cpu.PC != _oldState.PC;
             var sChanged = _cpu.S != _oldState.S;
@@ -126,7 +126,7 @@ namespace BbcMicro.Cpu
             RenderString("+-----------------------+");
             RenderString();
 
-            RenderString("| Next: "); RenderString(_dis.Disassemble(opCode, addressingMode, _cpu.PC, _cpu)); Console.CursorLeft = 24; RenderString("|");
+            RenderString("| Next: "); RenderString(_dis.Disassemble(_cpu)); Console.CursorLeft = 24; RenderString("|");
             RenderString();
 
             RenderString("+-----------------------+"); RenderString();
