@@ -1,4 +1,4 @@
-﻿namespace BbcMicro.Cpu.Image.Abstractions
+﻿namespace BbcMicro.OS.Image.Abstractions
 {
     public sealed class ImageInfo
     {

@@ -1,10 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>BbcMicro.Cpu</RootNamespace>
     <AssemblyName>BbcMicroCpu</AssemblyName>
     <LangVersion>8.0</LangVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Memory\Memory.csproj" />
+  </ItemGroup>
 
 </Project>

@@ -1,5 +1,5 @@
 ﻿using BbcMicro.Cpu.Exceptions;
-using BbcMicro.Cpu.Memory.Abstractions;
+using BbcMicro.Memory.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;

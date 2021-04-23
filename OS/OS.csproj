@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
+    <ProjectReference Include="..\Memory\Memory.csproj" />
   </ItemGroup>
 
 </Project>

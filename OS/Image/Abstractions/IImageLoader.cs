@@ -1,6 +1,6 @@
-﻿using BbcMicro.Cpu.Memory.Abstractions;
+﻿using BbcMicro.Memory.Abstractions;
 
-namespace BbcMicro.Cpu.Image.Abstractions
+namespace BbcMicro.OS.Image.Abstractions
 {
     public interface IImageLoader
     {

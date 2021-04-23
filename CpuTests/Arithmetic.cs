@@ -1,6 +1,6 @@
 using BbcMicro.Cpu;
 using BbcMicro.Cpu.Memory;
-using BbcMicro.Cpu.Memory.Abstractions;
+using BbcMicro.Memory.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 

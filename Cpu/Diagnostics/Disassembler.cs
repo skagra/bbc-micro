@@ -1,4 +1,4 @@
-﻿using BbcMicro.Cpu.Memory.Abstractions;
+﻿using BbcMicro.Memory.Abstractions;
 using System;
 using System.Text;
 
