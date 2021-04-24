@@ -9,7 +9,7 @@ namespace BbcMicro.OS.Image
         public ImageInfo Load(string fileName, IAddressSpace memory)
         {
             var bytes = File.ReadAllBytes(fileName);
-            var entryPoint = (ushort)(bytes[0] + (bytes[1] >> 8));
+            var entryPoint = (ushort)(bytes[0] + (bytes[1] << 8));
 
             for (ushort offset = 0; offset < bytes.Length - 2; offset++)
             {

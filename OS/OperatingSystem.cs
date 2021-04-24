@@ -7,6 +7,8 @@
         public OperatingSystem()
         {
             _interceptorDispatcher.AddInterceptor(EntryPoints.OSWRCH, TextOutput.OSWRCH);
+            _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, Keyboard.OSRDCH);
+            
         }
 
         public InterceptorDispatcher InterceptorDispatcher { get { return _interceptorDispatcher; } }

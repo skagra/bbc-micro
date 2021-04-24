@@ -1,13 +1,15 @@
 ﻿			PROCESSOR	6502
+			INCLUDE		"OS.asm"
+
+; Entry point - always start of first segment
+			SEG			entry
 			ORG			$400
+			JMP			main
 
-OSWRCH = $FFEE
-			PROCESSOR	6502
-			ORG			$0000
-
-OSWRCH = $FFEE
-
-			LDX			#$0
+; Main routine
+			SEG			main
+			ORG			$404
+main:		LDX			#$0
 loop:		LDA			hello,X
 			BEQ			end
 			INX
@@ -15,5 +17,10 @@ loop:		LDA			hello,X
 			JMP			loop
 end:		BRK
 
+; Zero page variables
+			SEG			zpvariables
+			ORG			$0
 hello:		DC			"Hello World"
 			BYTE		0
+
+

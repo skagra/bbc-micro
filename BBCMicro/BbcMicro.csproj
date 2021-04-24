@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="mkdir $(ProjectDir)bin\Asm&#xD;&#xA;dasm $(ProjectDir)Asm\HelloWorld.asm -f1 -o$(ProjectDir)bin\Asm\HelloWorld.out -l$(ProjectDir)bin\Asm\HelloWorld.txt&#xD;&#xA;dasm $(ProjectDir)Asm\HelloName.asm -f1 -o$(ProjectDir)bin\Asm\HelloName.out -l$(ProjectDir)bin\Asm\HelloName.txt" />
+    <Exec Command="mkdir $(ProjectDir)bin\Asm&#xD;&#xA;dasm $(ProjectDir)Asm\HelloWorld.asm -f2 -o$(ProjectDir)bin\Asm\HelloWorld.out -l$(ProjectDir)bin\Asm\HelloWorld.txt -I$(ProjectDir)Asm&#xD;&#xA;dasm $(ProjectDir)Asm\HelloWorldJsr.asm -f2 -o$(ProjectDir)bin\Asm\HelloWorldJsr.out -l$(ProjectDir)bin\Asm\JsrHelloWorld.txt  -s$(ProjectDir)bin\Asm\JsrHelloWorldSym.txt -I$(ProjectDir)Asm&#xD;&#xA;&#xD;&#xA;" />
   </Target>
 
 </Project>

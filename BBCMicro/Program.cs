@@ -31,7 +31,7 @@ namespace BbcMicro
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
 
             // Read the image to execute
-            var imageLoader = new DasmLoaderType1();
+            var imageLoader = new DasmLoaderType2();
             var imageInfo = imageLoader.Load(args[0], addressSpace);
 
             // Single step mode

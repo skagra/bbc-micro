@@ -759,7 +759,7 @@ namespace BbcMicro.Cpu
 
         private void RTS(ushort operandAddress, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            PC = (ushort)(PopByte() + (PopByte() << 8) + 1);
         }
 
         /*
@@ -809,9 +809,9 @@ namespace BbcMicro.Cpu
          * Stores the contents of the accumulator into memory.
          */
 
-        private void STA(ushort operandAddress, AddressingMode addressingMode)
+        private void STA(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            Memory.SetByte(A, operand);
         }
 
         /*
@@ -820,7 +820,7 @@ namespace BbcMicro.Cpu
          * Stores the contents of the X register into memory.
          */
 
-        private void STX(ushort operandAddress, AddressingMode addressingMode)
+        private void STX(ushort operand, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
         }
