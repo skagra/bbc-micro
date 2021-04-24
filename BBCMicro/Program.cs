@@ -73,6 +73,11 @@ namespace BbcMicro
                         done = true;
                         break;
 
+                    case ConsoleKey.H:
+                        _displayCPU = false;
+                        Console.Clear();
+                        break;
+
                     default:
                         cpu.ExecuteNextInstruction();
                         break;
