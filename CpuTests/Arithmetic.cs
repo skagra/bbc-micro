@@ -80,22 +80,22 @@ namespace CpuTests
             Assert.Equal(outZ, _cpu.PIsSet(CPU.PFlags.Z));
         }
 
-        //[Theory]
-        //[InlineData(0b0000_0101, 0b0000_0011, true, 0b0000_0010, true)] // (2.13) 5 - 3 = 2   (carry set as no borrow)
-        //[InlineData(0b0000_0101, 0b0000_0110, true, 0b1111_1111, false)] // (2.14) 5 - 6 = -1 (carry not set as borrow?)
-        //public void UnsignedSubtraction(byte inA, byte inImmediate, bool inC, byte outA, bool outC)
-        //{
-        //    _cpu.PSet(CPU.PFlags.C, inC);
+        [Theory]
+        [InlineData(0b0000_0101, 0b0000_0011, true, 0b0000_0010, true)] // (2.13) 5 - 3 = 2   (carry set as no borrow)
+        [InlineData(0b0000_0101, 0b0000_0110, true, 0b1111_1111, false)] // (2.14) 5 - 6 = -1 (carry not set as borrow?)
+        public void UnsignedSubtraction(byte inA, byte inImmediate, bool inC, byte outA, bool outC)
+        {
 
-        //    SetMem(LDA_IMMEDIATE);
-        //    SetMem(inA);
-        //    SetMem(SBC_IMMEDIATE);
-        //    SetMem(inImmediate);
+            SetMem(LDA_IMMEDIATE);
+            SetMem(inA);
+            SetMem(SBC_IMMEDIATE);
+            SetMem(inImmediate);
 
-        //    _cpu.ExecuteToBrk();
+            _cpu.PSet(CPU.PFlags.C, inC);
+            _cpu.ExecuteToBrk();
 
-        //    Assert.Equal(outA, _cpu.A);
-        //    Assert.Equal(outC, _cpu.PIsSet(CPU.PFlags.C));
-        //}
+            Assert.Equal(outA, _cpu.A);
+            Assert.Equal(outC, _cpu.PIsSet(CPU.PFlags.C));
+        }
     }
 }

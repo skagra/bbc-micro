@@ -645,7 +645,7 @@ namespace BbcMicro.Cpu
             }
             else
             {
-                byte operandValue = Memory.GetByte(operand);
+                byte operandValue = GetByteValue(operand, addressingMode);
                 byte shiftedValue = (byte)(operandValue >> 1);
                 Memory.SetByte(shiftedValue, operand);
                 PSet(PFlags.C, (operandValue & 00000_0001) != 0);
@@ -674,7 +674,7 @@ namespace BbcMicro.Cpu
 
         private void ORA(ushort operand, AddressingMode addressingMode)
         {
-            A |= Memory.GetByte(operand);
+            A |= GetByteValue(operand, addressingMode);
             UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
@@ -744,7 +744,7 @@ namespace BbcMicro.Cpu
             }
             else
             {
-                byte operandValue = Memory.GetByte(operand);
+                byte operandValue = GetByteValue(operand, addressingMode);
                 byte rotateResult = (byte)((byte)(operandValue << 1) | (byte)(PIsSet(PFlags.C) ? 0b0000_0001 : 0b0000_0000));
                 Memory.SetByte(rotateResult, operand);
                 PSet(PFlags.C, (operandValue & 0b1000_0000) != 0);
@@ -770,7 +770,7 @@ namespace BbcMicro.Cpu
             }
             else
             {
-                byte operandValue = Memory.GetByte(operand);
+                byte operandValue = GetByteValue(operand, addressingMode);
                 byte rotatedResult = (byte)((byte)(operand >> 1) | (byte)(PIsSet(PFlags.C) ? 0b1000_0000 : 0b0000_000));
                 Memory.SetByte(rotatedResult, operand);
                 PSet(PFlags.C, (operandValue & 0b0000_0001) != 0);
@@ -814,7 +814,7 @@ namespace BbcMicro.Cpu
 
         private void SBC(ushort operand, AddressingMode addressingMode)
         {
-            byte operandValue = Memory.GetByte(operand);
+            byte operandValue = GetByteValue(operand, addressingMode);
             short subtractWithCarryResult = (short)(A - operandValue - (PIsSet(PFlags.C) ? 0 : 1));
             PSet(PFlags.C, subtractWithCarryResult >= 0);
             PSet(PFlags.V, ((A ^ subtractWithCarryResult) & (operandValue ^ subtractWithCarryResult) & 0x80) != 0);
