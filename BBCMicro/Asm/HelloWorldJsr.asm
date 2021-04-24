@@ -1,4 +1,12 @@
-﻿			PROCESSOR	6502
+﻿/*
+ * A programme to print a string as a basic test
+ * of 6502 emulator
+ */
+
+; Processor type
+			PROCESSOR	6502
+
+; Operating system entry points
 			INCLUDE		"OS.asm"
 
 ; Entry point - always start of first segment
@@ -11,6 +19,7 @@
 			SEG			main
 			ORG			$404
 
+; Print a null terminated stringe using OSWRCH
 			SUBROUTINE
 print:		LDY			#$0
 .loop:		LDA			(printvec),Y
@@ -20,6 +29,7 @@ print:		LDY			#$0
 			JMP			.loop
 .end:		RTS
 
+; Main subroutine
 			SUBROUTINE
 main:		LDA			#<hello
 			STA			printvec
@@ -32,6 +42,7 @@ main:		LDA			#<hello
 			SEG			working
 			ORG			$500
 
+; String to print
 hello:		DC			"Hello World"
 			BYTE		0
 
@@ -39,6 +50,7 @@ hello:		DC			"Hello World"
 			SEG.U		zpvariables
 			ORG			$0
 
+; Indirection for print subroutine
 printvec:	DS			2
 
 

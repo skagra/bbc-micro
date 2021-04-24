@@ -9,10 +9,52 @@ namespace BbcMicro.Cpu.Diagnostics
         private Disassembler _dis = new Disassembler();
         private ProcessorState _oldState;
 
+        private const int BANNER_HEIGHT = 9;
+        private const int CPU_STATUS_TOP = BANNER_HEIGHT + 1;
+        private const int CPU_STATUS_HEIGHT = 18;
+        private const int MESSAGE_BANNER_HEIGHT = 3;
+        private const int MESSAGE_HEIGHT = 1;
+        private const int MESSAGE_BANNER_TOP = CPU_STATUS_TOP + CPU_STATUS_HEIGHT + 1;
+        private const int MESSAGE_TOP = MESSAGE_BANNER_TOP + MESSAGE_BANNER_HEIGHT;
+        private const int OUTPUT_BANNER_HEIGHT = 3;
+        private const int OUTPUT_BANNER_TOP = MESSAGE_TOP + MESSAGE_HEIGHT + 1;
+        private const int OUTPUT_TOP = OUTPUT_BANNER_TOP + OUTPUT_BANNER_HEIGHT;
+
+        private const int CPU_STATUS_TABLE_LEFT = 24;
+
         public CPUDisplay(CPU cpu)
         {
             _cpu = cpu;
             _oldState = new ProcessorState(_cpu);
+
+            Console.Clear();
+            
+            RenderBanner();
+            Render();
+            RenderMessageBanner();
+            RenderOutputBanner();
+
+            Console.CursorTop = OUTPUT_TOP;
+        }
+
+        private void RenderMessageBanner()
+        {
+            Console.CursorTop = MESSAGE_BANNER_TOP;
+            RenderString("Message");
+            RenderString();
+            RenderString("-------");
+            RenderString();
+            RenderString();
+            RenderString("-");
+            RenderString();
+        }
+
+        private void RenderOutputBanner()
+        {
+            Console.CursorTop = OUTPUT_BANNER_TOP;
+            Console.WriteLine("Output");
+            Console.WriteLine("------");
+            Console.WriteLine();
         }
 
         private sealed class ProcessorState
@@ -66,6 +108,54 @@ namespace BbcMicro.Cpu.Diagnostics
 
         private readonly Decoder _decoder = new Decoder();
 
+        public void RenderMessage(string message)
+        {
+            var clSafe = Console.CursorLeft;
+            var ctSafe = Console.CursorTop;
+
+            Console.CursorLeft = 0;
+            Console.CursorTop = MESSAGE_TOP;
+            Console.Write("                                                        ");
+            Console.CursorLeft = 0;
+            Console.CursorTop = MESSAGE_TOP;
+            Console.Write(message);
+
+            Console.CursorLeft = clSafe;
+            Console.CursorTop = ctSafe;
+        }
+
+        private void Clear()
+        {
+            var clSafe = Console.CursorLeft;
+            var ctSafe = Console.CursorTop;
+
+            Console.CursorLeft = 0;
+            Console.CursorTop = CPU_STATUS_TOP;
+
+            for (int row=0; row <CPU_STATUS_HEIGHT; row++)
+            {
+                Console.CursorLeft = 0;
+                Console.Write("                                                ");
+                Console.CursorTop++;
+            }
+
+            Console.CursorLeft = clSafe;
+            Console.CursorTop = ctSafe;
+        }
+
+        private void RenderBanner()
+        {
+            Console.WriteLine("    6502 Processor Emulator     ");
+            Console.WriteLine("    -----------------------     ");
+            Console.WriteLine();
+            Console.WriteLine("   dD     ooooo  .d88b.  .d888b.");
+            Console.WriteLine("  d8'    8P~~~~ .8P  88. VP  `8D");
+            Console.WriteLine(" d8'    dP      88  d'88    odD'");
+            Console.WriteLine("d8888b. V8888b. 88 d' 88  .88'   ");
+            Console.WriteLine("88' `8D     `8D `88  d8' j88.   ");
+            Console.WriteLine("`8888P  88oobY'  `Y88P'  888888D");
+        }
+
         public void Render()
         {
             (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(_cpu.PC));
@@ -77,17 +167,24 @@ namespace BbcMicro.Cpu.Diagnostics
             var yChanged = _cpu.Y != _oldState.Y;
             var pChanged = _cpu.P != _oldState.P;
 
-            Console.Clear();
-            Console.SetCursorPosition(0, 0);
+            Clear();
+            Console.CursorVisible = false;
+
+            var clSafe = Console.CursorLeft;
+            var ctSafe = Console.CursorTop;
+ 
+            Console.SetCursorPosition(0, CPU_STATUS_TOP);
+
             RenderString("Processor State"); RenderString();
+            RenderString("---------------"); RenderString();
             RenderString();
 
             RenderString("+-----------------------+");
             RenderString();
 
             RenderString("| PC "); RenderWord(_cpu.PC, pcChanged);
-            RenderString("  | S "); RenderWord(_cpu.S, sChanged);
-            RenderString("   |");
+            RenderString("  | S "); RenderByte(_cpu.S, sChanged);
+            RenderString("     |");
             RenderString();
 
             RenderString("+-------+-------+-------+");
@@ -126,11 +223,33 @@ namespace BbcMicro.Cpu.Diagnostics
             RenderString("+-----------------------+");
             RenderString();
 
-            RenderString("| Next: "); RenderString(_dis.Disassemble(_cpu)); Console.CursorLeft = 24; RenderString("|");
+            RenderString();
+            RenderString("Memory"); RenderString();
+            RenderString("------"); RenderString();
+            RenderString();
+
+            RenderString("+-----------------------+");
+            RenderString();
+
+            RenderString("| Dis: "); RenderString(_dis.Disassemble(_cpu)); Console.CursorLeft = CPU_STATUS_TABLE_LEFT; RenderString("|");
+            RenderString();
+
+            RenderString($"| Mem: ${_cpu.Memory.GetByte(_cpu.PC):X2}");
+            var operandBytes = _decoder.GetAddressingModePCDelta(addressingMode);
+            for (ushort pcOffset=0; pcOffset<operandBytes; pcOffset++)
+            {
+                RenderString($" ${_cpu.Memory.GetByte((ushort)(_cpu.PC+pcOffset+1)):X2}");
+            }
+            Console.CursorLeft = CPU_STATUS_TABLE_LEFT; RenderString("|");
             RenderString();
 
             RenderString("+-----------------------+"); RenderString();
             RenderString();
+
+            Console.CursorLeft = clSafe;
+            Console.CursorTop = ctSafe;
+            
+            Console.CursorVisible = true;
 
             _oldState = new ProcessorState(_cpu);
         }

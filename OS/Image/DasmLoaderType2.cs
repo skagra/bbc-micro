@@ -1,11 +1,19 @@
 ﻿using BbcMicro.Memory.Abstractions;
 using BbcMicro.OS.Image.Abstractions;
+using System;
 using System.IO;
 
 namespace BbcMicro.OS.Image
 {
     public sealed class DasmLoaderType2 : IImageLoader
     {
+        private readonly IAddressSpace _memory;
+
+        public DasmLoaderType2(IAddressSpace memory)
+        {
+            _memory = memory ?? throw new ArgumentNullException(nameof(memory));
+        }
+
         private void LoadSegment(ushort segmentOrigin, ushort segmentLength, 
             ushort imageBase, byte[] image, IAddressSpace memory)
         {
@@ -15,7 +23,7 @@ namespace BbcMicro.OS.Image
             }
         }
 
-        public ImageInfo Load(string fileName, IAddressSpace memory)
+        public ImageInfo Load(string fileName)
         {
             var bytes = File.ReadAllBytes(fileName);
             ushort offset = 0;
@@ -27,7 +35,7 @@ namespace BbcMicro.OS.Image
 
                 offset += (ushort)4;
 
-                LoadSegment(segmentOrigin, segmentLength, offset, bytes, memory);
+                LoadSegment(segmentOrigin, segmentLength, offset, bytes, _memory);
 
                 offset += (ushort)segmentLength;
             }

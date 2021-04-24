@@ -635,9 +635,22 @@ namespace BbcMicro.Cpu
          * to zero.
          */
 
-        private void LSR(ushort operandAddress, AddressingMode addressingMode)
+        private void LSR(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            if (addressingMode==AddressingMode.Accumulator)
+            {
+                A = (byte)(operand >> 1);
+                PSet(PFlags.C, (operand & 00000_0001) != 0);
+                UpdateFlags(A, PFlags.N | PFlags.Z);
+            }
+            else
+            {
+                byte operandValue = Memory.GetByte(operand);
+                byte shiftedValue = (byte)(operandValue >> 1);
+                Memory.SetByte(shiftedValue, operand);
+                PSet(PFlags.C, (operandValue & 00000_0001) != 0);
+                UpdateFlags(shiftedValue, PFlags.N | PFlags.Z);
+            }
         }
 
         /*
@@ -648,9 +661,8 @@ namespace BbcMicro.Cpu
          * instruction.
          */
 
-        private void NOP(ushort operandAddress, AddressingMode addressingMode)
+        private void NOP(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
         }
 
         /*
@@ -660,9 +672,10 @@ namespace BbcMicro.Cpu
          * contents using the contents of a byte of memory.
          */
 
-        private void ORA(ushort operandAddress, AddressingMode addressingMode)
+        private void ORA(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            A |= Memory.GetByte(operand);
+            UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
         /*
@@ -671,9 +684,9 @@ namespace BbcMicro.Cpu
          * Pushes a copy of the accumulator on to the stack.
          */
 
-        private void PHA(ushort operandAddress, AddressingMode addressingMode)
+        private void PHA(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            PushByte(A);
         }
 
         /*
@@ -684,7 +697,7 @@ namespace BbcMicro.Cpu
 
         private void PHP(ushort operandAddress, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            PushByte(P);
         }
 
         /*
@@ -696,7 +709,8 @@ namespace BbcMicro.Cpu
 
         private void PLA(ushort operandAddress, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            A=PopByte();
+            UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
         /*
@@ -708,7 +722,7 @@ namespace BbcMicro.Cpu
 
         private void PLP(ushort operandAddress, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            P = PopByte();
         }
 
         /*
@@ -719,9 +733,23 @@ namespace BbcMicro.Cpu
          * bit 7 becomes the new carry flag value.
          */
 
-        private void ROL(ushort operandAddress, AddressingMode addressingMode)
+        private void ROL(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            if (addressingMode == AddressingMode.Accumulator)
+            {
+                A = (byte)((byte)(operand << 1) | (byte)(PIsSet(PFlags.C) ? 0b0000_0001 : 0b0000_0000));
+                PSet(PFlags.C, (operand & 0b1000_0000) != 0);
+                UpdateFlags(A, PFlags.N | PFlags.Z);
+
+            }
+            else
+            {
+                byte operandValue = Memory.GetByte(operand);
+                byte rotateResult = (byte)((byte)(operandValue << 1) | (byte)(PIsSet(PFlags.C) ? 0b0000_0001 : 0b0000_0000));
+                Memory.SetByte(rotateResult, operand);
+                PSet(PFlags.C, (operandValue & 0b1000_0000) != 0);
+                UpdateFlags(rotateResult, PFlags.N | PFlags.Z);
+            }
         }
 
         /*
@@ -732,9 +760,22 @@ namespace BbcMicro.Cpu
          * bit 0 becomes the new carry flag value.
          */
 
-        private void ROR(ushort operandAddress, AddressingMode addressingMode)
+        private void ROR(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            if (addressingMode == AddressingMode.Accumulator)
+            {
+                A = (byte)((byte)(operand >> 1) | (byte)(PIsSet(PFlags.C) ? 0b1000_0000 : 0b0000_000));
+                PSet(PFlags.C, (operand & 0b0000_0001) != 0);
+                UpdateFlags(A, PFlags.N | PFlags.Z);
+            }
+            else
+            {
+                byte operandValue = Memory.GetByte(operand);
+                byte rotatedResult = (byte)((byte)(operand >> 1) | (byte)(PIsSet(PFlags.C) ? 0b1000_0000 : 0b0000_000));
+                Memory.SetByte(rotatedResult, operand);
+                PSet(PFlags.C, (operandValue & 0b0000_0001) != 0);
+                UpdateFlags(rotatedResult, PFlags.N | PFlags.Z);
+            }
         }
 
         /*
@@ -745,7 +786,7 @@ namespace BbcMicro.Cpu
          * the program counter.
          */
 
-        private void RTI(ushort operandAddress, AddressingMode addressingMode)
+        private void RTI(ushort operand, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
         }
@@ -771,25 +812,30 @@ namespace BbcMicro.Cpu
          * performed.
          */
 
-        private void SBC(ushort operandAddress, AddressingMode addressingMode)
+        private void SBC(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            byte operandValue = Memory.GetByte(operand);
+            short subtractWithCarryResult = (short)(A - operandValue - (PIsSet(PFlags.C) ? 0 : 1));
+            PSet(PFlags.C, subtractWithCarryResult >= 0);
+            PSet(PFlags.V, ((A ^ subtractWithCarryResult) & (operandValue ^ subtractWithCarryResult) & 0x80) != 0);
+            A = (byte)subtractWithCarryResult;
+            UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
         /*
          * Set carry flag
          */
 
-        private void SEC(ushort operandAddress, AddressingMode addressingMode)
+        private void SEC(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            PSet(PFlags.C);
         }
 
         /*
          * Set decimal flag
          */
 
-        private void SED(ushort operandAddress, AddressingMode addressingMode)
+        private void SED(ushort operand, AddressingMode addressingMode)
         {
             throw new NotImplementedException();
         }
@@ -798,9 +844,9 @@ namespace BbcMicro.Cpu
          * Set interrupt disable
          */
 
-        private void SEI(ushort operandAddress, AddressingMode addressingMode)
+        private void SEI(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            PSet(PFlags.I);
         }
 
         /*
@@ -822,7 +868,7 @@ namespace BbcMicro.Cpu
 
         private void STX(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            Memory.SetByte(X, operand);
         }
 
         /*
@@ -831,9 +877,9 @@ namespace BbcMicro.Cpu
          * Stores the contents of the Y register into memory.
          */
 
-        private void STY(ushort operandAddress, AddressingMode addressingMode)
+        private void STY(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            Memory.SetByte(Y, operand);
         }
 
         /*
@@ -843,9 +889,10 @@ namespace BbcMicro.Cpu
          * register and sets the zero and negative flags as appropriate.
          */
 
-        private void TAX(ushort operandAddress, AddressingMode addressingMode)
+        private void TAX(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            X = A;
+            UpdateFlags(X, PFlags.N | PFlags.Z);
         }
 
         /*
@@ -855,9 +902,10 @@ namespace BbcMicro.Cpu
          * register and sets the zero and negative flags as appropriate.
          */
 
-        private void TAY(ushort operandAddress, AddressingMode addressingMode)
+        private void TAY(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            Y = A;
+            UpdateFlags(Y, PFlags.N | PFlags.Z);
         }
 
         /*
@@ -867,9 +915,10 @@ namespace BbcMicro.Cpu
          * the X register and sets the zero and negative flags as appropriate.
          */
 
-        private void TSX(ushort operandAddress, AddressingMode addressingMode)
+        private void TSX(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            X = S;
+            UpdateFlags(X, PFlags.N | PFlags.Z);
         }
 
         /*
@@ -879,9 +928,10 @@ namespace BbcMicro.Cpu
          * accumulator and sets the zero and negative flags as appropriate.
          */
 
-        private void TXA(ushort operandAddress, AddressingMode addressingMode)
+        private void TXA(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            A = X;
+            UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
         /*
@@ -890,21 +940,23 @@ namespace BbcMicro.Cpu
          * Copies the current contents of the X register into the stack register.
          */
 
-        private void TXS(ushort operandAddress, AddressingMode addressingMode)
+        private void TXS(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            S = X;
+            UpdateFlags(S, PFlags.N | PFlags.Z);
         }
 
         /*
-         * Transfer to accumulator
+         * Transfer Y to accumulator
          *
          * Copies the current contents of the Y register into the accumulator
          * and sets the zero and negative flags as appropriate.
          */
 
-        private void TYA(ushort operandAddress, AddressingMode addressingMode)
+        private void TYA(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            A = Y;
+            UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
         /*
