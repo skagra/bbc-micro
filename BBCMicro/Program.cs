@@ -69,6 +69,7 @@ namespace BbcMicro
                         break;
 
                     case ConsoleKey.R:
+                        _cpuDisplay.RenderMessage("Running to completion...");
                         cpu.ExecuteToBrk();
                         done = true;
                         break;
@@ -83,6 +84,7 @@ namespace BbcMicro
                         break;
                 }
             }
+            Console.WriteLine();
         }
     }
 }

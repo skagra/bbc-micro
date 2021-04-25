@@ -9,7 +9,7 @@ namespace BbcMicro.Cpu.Diagnostics
         private Disassembler _dis = new Disassembler();
         private ProcessorState _oldState;
 
-        private const int BANNER_HEIGHT = 9;
+        private const int BANNER_HEIGHT = 2;
         private const int CPU_STATUS_TOP = BANNER_HEIGHT + 1;
         private const int CPU_STATUS_HEIGHT = 18;
         private const int MESSAGE_BANNER_HEIGHT = 3;
@@ -145,15 +145,9 @@ namespace BbcMicro.Cpu.Diagnostics
 
         private void RenderBanner()
         {
-            Console.WriteLine("    6502 Processor Emulator     ");
-            Console.WriteLine("    -----------------------     ");
+            Console.WriteLine("6502 Processor Emulator");
+            Console.WriteLine("-----------------------");
             Console.WriteLine();
-            Console.WriteLine("   dD     ooooo  .d88b.  .d888b.");
-            Console.WriteLine("  d8'    8P~~~~ .8P  88. VP  `8D");
-            Console.WriteLine(" d8'    dP      88  d'88    odD'");
-            Console.WriteLine("d8888b. V8888b. 88 d' 88  .88'   ");
-            Console.WriteLine("88' `8D     `8D `88  d8' j88.   ");
-            Console.WriteLine("`8888P  88oobY'  `Y88P'  888888D");
         }
 
         public void Render()
