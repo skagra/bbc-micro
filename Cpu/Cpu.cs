@@ -1091,15 +1091,15 @@ namespace BbcMicro.Cpu
                 AddressingMode.Immediate => Memory.GetByte(operandAddress), // Operand is the byte following the op code
                 AddressingMode.Implied => 0, // Operand ignored
                 AddressingMode.Relative => Memory.GetByte(operandAddress), // Operand is the byte following the op code
-                AddressingMode.Absolute => Memory.GetWord(operandAddress), // Operand is the word following the op code
+                AddressingMode.Absolute => Memory.GetNativeWord(operandAddress), // Operand is the word following the op code
                 AddressingMode.ZeroPage => Memory.GetByte(operandAddress), // Operand is the byte following the op code
-                AddressingMode.Indirect => Memory.GetWord(Memory.GetWord(operandAddress)), // Operand is pointed to by the word following the op code
-                AddressingMode.AbsoluteIndexedX => (ushort)(Memory.GetWord(operandAddress) + X), // Operand is the word following the op code + X
-                AddressingMode.AbsoluteIndexedY => (ushort)(Memory.GetWord(operandAddress) + Y), // Operand is the word following the op code + Y
+                AddressingMode.Indirect => Memory.GetNativeWord(Memory.GetNativeWord(operandAddress)), // Operand is pointed to by the word following the op code
+                AddressingMode.AbsoluteIndexedX => (ushort)(Memory.GetNativeWord(operandAddress) + X), // Operand is the word following the op code + X
+                AddressingMode.AbsoluteIndexedY => (ushort)(Memory.GetNativeWord(operandAddress) + Y), // Operand is the word following the op code + Y
                 AddressingMode.ZeroPageIndexedX => (byte)(Memory.GetByte(operandAddress) + X), // Cast to byte to wrap to zero page
                 AddressingMode.ZeroPageIndexedY => (byte)(Memory.GetByte(operandAddress) + Y), // Cast to byte to wrap to zero page
-                AddressingMode.IndexedXIndirect => Memory.GetWord((byte)(Memory.GetByte(operandAddress) + X)), // Cast to byte to wrap to zero page
-                AddressingMode.IndirectIndexedY => (ushort)(Memory.GetWord(Memory.GetByte(operandAddress)) + Y),
+                AddressingMode.IndexedXIndirect => Memory.GetNativeWord((byte)(Memory.GetByte(operandAddress) + X)), // Cast to byte to wrap to zero page
+                AddressingMode.IndirectIndexedY => (ushort)(Memory.GetNativeWord(Memory.GetByte(operandAddress)) + Y),
             };
         }
 

@@ -6,7 +6,7 @@ namespace BbcMicro.Cpu.Diagnostics
     {
         private static readonly string MEMORY_CORE_FILENAME = "core.bin";
 
-        public static void WriteWord(ushort word, BinaryWriter writer)
+        public static void WritLittleEndianeWord(ushort word, BinaryWriter writer)
         {
             writer.Write((byte)word);
             writer.Write((byte)(word >> 8));
@@ -14,9 +14,14 @@ namespace BbcMicro.Cpu.Diagnostics
 
         public static void DumpCore(CPU cpu)
         {
-            using (var writer = new BinaryWriter(new FileStream(MEMORY_CORE_FILENAME, FileMode.Create)))
+            DumpCore(MEMORY_CORE_FILENAME, cpu);
+        }
+
+        public static void DumpCore(string fileName, CPU cpu)
+        {
+            using (var writer = new BinaryWriter(new FileStream(fileName, FileMode.Create)))
             {
-                WriteWord(cpu.PC, writer);
+                WritLittleEndianeWord(cpu.PC, writer);
                 writer.Write(cpu.S);
                 writer.Write(cpu.A);
                 writer.Write(cpu.X);

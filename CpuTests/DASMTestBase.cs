@@ -1,27 +1,12 @@
-﻿using BbcMicro.Cpu;
-using BbcMicro.Cpu.Memory;
-using BbcMicro.Memory.Abstractions;
-using BbcMicro.OS.Image;
-using Xunit;
+﻿using BbcMicro.OS.Image;
 using Xunit.Abstractions;
 
 namespace CpuTests
 {
-    public class DASMTestBase
+    public abstract class DASMTestBase:CPUTestBase
     {
-        protected readonly ITestOutputHelper _stdOut;
-
-        protected readonly CPU _cpu;
-        protected readonly IAddressSpace _addressSpace;
-
-        public DASMTestBase(ITestOutputHelper stdOut)
+        public DASMTestBase(ITestOutputHelper stdOut):base(stdOut)
         {
-            _stdOut = stdOut;
-            _addressSpace = new FlatAddressSpace();
-            _cpu = new CPU(_addressSpace);
-
-            var os = new BbcMicro.OS.OperatingSystem();
-            _cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
         }
 
         protected void Load(string fileName)

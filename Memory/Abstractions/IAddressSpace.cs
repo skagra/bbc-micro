@@ -6,7 +6,7 @@
 
         byte GetByte(ushort address);
 
-        ushort GetWord(ushort address);
+        ushort GetNativeWord(ushort address);
 
         void Flush();
 

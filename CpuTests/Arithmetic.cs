@@ -1,6 +1,4 @@
 using BbcMicro.Cpu;
-using BbcMicro.Cpu.Memory;
-using BbcMicro.Memory.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -11,13 +9,8 @@ namespace CpuTests
      * http://archive.6502.org/books/mcs6500_family_programming_manual.pdf
      */
 
-    public class Arithmetic
+    public class Arithmetic: CPUTestBase
     {
-        private readonly ITestOutputHelper _stdOut;
-
-        private readonly CPU _cpu;
-        private readonly IAddressSpace _addressSpace;
-
         private const byte LDA_IMMEDIATE = 0xA9;
         private const byte ADC_IMMEDIATE = 0x69;
         private const byte SBC_IMMEDIATE = 0xE9;
@@ -26,15 +19,12 @@ namespace CpuTests
 
         private void SetMem(byte value)
         {
-            _addressSpace.SetByte(value, _memPtr);
+            SetByte(value, _memPtr);
             _memPtr++;
         }
 
-        public Arithmetic(ITestOutputHelper stdOut)
+        public Arithmetic(ITestOutputHelper stdOut):base(stdOut)
         {
-            _stdOut = stdOut;
-            _addressSpace = new FlatAddressSpace();
-            _cpu = new CPU(_addressSpace);
         }
 
         [Theory]

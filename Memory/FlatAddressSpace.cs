@@ -18,8 +18,7 @@ namespace BbcMicro.Cpu.Memory
             _memory[address] = value;
         }
 
-        // The little endian values in memory are converted a C# ushort representation
-        public ushort GetWord(ushort address)
+        public ushort GetNativeWord(ushort address)
         {
             return (ushort)(_memory[address] + (_memory[address + 1] << 8));
         }
