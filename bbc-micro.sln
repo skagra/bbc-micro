@@ -13,15 +13,16 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{7A60722D-B40E-4461-831F-B1BFFBB20F94}"
 	ProjectSection(SolutionItems) = preProject
 		Notes.md = Notes.md
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CpuTests", "CpuTests\CpuTests.csproj", "{D6384A7A-BC8B-4EDB-A7AF-541051819865}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BbcMicro", "BBCMicro\BbcMicro.csproj", "{3E6A7123-8D88-4A2B-BF4D-6E9DEC6B16FA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OS", "OS\OS.csproj", "{BE01F85B-AA8A-4632-8BBF-191CF04DF6D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OS", "OS\OS.csproj", "{BE01F85B-AA8A-4632-8BBF-191CF04DF6D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Memory", "Memory\Memory.csproj", "{7BCE22E1-C9F3-4E51-9397-7C8B4D1F562B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Memory", "Memory\Memory.csproj", "{7BCE22E1-C9F3-4E51-9397-7C8B4D1F562B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
