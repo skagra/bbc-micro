@@ -1,6 +1,7 @@
 ﻿using BbcMicro.Memory.Abstractions;
 using System;
 using System.Text;
+using BbcMicro.Memory.Extensions;
 
 namespace BbcMicro.Cpu
 {

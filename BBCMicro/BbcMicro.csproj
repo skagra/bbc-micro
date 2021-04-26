@@ -13,7 +13,9 @@
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="mkdir $(ProjectDir)bin\Asm&#xD;&#xA;dasm $(ProjectDir)Asm\HelloWorld.asm -f2 -o$(OutDir)HelloWorld.out -l$(OutDir)HelloWorld.txt -I$(ProjectDir)Asm&#xD;&#xA;dasm $(ProjectDir)Asm\HelloWorldJsr.asm -f2 -o$(OutDir)HelloWorldJsr.out -l$(OutDir)JsrHelloWorld.txt -I$(ProjectDir)Asm&#xD;&#xA;" />
+    <Exec Command="dasm $(ProjectDir)Asm\HelloWorld.asm -f2 -o$(OutDir)HelloWorld.out -l$(OutDir)HelloWorld.txt -I$(ProjectDir)Asm"/>
+    <Exec Command="dasm $(ProjectDir)Asm\HelloWorldJsr.asm -f2 -o$(OutDir)HelloWorldJsr.out -l$(OutDir)JsrHelloWorld.txt -I$(ProjectDir)Asm"/>
   </Target>
 
 </Project>
+ 

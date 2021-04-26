@@ -1,26 +1,27 @@
 ﻿; Adapted from http://6502.org/source/sorting/bubble8.htm
-	     PROCESSOR  6502
-         ORG        $400
+            PROCESSOR  6502
+            ORG $400
 
 ; Entry point - always start of first segment
-			SEG			entry
-			ORG			$400
+            SEG entry
+            ORG $400
 
             ; Jump to main
-			JMP			main
+            JSR main
+            BRK
 
 ; Main program
-			SEG			main
-			ORG			$404
+            SEG main
+            ORG $408
 
             ; Main subroutine
-			SUBROUTINE
-main:		LDA			#<tosort
-			STA			sortvec
-			LDA			#>tosort
-			STA			sortvec+1
-			JSR			SORT8
-			BRK
+            SUBROUTINE
+main:       LDA #<tosort
+            STA sortvec
+            LDA #>tosort
+            STA sortvec+1
+            JSR SORT8
+            RTS
 
             ; Bubble sort
 SORT8:      LDY #$00            ;TURN EXCHANGE FLAG OFF (= 0)
@@ -51,16 +52,17 @@ CHKEND:     DEX                 ;END OF LIST?
             RTS                 ;YES. LIST IS NOW ORDERED
 
 ; Working memory
-			SEG			working
-			ORG			$500
+            SEG working
+            ORG $500
 
 ; Values to sort - length in first byte
-tosort:     DS          $100
+tosort:     DS $100
 
 ; Zero page variables
-			SEG.U		zpvariables
-			ORG			$0
+            SEG.U zpvariables
+            ORG $0
 
 ; Indirection for print subroutine
-sortvec:	DS			2
-exflag:     DS          1
+sortvec:    DS 2
+exflag:     DS 1
+

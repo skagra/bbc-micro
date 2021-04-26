@@ -5,6 +5,11 @@ namespace BbcMicro.Memory.Extensions
 {
     public static class AddressSpaceExtensions
     {
+        public static ushort GetNativeWord(this IAddressSpace addressSpace, ushort address)
+        {
+            return (ushort)(addressSpace.GetByte(address) + (addressSpace.GetByte((ushort)(address + 1)) << 8));
+        }
+
         public static void SetString(this IAddressSpace addressSpace, string value, ushort address)
         {
             var asciiBytes = Encoding.ASCII.GetBytes(value.ToCharArray());

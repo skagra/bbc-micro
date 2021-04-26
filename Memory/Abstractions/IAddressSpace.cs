@@ -6,8 +6,6 @@
 
         byte GetByte(ushort address);
 
-        ushort GetNativeWord(ushort address);
-
         void Flush();
 
         string ToString(ushort start, ushort length);

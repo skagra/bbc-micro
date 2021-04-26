@@ -3,6 +3,7 @@ using BbcMicro.Memory.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BbcMicro.Memory.Extensions;
 
 namespace BbcMicro.Cpu
 {
@@ -639,8 +640,8 @@ namespace BbcMicro.Cpu
         {
             if (addressingMode==AddressingMode.Accumulator)
             {
-                A = (byte)(operand >> 1);
-                PSet(PFlags.C, (operand & 00000_0001) != 0);
+                PSet(PFlags.C, (A & 00000_0001) != 0);
+                A = (byte)(A >> 1);
                 UpdateFlags(A, PFlags.N | PFlags.Z);
             }
             else
@@ -737,8 +738,9 @@ namespace BbcMicro.Cpu
         {
             if (addressingMode == AddressingMode.Accumulator)
             {
-                A = (byte)((byte)(operand << 1) | (byte)(PIsSet(PFlags.C) ? 0b0000_0001 : 0b0000_0000));
-                PSet(PFlags.C, (operand & 0b1000_0000) != 0);
+                byte operandValue=A;
+                A = (byte)((byte)(A << 1) | (byte)(PIsSet(PFlags.C) ? 0b0000_0001 : 0b0000_0000));
+                PSet(PFlags.C, (operandValue & 0b1000_0000) != 0);
                 UpdateFlags(A, PFlags.N | PFlags.Z);
 
             }
@@ -764,8 +766,9 @@ namespace BbcMicro.Cpu
         {
             if (addressingMode == AddressingMode.Accumulator)
             {
-                A = (byte)((byte)(operand >> 1) | (byte)(PIsSet(PFlags.C) ? 0b1000_0000 : 0b0000_000));
-                PSet(PFlags.C, (operand & 0b0000_0001) != 0);
+                byte operandValue=A;
+                A = (byte)((byte)(A >> 1) | (byte)(PIsSet(PFlags.C) ? 0b1000_0000 : 0b0000_000));
+                PSet(PFlags.C, (operandValue & 0b0000_0001) != 0);
                 UpdateFlags(A, PFlags.N | PFlags.Z);
             }
             else

@@ -18,11 +18,6 @@ namespace BbcMicro.Cpu.Memory
             _memory[address] = value;
         }
 
-        public ushort GetNativeWord(ushort address)
-        {
-            return (ushort)(_memory[address] + (_memory[address + 1] << 8));
-        }
-
         public void Flush()
         {
             Array.Clear(_memory, 0, _memory.Length);
