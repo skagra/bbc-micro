@@ -108,17 +108,32 @@ namespace BbcMicro.Cpu.Diagnostics
 
         private readonly Decoder _decoder = new Decoder();
 
-        public void RenderMessage(string message)
-        {
+        private int messageCursorX = 0;
+
+        public void ResetMessage() {
             var clSafe = Console.CursorLeft;
             var ctSafe = Console.CursorTop;
 
             Console.CursorLeft = 0;
             Console.CursorTop = MESSAGE_TOP;
             Console.Write("                                                        ");
-            Console.CursorLeft = 0;
+            messageCursorX = 0;
+
+            Console.CursorLeft = clSafe;
+            Console.CursorTop = ctSafe;
+        }
+
+        public void RenderMessage(string message)
+        {
+            var clSafe = Console.CursorLeft;
+            var ctSafe = Console.CursorTop;
+
+            Console.CursorLeft = messageCursorX;
             Console.CursorTop = MESSAGE_TOP;
+
             Console.Write(message);
+
+            messageCursorX = Console.CursorLeft+1;
 
             Console.CursorLeft = clSafe;
             Console.CursorTop = ctSafe;

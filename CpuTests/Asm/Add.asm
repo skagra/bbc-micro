@@ -21,6 +21,3 @@ main:       LDA p1
 
 p1:         DS 1
 p2:         DS 1
-
-
-

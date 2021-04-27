@@ -9,17 +9,44 @@ namespace BbcMicro
 {
     internal class Program
     {
-        private static bool _displayCPU = true;
+        private static bool _displayingStatus = true;
+        private static bool _runningToCompletion = false;
 
         private static void DisplayCallback(CPU cpu, OpCode opCode, AddressingMode addressingMode)
         {
-            if (_displayCPU)
+            if (_displayingStatus)
             {
                 _cpuDisplay.Render();
             }
         }
 
         private static CPUDisplay _cpuDisplay;
+
+        private static void DisplayAddress(byte newVal, byte oldVal, ushort address) {
+            if (_runningToCompletion)
+            {
+                _cpuDisplay.ResetMessage();
+            }
+            RenderMessage($"${address:X4} <= ${newVal:X2} (${oldVal:X2})");
+            if (address <= 0x01FF && address >= 0x0100)
+            {
+                RenderMessage("[stack]");
+            }
+        }
+
+        private static void RenderMessage(string message) {
+            if (_displayingStatus)
+            {
+                _cpuDisplay.RenderMessage(message);
+            }
+        }
+
+        private static void ResetMessage() {
+            if (_displayingStatus)
+            {
+                _cpuDisplay.ResetMessage();
+            }
+        }
 
         private static void Main(string[] args)
         {
@@ -33,7 +60,7 @@ namespace BbcMicro
 
             // Read the image to execute
             IImageLoader imageLoader = null;
-            if (args[0]=="core.bin")
+            if (args[0] == "core.bin")
             {
                 imageLoader = new CoreFileLoader(cpu);
             }
@@ -50,32 +77,36 @@ namespace BbcMicro
             _cpuDisplay = new CPUDisplay(cpu);
             cpu.AddPostExecutionCallback(DisplayCallback);
 
+            addressSpace.AddSetByteCallback((newVal, oldVal, address) => 
+                DisplayAddress(newVal, oldVal, address));
+
             var done = false;
             while (!done)
             {
                 var key = Console.ReadKey(true).Key;
-                _cpuDisplay.RenderMessage("");
+                ResetMessage();
 
                 switch (key)
                 {
                     case ConsoleKey.X:
-                        _cpuDisplay.RenderMessage("Exiting...");
+                        RenderMessage("Exiting...");
                         done = true;
                         break;
 
                     case ConsoleKey.C:
-                        _cpuDisplay.RenderMessage("Dumping core!");
+                        RenderMessage("Dumping core!");
                         CoreDumper.DumpCore(cpu);
                         break;
 
                     case ConsoleKey.R:
-                        _cpuDisplay.RenderMessage("Running to completion...");
-                        cpu.ExecuteToBrk();
+                        RenderMessage("Running to completion...");
+                        _runningToCompletion = true;
+                        cpu.ExecuteToBrk();     
                         done = true;
                         break;
 
                     case ConsoleKey.H:
-                        _displayCPU = false;
+                        _displayingStatus = false;
                         Console.Clear();
                         break;
 

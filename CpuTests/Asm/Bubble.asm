@@ -6,15 +6,15 @@
             SEG entry
             ORG $400
 
-            ; Jump to main
+; Jump to main
             JSR main
             BRK
 
-; Main program
+; Main program segment
             SEG main
             ORG $408
 
-            ; Main subroutine
+; Main subroutine
             SUBROUTINE
 main:       LDA #<tosort
             STA sortvec

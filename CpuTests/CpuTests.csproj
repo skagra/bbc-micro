@@ -29,6 +29,7 @@
     <Exec Command="dasm $(ProjectDir)Asm\Add.asm -f2 -o$(OutDir)Add.out -I$(ProjectDir)Asm" />
     <Exec Command="dasm $(ProjectDir)Asm\Bubble.asm -f2 -o$(OutDir)Bubble.out -I$(ProjectDir)Asm" />
     <Exec Command="dasm $(ProjectDir)Asm\Nibble.asm -f2 -o$(OutDir)Nibble.out -I$(ProjectDir)Asm" />
+    <Exec Command="dasm $(ProjectDir)Asm\Shifts.asm -f2 -o$(OutDir)Shifts.out -I$(ProjectDir)Asm" />
   </Target>
 
 </Project>

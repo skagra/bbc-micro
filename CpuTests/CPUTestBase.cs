@@ -24,6 +24,10 @@ namespace CpuTests
             _cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
         }
 
+        protected byte GetByte(ushort address) {
+            return _addressSpace.GetByte(address);
+        }
+
         protected void SetByte(byte value, ushort address)
         {
             _addressSpace.SetByte(value, address);

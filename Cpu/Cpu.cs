@@ -432,7 +432,7 @@ namespace BbcMicro.Cpu
         private void CPX(ushort operand, AddressingMode addressingMode)
         {
             byte operandValue = GetByteValue(operand, addressingMode);
-            PSet(PFlags.N, X < operandValue);
+            PSet(PFlags.N, X < operandValue);   
             PSet(PFlags.C, X >= operandValue);
             PSet(PFlags.Z, X == operandValue);
         }
@@ -447,7 +447,7 @@ namespace BbcMicro.Cpu
         private void CPY(ushort operand, AddressingMode addressingMode)
         {
             byte operandValue = GetByteValue(operand, addressingMode);
-            PSet(PFlags.N, Y < operandValue);
+            PSet(PFlags.N, Y < operandValue); 
             PSet(PFlags.C, Y >= operandValue);
             PSet(PFlags.Z, Y == operandValue);
         }
@@ -474,7 +474,7 @@ namespace BbcMicro.Cpu
          * flags as appropriate.
          */
 
-        private void DEX(ushort operandAddress, AddressingMode addressingMode)
+        private void DEX(ushort operand, AddressingMode addressingMode)
         {
             X -= 1;
             UpdateFlags(X, PFlags.N | PFlags.Z);
@@ -487,7 +487,7 @@ namespace BbcMicro.Cpu
          * flags as appropriate.
          */
 
-        private void DEY(ushort operandAddress, AddressingMode addressingMode)
+        private void DEY(ushort operand, AddressingMode addressingMode)
         {
             Y -= 1;
             UpdateFlags(Y, PFlags.N | PFlags.Z);
@@ -562,7 +562,7 @@ namespace BbcMicro.Cpu
          */
 
         private void JMP(ushort operand, AddressingMode addressingMode)
-        {
+        {   
             PC = operand;
         }
 
@@ -774,7 +774,7 @@ namespace BbcMicro.Cpu
             else
             {
                 byte operandValue = GetByteValue(operand, addressingMode);
-                byte rotatedResult = (byte)((byte)(operand >> 1) | (byte)(PIsSet(PFlags.C) ? 0b1000_0000 : 0b0000_000));
+                byte rotatedResult = (byte)((byte)(operandValue >> 1) | (byte)(PIsSet(PFlags.C) ? 0b1000_0000 : 0b0000_000));
                 Memory.SetByte(rotatedResult, operand);
                 PSet(PFlags.C, (operandValue & 0b0000_0001) != 0);
                 UpdateFlags(rotatedResult, PFlags.N | PFlags.Z);
@@ -1068,7 +1068,7 @@ namespace BbcMicro.Cpu
                 AddressingMode.Relative => (byte)operand,
                 AddressingMode.Absolute => Memory.GetByte(operand),
                 AddressingMode.ZeroPage => Memory.GetByte(operand),
-                AddressingMode.Indirect => Memory.GetByte(operand),
+                AddressingMode.Indirect => 0, 
                 AddressingMode.AbsoluteIndexedX => Memory.GetByte(operand),
                 AddressingMode.AbsoluteIndexedY => Memory.GetByte(operand),
                 AddressingMode.ZeroPageIndexedX => Memory.GetByte(operand),
