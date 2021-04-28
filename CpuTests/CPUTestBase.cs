@@ -1,11 +1,11 @@
 ﻿using BbcMicro.Cpu;
-using BbcMicro.Cpu.Memory;
 using BbcMicro.Memory.Abstractions;
 using Xunit.Abstractions;
 using BbcMicro.Memory.Extensions;
 using BbcMicro.Cpu.Diagnostics;
+using BbcMicro.Memory;
 
-namespace CpuTests
+namespace BbcMicro.CpuTests
 {
     public abstract class CPUTestBase
     {
@@ -20,11 +20,12 @@ namespace CpuTests
             _addressSpace = new FlatAddressSpace();
             _cpu = new CPU(_addressSpace);
 
-            var os = new BbcMicro.OS.OperatingSystem();
+            var os = new OS.OperatingSystem();
             _cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
         }
 
-        protected byte GetByte(ushort address) {
+        protected byte GetByte(ushort address)
+        {
             return _addressSpace.GetByte(address);
         }
 

@@ -1,4 +1,5 @@
 ﻿using BbcMicro.Cpu;
+using BbcMicro.OS;
 using System;
 using System.Collections.Generic;
 

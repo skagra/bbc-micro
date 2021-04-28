@@ -1,7 +1,7 @@
 ﻿using BbcMicro.Memory.Abstractions;
-using System;
 using System.Text;
 using BbcMicro.Memory.Extensions;
+using BbcMicro.Cpu.Exceptions;
 
 namespace BbcMicro.Cpu
 {
@@ -33,7 +33,7 @@ namespace BbcMicro.Cpu
                 AddressingMode.ZeroPageIndexedY => $"${memory.GetByte(operandAddress):X2},Y",
                 AddressingMode.IndexedXIndirect => $"(${memory.GetByte(operandAddress):X2},X)",
                 AddressingMode.IndirectIndexedY => $"(${memory.GetByte(operandAddress):X2}),Y",
-                _ => throw new Exception($"Invalid addressing mode '{addressingMode}'") // TODO
+                _ => throw new CPUException($"Invalid addressing mode '{addressingMode}'")
             });
 
             return result.ToString();

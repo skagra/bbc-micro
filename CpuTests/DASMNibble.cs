@@ -1,12 +1,11 @@
-﻿
-using Xunit;
+﻿using Xunit;
 using Xunit.Abstractions;
 
-namespace CpuTests
+namespace BbcMicro.CpuTests
 {
-    public class DASMNibble: DASMTestBase
+    public class DASMNibble : DASMTestBase
     {
-        public DASMNibble(ITestOutputHelper stdOut):base(stdOut)
+        public DASMNibble(ITestOutputHelper stdOut) : base(stdOut)
         {
         }
 
@@ -18,11 +17,11 @@ namespace CpuTests
         {
             Load("Nibble.out");
 
-            _cpu.A=inByte;
+            _cpu.A = inByte;
 
             Run();
 
-            Assert.Equal((byte)((inByte<<4) | (inByte>>4)), _cpu.A);
+            Assert.Equal((byte)((inByte << 4) | (inByte >> 4)), _cpu.A);
         }
     }
 }

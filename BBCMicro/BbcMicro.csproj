@@ -6,16 +6,17 @@
     <RootNamespace>BbcMicro</RootNamespace>
   </PropertyGroup>
 
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="dasm $(ProjectDir)Asm\HelloWorld.asm -f2 -o$(OutDir)HelloWorld.out -l$(OutDir)HelloWorld.txt -I$(ProjectDir)Asm" />
+    <Exec Command="dasm $(ProjectDir)Asm\HelloWorldJsr.asm -f2 -o$(OutDir)HelloWorldJsr.out -l$(OutDir)JsrHelloWorld.txt -I$(ProjectDir)Asm" />
+  </Target>
+
   <ItemGroup>
+    <ProjectReference Include="..\ConsoleWindowing\ConsoleWindowing.csproj" />
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
     <ProjectReference Include="..\OS\OS.csproj" />
   </ItemGroup>
-
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="dasm $(ProjectDir)Asm\HelloWorld.asm -f2 -o$(OutDir)HelloWorld.out -l$(OutDir)HelloWorld.txt -I$(ProjectDir)Asm"/>
-    <Exec Command="dasm $(ProjectDir)Asm\HelloWorldJsr.asm -f2 -o$(OutDir)HelloWorldJsr.out -l$(OutDir)JsrHelloWorld.txt -I$(ProjectDir)Asm"/>
-  </Target>
 
 </Project>
  

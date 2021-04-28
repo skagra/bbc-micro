@@ -2,11 +2,11 @@
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CpuTests
+namespace BbcMicro.CpuTests
 {
-    public class DASMArithmetic: DASMTestBase
+    public class DASMArithmetic : DASMTestBase
     {
-        public DASMArithmetic(ITestOutputHelper stdOut):base(stdOut)
+        public DASMArithmetic(ITestOutputHelper stdOut) : base(stdOut)
         {
         }
 

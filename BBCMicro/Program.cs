@@ -1,50 +1,44 @@
 ﻿using System;
+using System.Text;
 using BbcMicro.Cpu;
 using BbcMicro.Cpu.Diagnostics;
-using BbcMicro.Cpu.Memory;
+using BbcMicro.Memory;
 using BbcMicro.OS.Image;
 using BbcMicro.OS.Image.Abstractions;
+using OS.Image;
 
 namespace BbcMicro
 {
     internal class Program
     {
         private static bool _displayingStatus = true;
-        private static bool _runningToCompletion = false;
 
         private static void DisplayCallback(CPU cpu, OpCode opCode, AddressingMode addressingMode)
         {
             if (_displayingStatus)
             {
-                _cpuDisplay.Render();
+                _cpuDisplay.Update();
             }
         }
 
         private static CPUDisplay _cpuDisplay;
 
-        private static void DisplayAddress(byte newVal, byte oldVal, ushort address) {
-            if (_runningToCompletion)
-            {
-                _cpuDisplay.ResetMessage();
-            }
-            RenderMessage($"${address:X4} <= ${newVal:X2} (${oldVal:X2})");
+        private static void DisplayAddress(byte newVal, byte oldVal, ushort address)
+        {
+            var message = new StringBuilder($"${address:X4} <= ${newVal:X2} (${oldVal:X2})");
+
             if (address <= 0x01FF && address >= 0x0100)
             {
-                RenderMessage("[stack]");
+                message.Append(" [stack]");
             }
+            RenderMessage(message.ToString());
         }
 
-        private static void RenderMessage(string message) {
+        private static void RenderMessage(string message)
+        {
             if (_displayingStatus)
             {
-                _cpuDisplay.RenderMessage(message);
-            }
-        }
-
-        private static void ResetMessage() {
-            if (_displayingStatus)
-            {
-                _cpuDisplay.ResetMessage();
+                _cpuDisplay.WriteMessage(message);
             }
         }
 
@@ -70,21 +64,27 @@ namespace BbcMicro
             }
             var imageInfo = imageLoader.Load(args[0]);
 
-            // Execute the loaded image
+            //Execute the loaded image
             cpu.PC = imageInfo.EntryPoint;
+
+            //var loader = new ROMLoader();
+            //loader.Load("/Development/BBCRoms/OS-1.2.rom", 0xC000, addressSpace);
+            //cpu.PC = 0xda42;// addressSpace.GetNativeWord(0xFFFC);
 
             // Single step mode
             _cpuDisplay = new CPUDisplay(cpu);
             cpu.AddPostExecutionCallback(DisplayCallback);
 
-            addressSpace.AddSetByteCallback((newVal, oldVal, address) => 
+            addressSpace.AddSetByteCallback((newVal, oldVal, address) =>
                 DisplayAddress(newVal, oldVal, address));
+
+            Console.SetCursorPosition(0, 15);
 
             var done = false;
             while (!done)
             {
                 var key = Console.ReadKey(true).Key;
-                ResetMessage();
+                _cpuDisplay.ClearMessage();
 
                 switch (key)
                 {
@@ -100,8 +100,7 @@ namespace BbcMicro
 
                     case ConsoleKey.R:
                         RenderMessage("Running to completion...");
-                        _runningToCompletion = true;
-                        cpu.ExecuteToBrk();     
+                        cpu.ExecuteToBrk();
                         done = true;
                         break;
 

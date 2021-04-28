@@ -3,13 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace BbcMicro.Cpu.Memory
+namespace BbcMicro.Memory
 {
     public sealed class FlatAddressSpace : IAddressSpace
     {
         private readonly byte[] _memory = new byte[0x10000];
 
-        private readonly List<Action<byte, byte, ushort>> _setByteCallbacks = 
+        private readonly List<Action<byte, byte, ushort>> _setByteCallbacks =
             new List<Action<byte, byte, ushort>>();
 
         public byte GetByte(ushort address)
@@ -23,7 +23,8 @@ namespace BbcMicro.Cpu.Memory
             _memory[address] = value;
         }
 
-        public void AddSetByteCallback(Action<byte, byte, ushort> callback) {
+        public void AddSetByteCallback(Action<byte, byte, ushort> callback)
+        {
             _setByteCallbacks.Add(callback);
         }
 

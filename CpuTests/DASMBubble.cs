@@ -1,12 +1,11 @@
-﻿
-using Xunit;
+﻿using Xunit;
 using Xunit.Abstractions;
 
-namespace CpuTests
+namespace BbcMicro.CpuTests
 {
-    public class DASMBubble: DASMTestBase
+    public class DASMBubble : DASMTestBase
     {
-        public DASMBubble(ITestOutputHelper stdOut):base(stdOut)
+        public DASMBubble(ITestOutputHelper stdOut) : base(stdOut)
         {
         }
 

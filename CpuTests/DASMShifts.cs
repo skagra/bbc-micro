@@ -2,11 +2,11 @@
 using Xunit.Abstractions;
 using static BbcMicro.Cpu.CPU;
 
-namespace CpuTests
+namespace BbcMicro.CpuTests
 {
-    public class DASMShifts: DASMTestBase
+    public class DASMShifts : DASMTestBase
     {
-        public DASMShifts(ITestOutputHelper stdOut):base(stdOut)
+        public DASMShifts(ITestOutputHelper stdOut) : base(stdOut)
         {
         }
 
@@ -23,7 +23,7 @@ namespace CpuTests
         {
             Load("Shifts.out");
 
-            _cpu.A=inByte;
+            _cpu.A = inByte;
             _cpu.PSet(PFlags.C, cIn);
 
             Run();

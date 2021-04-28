@@ -2,14 +2,14 @@ using BbcMicro.Cpu;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace CpuTests
+namespace BbcMicro.CpuTests
 {
     /*
      * Section numbers refer to MCS6500 Family Programming Manual
      * http://archive.6502.org/books/mcs6500_family_programming_manual.pdf
      */
 
-    public class Arithmetic: CPUTestBase
+    public class Arithmetic : CPUTestBase
     {
         private const byte LDA_IMMEDIATE = 0xA9;
         private const byte ADC_IMMEDIATE = 0x69;
@@ -23,7 +23,7 @@ namespace CpuTests
             _memPtr++;
         }
 
-        public Arithmetic(ITestOutputHelper stdOut):base(stdOut)
+        public Arithmetic(ITestOutputHelper stdOut) : base(stdOut)
         {
         }
 
@@ -75,7 +75,6 @@ namespace CpuTests
         [InlineData(0b0000_0101, 0b0000_0110, true, 0b1111_1111, false)] // (2.14) 5 - 6 = -1 (carry not set as borrow?)
         public void UnsignedSubtraction(byte inA, byte inImmediate, bool inC, byte outA, bool outC)
         {
-
             SetMem(LDA_IMMEDIATE);
             SetMem(inA);
             SetMem(SBC_IMMEDIATE);
