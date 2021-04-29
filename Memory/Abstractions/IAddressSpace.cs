@@ -1,4 +1,6 @@
-﻿namespace BbcMicro.Memory.Abstractions
+﻿using System;
+
+namespace BbcMicro.Memory.Abstractions
 {
     public interface IAddressSpace
     {
@@ -7,6 +9,8 @@
         byte GetByte(ushort address);
 
         void Flush();
+
+        void AddSetByteCallback(Action<byte, byte, ushort> callback);
 
         string ToString(ushort start, ushort length);
     }

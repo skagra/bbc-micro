@@ -118,6 +118,27 @@ namespace BbcMicro.ConsoleWindowing
             return this;
         }
 
+        public Viewport Gap()
+        {
+            return Gap(DefaultForegroundColour);
+        }
+
+        public Viewport Space()
+        {
+            return Gap(DefaultBackgroundColour);
+        }
+
+        public Viewport Gap(ConsoleColor gapColor)
+        {
+            return Write(" ", gapColor, gapColor);
+        }
+
+        public Viewport SetLeft(int left)
+        {
+            CursorLeft = left;
+            return this;
+        }
+
         public Viewport Write(string text, ConsoleColor foregroundColor, ConsoleColor backgroundColor)
         {
             SaveConsoleState();
@@ -136,6 +157,13 @@ namespace BbcMicro.ConsoleWindowing
             Console.Write(text);
             CursorLeft = Console.CursorLeft - ViewportLeft;
             RestoreConsoleState();
+
+            return this;
+        }
+
+        public Viewport Write(string text, ConsoleColor foregroundColor)
+        {
+            Write(text, foregroundColor, DefaultBackgroundColour);
 
             return this;
         }
