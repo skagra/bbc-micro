@@ -38,8 +38,8 @@ namespace BbcMicro.Debugger
         private const int RES_VP_HEIGHT = 10;
 
         private const int CMD_VP_TOP = RES_VP_TOP + RES_VP_HEIGHT + 1;
-        private const int CMD_VP_LEFT = 0;
-        private const int CMD_VP_WIDTH = RES_VP_WIDTH;
+        private const int CMD_VP_LEFT = 3;
+        private const int CMD_VP_WIDTH = RES_VP_WIDTH - 3;
         private const int CMD_VP_HEIGHT = 1;
 
         private const ConsoleColor GAP_COLOR = ConsoleColor.DarkGray;
@@ -78,7 +78,22 @@ namespace BbcMicro.Debugger
             _disViewport.Clear();
             _memoryViewport.Clear();
             _resultViewport.Clear();
+            WriteCommandPrefix();
             _commandViewport.Clear();
+        }
+
+        private void WriteCommandPrefix()
+        {
+            var safeFg = Console.ForegroundColor;
+            var safeBg = Console.BackgroundColor;
+
+            Console.SetCursorPosition(0, CMD_VP_TOP);
+            Console.ForegroundColor = FG_COLOR;
+            Console.BackgroundColor = BG_COLOR;
+            Console.Write(" > ");
+
+            Console.ForegroundColor = safeFg;
+            Console.BackgroundColor = safeBg;
         }
 
         /*
@@ -134,7 +149,7 @@ namespace BbcMicro.Debugger
 
         public void WriteResult(string value)
         {
-            _resultViewport.Write(value);
+            _resultViewport.Space().Write(value);
             _resultViewport.NewLine();
         }
 

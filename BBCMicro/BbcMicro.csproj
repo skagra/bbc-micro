@@ -12,7 +12,6 @@
   </Target>
 
   <ItemGroup>
-    <ProjectReference Include="..\ConsoleWindowing\ConsoleWindowing.csproj" />
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
     <ProjectReference Include="..\OS\OS.csproj" />
