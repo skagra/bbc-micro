@@ -41,7 +41,7 @@ namespace BbcMicro.Debugger
             _debugger = new Debugger(_cpu);
 
             // TODO
-            Console.SetCursorPosition(0, 26);
+            Console.SetCursorPosition(0, 36);
             Console.Write("Output > ");
 
             _debugger.Run();

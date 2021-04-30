@@ -100,7 +100,7 @@ namespace BbcMicro.ConsoleWindowing
             return this;
         }
 
-        public Viewport Scroll()
+        public Viewport ScrollUp()
         {
             SaveConsoleState();
 
@@ -109,6 +109,24 @@ namespace BbcMicro.ConsoleWindowing
 
             Console.CursorLeft = ViewportLeft;
             Console.CursorTop = ViewportTop + ViewportHeight - 1;
+            Console.BackgroundColor = DefaultBackgroundColour;
+            Console.Write(_fillString);
+            CursorLeft = 0;
+
+            RestoreConsoleState();
+
+            return this;
+        }
+
+        public Viewport ScrollDown()
+        {
+            SaveConsoleState();
+
+            Console.MoveBufferArea(ViewportLeft, ViewportTop, ViewportWidth, ViewportHeight - 1,
+                ViewportLeft, ViewportTop + 1);
+
+            Console.CursorLeft = ViewportLeft;
+            Console.CursorTop = ViewportTop;
             Console.BackgroundColor = DefaultBackgroundColour;
             Console.Write(_fillString);
             CursorLeft = 0;
@@ -146,7 +164,7 @@ namespace BbcMicro.ConsoleWindowing
             {
                 if (_autoScroll)
                 {
-                    Scroll();
+                    ScrollUp();
                 }
                 CursorTop = ViewportHeight - 1;
             }

@@ -24,6 +24,14 @@ namespace BbcMicro.Debugger
         private const int CPU_VP_WIDTH = 23;
         private const int CPU_VP_HEIGHT = 3;
 
+        private const int STK_BANNER_LEFT = MEM_VP_LEFT + MEM_VP_WIDTH + 2;
+        private const int STK_BANNER_TOP = CPU_BANNER_TOP;
+
+        private const int STK_VP_TOP = STK_BANNER_TOP + 2;
+        private const int STK_VP_LEFT = STK_BANNER_LEFT;
+        private const int STK_VP_HEIGHT = 8;
+        private const int STK_VP_WIDTH = 10;
+
         private const int MEM_BANNER_LEFT = CPU_BANNER_LEFT;
         private const int MEM_BANNER_TOP = CPU_VP_TOP + CPU_VP_HEIGHT + 1;
 
@@ -34,8 +42,8 @@ namespace BbcMicro.Debugger
 
         private const int RES_VP_TOP = DIS_VP_TOP + DIS_VP_HEIGHT + 1;
         private const int RES_VP_LEFT = 0;
-        private const int RES_VP_WIDTH = DIS_VP_WIDTH + MEM_VP_WIDTH + 2;
-        private const int RES_VP_HEIGHT = 10;
+        private const int RES_VP_WIDTH = DIS_VP_WIDTH + MEM_VP_WIDTH + STK_VP_WIDTH + 4;
+        private const int RES_VP_HEIGHT = 20;
 
         private const int CMD_VP_TOP = RES_VP_TOP + RES_VP_HEIGHT + 1;
         private const int CMD_VP_LEFT = 3;
@@ -62,6 +70,9 @@ namespace BbcMicro.Debugger
         private readonly Viewport _commandViewport =
             new Viewport(CMD_VP_TOP, CMD_VP_LEFT, CMD_VP_WIDTH, CMD_VP_HEIGHT, FG_COLOR, BG_COLOR);
 
+        private readonly Viewport _stackViewport =
+            new Viewport(STK_VP_TOP, STK_VP_LEFT, STK_VP_WIDTH, STK_VP_HEIGHT, FG_COLOR, BG_COLOR);
+
         public Display()
         {
             Console.BackgroundColor = ConsoleColor.Black;
@@ -72,11 +83,13 @@ namespace BbcMicro.Debugger
             WriteHeaderBanner();
             WriteDisBanner();
             WriteCPUBanner();
+            WriteStackBanner();
             WriteMemoryBanner();
 
             _cpuViewport.Clear();
             _disViewport.Clear();
             _memoryViewport.Clear();
+            _stackViewport.Clear();
             _resultViewport.Clear();
             WriteCommandPrefix();
             _commandViewport.Clear();
@@ -116,6 +129,25 @@ namespace BbcMicro.Debugger
         }
 
         /*
+         * Stack viewport
+         */
+
+        private void WriteStackBanner()
+        {
+            Console.SetCursorPosition(STK_BANNER_LEFT, STK_BANNER_TOP);
+            Console.Write("Stack");
+        }
+
+        private void WriteStack(byte[] stack)
+        {
+            _stackViewport.Clear();
+            for (var offset = 0; offset < stack.Length && offset < STK_VP_HEIGHT; offset++)
+            {
+                _stackViewport.Write($" {offset:X2} ").Gap(GAP_COLOR).Write($" ${stack[offset]:X2}").NewLine();
+            }
+        }
+
+        /*
          * Dissemmbly viewport
          */
 
@@ -147,6 +179,12 @@ namespace BbcMicro.Debugger
             _resultViewport.Clear();
         }
 
+        public void WriteError(string value)
+        {
+            _resultViewport.Space().Write(value, HI_FG_COLOR);
+            _resultViewport.NewLine();
+        }
+
         public void WriteResult(string value)
         {
             _resultViewport.Space().Write(value);
@@ -170,7 +208,7 @@ namespace BbcMicro.Debugger
             _cpuViewport.Clear();
         }
 
-        public void WriteCPU(ProcessorState cpuState)
+        public void WriteCPU(ProcessorState cpuState, byte[] stack)
         {
             if (_prevState == null)
             {
@@ -211,6 +249,11 @@ namespace BbcMicro.Debugger
                     HiColour((changedFlags & (byte)f) != 0))
             );
             _cpuViewport.Write(")");
+
+            if (_prevState.S != cpuState.S)
+            {
+                WriteStack(stack);
+            }
 
             _prevState.PC = cpuState.PC;
             _prevState.S = cpuState.S;

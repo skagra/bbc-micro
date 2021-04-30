@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Decoder = BbcMicro.Cpu.Decoder;
 
 namespace BbcMicro.Debugger
 {
@@ -11,14 +12,14 @@ namespace BbcMicro.Debugger
     {
         private readonly CPU _cpu;
         private readonly Disassembler _dis = new Disassembler();
-        private readonly Cpu.Decoder _decoder = new Cpu.Decoder();
+        private readonly Decoder _decoder = new Cpu.Decoder();
         private readonly Display _display = new Display();
 
         public Debugger(CPU cpu)
         {
             _cpu = cpu;
             _cpu.Memory.AddSetByteCallback((newVal, oldVal, address) =>
-                DisplayAddress(newVal, oldVal, address));
+                DisplayMemory(newVal, oldVal, address));
             _cpu.AddPostExecutionCallback(DisplayCallback);
 
             UpdateCPU();
@@ -27,6 +28,13 @@ namespace BbcMicro.Debugger
 
         private void UpdateCPU()
         {
+            var stack = new byte[0XFF - _cpu.S];
+
+            for (var offset = 0; offset < stack.Length; offset++)
+            {
+                stack[offset] = _cpu.Memory.GetByte((ushort)(0X1FF - offset));
+            }
+
             _display.WriteCPU(new ProcessorState
             {
                 PC = _cpu.PC,
@@ -35,15 +43,17 @@ namespace BbcMicro.Debugger
                 X = _cpu.X,
                 Y = _cpu.Y,
                 P = _cpu.P
-            });
+            }, stack.Reverse().ToArray());
         }
 
         private (byte[] memory, string dis) GetDis(ushort address)
         {
-            (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(_cpu.PC));
+            (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
 
             var memory = new byte[_decoder.GetAddressingModePCDelta(addressingMode) + 1];
-            for (ushort pcOffset = 0; pcOffset < memory.Length; pcOffset++)
+            memory[0] = _cpu.Memory.GetByte(_cpu.PC);
+
+            for (ushort pcOffset = 1; pcOffset < memory.Length; pcOffset++)
             {
                 memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
             }
@@ -53,11 +63,10 @@ namespace BbcMicro.Debugger
         private void UpdateDis()
         {
             (var memory, var dis) = GetDis(_cpu.PC);
-
             _display.WriteDis(_cpu.PC, memory, dis);
         }
 
-        private void DisplayAddress(byte newVal, byte oldVal, ushort address)
+        private void DisplayMemory(byte newVal, byte oldVal, ushort address)
         {
             var message = new StringBuilder($"${address:X4} <= ${newVal:X2} (${oldVal:X2})");
 
@@ -74,34 +83,111 @@ namespace BbcMicro.Debugger
             UpdateDis();
         }
 
-        private void Error()
+        private void Error(string value = "Error")
         {
-            Console.Beep();
+            _display.WriteError(value);
         }
 
         private List<ushort> _breakPoints = new List<ushort>();
 
-        private void AddBreakPoint(List<string> command)
+        private bool ParseHexWord(string value, out ushort word)
         {
-            if (command.Count() == 2)
-            {
-                if (ushort.TryParse(command[1],
-                    System.Globalization.NumberStyles.HexNumber,
-                    null,
-                    out var operand))
-                {
-                    _breakPoints.Add(operand);
+            var ok = ushort.TryParse(value,
+                        System.Globalization.NumberStyles.HexNumber,
+                        null,
+                        out word);
 
-                    _display.WriteResult($"Added breakpoint {_breakPoints.Count() - 1} at ${operand:X4}");
-                }
-                else
+            if (!ok)
+            {
+                Error($"Could not parse '{value}' as hex.");
+            }
+
+            return ok;
+        }
+
+        private const string EXIT_CMD = "x";
+        private const string EXIT_USAGE = EXIT_CMD + " - Exit";
+
+        private const string STEP_IN_CMD = "s";
+        private const string STEP_IN_USAGE = STEP_IN_CMD + " - Single step in";
+
+        private const string STEP_OVER_CMD = "o";
+        private const string STEP_OVER_USAGE = STEP_OVER_CMD + " - Single step over";
+
+        private const string RUN_CMD = "r";
+        private const string RUN_USAGE = RUN_CMD + " - Run";
+
+        private const string RUN_TO_RTS_CMD = "t";
+        private const string RUN_TO_RTS_CMD_USAGE = RUN_TO_RTS_CMD + " - Return from subroutine";
+
+        private const string SET_CMD = "set";
+        private const string SET_USAGE = SET_CMD + " PC|S|A|X|Y|S|<addr> <value> - Set value";
+
+        private const string SET_BP_CMD = "sb";
+        private const string SET_BP_USAGE = SET_BP_CMD + " [addr] - Set breakpoint";
+
+        private const string LIST_BP_CMD = "lb";
+        private const string LIST_CP_USAGE = LIST_BP_CMD + " - List breakpoints";
+
+        private const string CLEAR_BP_CMD = "cb";
+        private const string CLEAR_BP_USAGE = CLEAR_BP_CMD + " <id> - Clear breakpoint";
+
+        private const string SET_BPMW_CMD = "sbmw";
+        private const string SET_BPMW_USAGE = SET_BPMW_CMD + " <addr> [length]- Set breakpoint on memory write";
+
+        private const string LIST_BPMW_CMD = "lbmw";
+        private const string LIST_CPMW_USAGE = LIST_BPMW_CMD + " - List memory write breakpoints";
+
+        private const string CLEAR_BPMW_CMD = "cbmw";
+        private const string CLEAR_BPMW_USAGE = CLEAR_BPMW_CMD + " <id> - Clear memory write breakpoint";
+
+        private const string SET_BPMR_CMD = "sbmr";
+        private const string SET_BPMR_USAGE = SET_BPMR_CMD + " <addr> [length]- Set breakpoint on memory read";
+
+        private const string LIST_BPMR_CMD = "lbmr";
+        private const string LIST_CPMR_USAGE = LIST_BPMR_CMD + " - List memory read breakpoints";
+
+        private const string CLEAR_BPMR_CMD = "cbmr";
+        private const string CLEAR_BPMR_USAGE = CLEAR_BPMR_CMD + " <id> - Clear memory read breakpoint";
+
+        private const string SET_MM_CMD = "smm";
+        private const string SET_MM_USAGE = SET_MM_CMD + " <addr> [length]- Set memory monitor";
+
+        private const string LIST_MM_CMD = "lmm";
+        private const string LIST_MM_USAGE = LIST_MM_CMD + " - List memory monitors";
+
+        private const string CLEAR_MM_CMD = "cmm";
+        private const string CLEAR_MM_USAGE = CLEAR_MM_CMD + " <id> - Clear memory monitor";
+
+        private const string LM_CMD = "lm";
+        private const string LM_USGE = LM_CMD + " [addr] [length] - List memory";
+
+        private const string LD_CMD = "ld";
+        private const string LD_USAGE = LD_CMD + " [addr] [length] - List disassembly";
+
+        private const string HELP_CMD = "h";
+
+        private void SetBreakPoint(List<string> command)
+        {
+            if (command.Count <= 2)
+            {
+                var ok = true;
+                ushort breakpointAddress = _cpu.PC;
+
+                if (command.Count() == 2)
                 {
-                    Error();
+                    ok = ParseHexWord(command[1], out breakpointAddress);
+                }
+
+                if (ok)
+                {
+                    _breakPoints.Add(breakpointAddress);
+                    _display.WriteResult($"Set breakpoint {_breakPoints.Count() - 1} at ${breakpointAddress:X4}");
                 }
             }
             else
             {
-                Error();
+                Error(SET_BP_USAGE);
             }
         }
 
@@ -120,7 +206,7 @@ namespace BbcMicro.Debugger
             }
         }
 
-        private void DeleteBreakPoint(List<string> command)
+        private void ClearBreakPoint(List<string> command)
         {
             if (command.Count == 2)
             {
@@ -133,102 +219,117 @@ namespace BbcMicro.Debugger
                     }
                     else
                     {
-                        _display.WriteResult($"Breakpoint {operand} does not exist");
-                        Error();
+                        Error($"Breakpoint {operand} does not exist");
                     }
                 }
             }
             else
             {
-                Error();
+                _display.WriteError("Breakpoint");
             }
         }
 
         private void ListDis(List<string> command)
         {
-            if (command.Count == 3)
+            var ok = true;
+
+            ushort count = 0x05;
+            ushort baseAddress = _cpu.PC;
+
+            if (command.Count() == 3)
             {
-                if (ushort.TryParse(command[1],
-                    System.Globalization.NumberStyles.HexNumber,
-                    null,
-                    out var startingAddress) &&
-                    ushort.TryParse(command[2], out var count))
+                ok = ParseHexWord(command[2], out count);
+            }
+
+            if (ok && command.Count() >= 2)
+            {
+                ok = ParseHexWord(command[1], out baseAddress);
+            }
+
+            if (ok)
+            {
+                var illegal = false;
+                var address = baseAddress;
+                for (var i = 0; i < count && !illegal; i++)
                 {
-                    var address = startingAddress;
-                    for (var i = 0; i < count; i++)
+                    try
                     {
-                        try
-                        {
-                            (var memory, var dis) = GetDis(address);
-                            _display.WriteResult($"${address:X4} {dis}");
-                            address += (ushort)memory.Length;
-                        }
-                        catch (Exception)
-                        {
-                            _display.WriteResult($"${address:X4} -");
-                            address += 1;
-                        }
+                        (var memory, var dis) = GetDis(address);
+                        _display.WriteResult($"${address:X4} {dis}");
+                        address += (ushort)(memory.Length);
+                    }
+                    catch (Exception)
+                    {
+                        illegal = true;
                     }
                 }
-                else
+                if (illegal)
                 {
-                    Error();
+                    Error($"Illegal instruction ${_cpu.Memory.GetByte(address):X2} at ${address:X4}");
                 }
             }
-            else
+
+            if (!ok)
             {
-                Error();
+                Error(LD_USAGE);
             }
         }
 
         private void ListMemory(List<string> command)
         {
-            if (command.Count == 3)
-            {
-                if (ushort.TryParse(command[1],
-                    System.Globalization.NumberStyles.HexNumber,
-                    null,
-                    out var startingAddress) &&
-                    ushort.TryParse(command[2], out var count))
-                {
-                    var offset = 0;
-                    while (offset < count)
-                    {
-                        var line = new StringBuilder($"{(startingAddress + offset):X4}");
+            var ok = true;
 
-                        for (var batchOffset = 0; batchOffset < 16; batchOffset++)
-                        {
-                            if (offset + batchOffset >= count)
-                            {
-                                break;
-                            }
-                            line.Append($" {_cpu.Memory.GetByte((ushort)(startingAddress + offset + batchOffset)):X2}");
-                        }
-                        offset += 16;
-                        _display.WriteResult(line.ToString());
-                    }
-                }
-                else
+            ushort length = 0x40;
+            ushort baseAddress = _cpu.PC;
+
+            if (command.Count() == 3)
+            {
+                ok = ParseHexWord(command[2], out length);
+            }
+
+            if (ok && command.Count() >= 2)
+            {
+                ok = ParseHexWord(command[1], out baseAddress);
+            }
+
+            if (ok)
+            {
+                var offset = 0;
+                while (offset < length)
                 {
-                    Error();
+                    var line = new StringBuilder($"{(baseAddress + offset):X4}");
+                    var hexLine = new StringBuilder();
+                    var charLine = new StringBuilder();
+
+                    for (var batchOffset = 0; batchOffset < 16; batchOffset++)
+                    {
+                        if (offset + batchOffset >= length)
+                        {
+                            break;
+                        }
+                        byte currentByte = _cpu.Memory.GetByte((ushort)(baseAddress + offset + batchOffset));
+                        hexLine.Append($" {currentByte:X2}");
+                        char currentChar = (char)currentByte;
+                        charLine.Append((Char.IsControl(currentChar) || Char.IsWhiteSpace(currentChar)) ? '.' : currentChar);
+                    }
+                    offset += 16;
+                    _display.WriteResult(line.Append(" ").Append(hexLine).Append(" ").Append(charLine).ToString());
                 }
             }
-            else
+
+            if (!ok)
             {
-                Error();
+                Error(LM_USGE);
             }
         }
 
-        private void DoSet(List<string> command)
+        private void Set(List<string> command)
         {
             if (command.Count() == 3)
             {
-                if (ushort.TryParse(command[2],
-                    System.Globalization.NumberStyles.HexNumber,
-                    null,
-                    out var operand))
+                if (ParseHexWord(command[2], out var operand))
                 {
-                    switch (command[1])
+                    switch (command[1].ToLower())
                     {
                         case "a":
                             _cpu.A = (byte)operand;
@@ -250,125 +351,169 @@ namespace BbcMicro.Debugger
                             UpdateCPU();
                             break;
 
-                        case "PC":
+                        case "pc":
                             _cpu.PC = operand;
                             UpdateCPU();
                             UpdateDis();
                             break;
 
-                        case "P":
+                        case "p":
                             _cpu.P = (byte)operand;
                             UpdateCPU();
                             break;
 
                         default:
-                            if (ushort.TryParse(command[1],
-                                System.Globalization.NumberStyles.HexNumber,
-                                null,
-                                out var address))
+                            if (ParseHexWord(command[1], out var address))
                             {
                                 _cpu.Memory.SetByte((byte)operand, address);
                             }
                             else
                             {
-                                Error();
+                                Error(SET_USAGE);
                             }
                             break;
                     }
                 }
                 else
                 {
-                    Error();
+                    Error(SET_USAGE);
                 }
             }
             else
             {
-                Error();
+                Error(SET_USAGE);
             }
         }
 
-        private bool ExecuteToBreakPoint()
+        private bool ExecuteToBreakPoint(bool stopAfterRts)
         {
-            var done = false;
-            _cpu.ExecuteNextInstruction();
-            while (!_breakPoints.Contains(_cpu.PC) && !done)
+            // Done if we hit a brk
+            var hitBrk = false;
+
+            // Have we run until an RTS
+            var rtsDone = false;
+
+            // Done because of hitting a breakpoint
+            var bpDone = false;
+
+            // If we are stopping at RTS then it needs to be
+            // the stack is a at the right level, so store the current value
+            byte savedSp = _cpu.S;
+
+            // We'll always execute one instruction
+            do
             {
-                done = _cpu.Memory.GetByte(_cpu.PC) == (byte)0;
-                if (!done)
+                // Byte at the PC
+                var curByte = _cpu.Memory.GetByte(_cpu.PC);
+
+                // Is the current instruction a RTS
+                // If so we might be done dependign on the depth of the stack
+                var executedRts = curByte == (byte)0X60;
+
+                // Is this a BRK
+                hitBrk = curByte == (byte)0;
+
+                if (!hitBrk)
                 {
+                    // Run the current instuction
                     _cpu.ExecuteNextInstruction();
                 }
-            }
-            if (!done)
+
+                // We are done because of an RTS if we've executed an RTS
+                // and the stack is at the right level
+                rtsDone = stopAfterRts && executedRts && _cpu.S == savedSp + 2;
+
+                // We are done because of a breakpoint if we have hit one!
+                bpDone = _breakPoints.Contains(_cpu.PC);
+            } while (!hitBrk && !rtsDone && !bpDone);
+
+            if (bpDone)
             {
                 _display.WriteResult($"Stopped at breakpoint {_breakPoints.IndexOf(_cpu.PC)} at ${_cpu.PC:X4}");
             }
-            return done;
+            else if (rtsDone)
+            {
+                _display.WriteResult($"Returned from subroutine");
+            }
+
+            return hitBrk;
         }
 
         private void Help()
         {
-            _display.WriteResult("mem <address> <count> - Dump memory");
-            _display.WriteResult("dis <address> <count> - Disassemble");
-            _display.WriteResult("set PC|S|A|X|Y|P|<address> <value> - Set register or memory");
-            _display.WriteResult("r|run - Run until breakpoint");
-            _display.WriteResult("sb <address> - Set breakpoint");
-            _display.WriteResult("lb - List breakpoints");
-            _display.WriteResult("db <breakpoint> - Delete breakpoint");
-            _display.WriteResult("x|exit - Exit");
+            _display.WriteResult(EXIT_USAGE);
+            _display.WriteResult(STEP_IN_USAGE);
+            _display.WriteResult(STEP_OVER_USAGE);
+            _display.WriteResult(RUN_USAGE);
+            _display.WriteResult(RUN_TO_RTS_CMD_USAGE);
+            _display.WriteResult(SET_USAGE);
+            _display.WriteResult(SET_BP_USAGE);
+            _display.WriteResult(LIST_CP_USAGE);
+            _display.WriteResult(CLEAR_BP_USAGE);
+            _display.WriteResult(SET_BPMW_USAGE);
+            _display.WriteResult(LIST_CPMW_USAGE);
+            _display.WriteResult(CLEAR_BPMW_USAGE);
+            _display.WriteResult(SET_BPMR_USAGE);
+            _display.WriteResult(LIST_CPMR_USAGE);
+            _display.WriteResult(CLEAR_BPMR_USAGE);
+            _display.WriteResult(SET_MM_USAGE);
+            _display.WriteResult(LIST_MM_USAGE);
+            _display.WriteResult(CLEAR_MM_USAGE);
+            _display.WriteResult(LM_USGE);
+            _display.WriteResult(LD_USAGE);
         }
 
         private bool ProcessCommandLine(string commandLine)
         {
             var done = false;
             var commandParts = commandLine.Split(" ").Select(word => word.Trim()).ToList();
-            switch (commandParts.ElementAt(0))
+            switch (commandParts.ElementAt(0).ToLower())
             {
-                case "x":
-                case "exit":
+                case EXIT_CMD:
                     done = true;
                     _display.WriteResult("Exiting");
                     break;
 
-                case "r":
-                case "run":
-                    _display.WriteResult("Running to breakpoint");
-                    done = ExecuteToBreakPoint();
+                case RUN_CMD:
+                    _display.WriteResult("Running until breakpoint");
+                    done = ExecuteToBreakPoint(false);
                     break;
 
-                case "s":
-                case "set":
-                    DoSet(commandParts);
+                case RUN_TO_RTS_CMD:
+                    _display.WriteResult("Returning from subroutine");
+                    done = ExecuteToBreakPoint(true);
                     break;
 
-                case "sb":
-                    AddBreakPoint(commandParts);
+                case SET_CMD:
+                    Set(commandParts);
                     break;
 
-                case "lb":
+                case SET_BP_CMD:
+                    SetBreakPoint(commandParts);
+                    break;
+
+                case LIST_BP_CMD:
                     ListBreakPoints(commandParts);
                     break;
 
-                case "cb":
-                    DeleteBreakPoint(commandParts);
+                case CLEAR_BP_CMD:
+                    ClearBreakPoint(commandParts);
                     break;
 
-                case "mem":
+                case LM_CMD:
                     ListMemory(commandParts);
                     break;
 
-                case "dis":
+                case LD_CMD:
                     ListDis(commandParts);
                     break;
 
-                case "?":
-                case "h":
+                case HELP_CMD:
                     Help();
                     break;
 
                 default:
-                    _display.WriteResult($"No such command '{commandLine}'.");
-                    Error();
+                    Error($"No such command '{commandLine}'.");
                     break;
             }
 
