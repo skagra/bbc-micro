@@ -12,5 +12,11 @@ namespace BbcMicro.OS
             Console.Write($"{(char)cpu.A}");
             return true;
         }
+
+        public static bool OSASCI(CPU cpu, OpCode opCode, AddressingMode addressingMode, ushort operand)
+        {
+            Console.Write($"{(char)cpu.A}");
+            return true;
+        }
     }
 }

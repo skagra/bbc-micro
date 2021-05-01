@@ -2,6 +2,7 @@
 using BbcMicro.Memory;
 using BbcMicro.OS.Image;
 using BbcMicro.OS.Image.Abstractions;
+using OS.Image;
 
 namespace BbcMicro
 {
@@ -18,23 +19,25 @@ namespace BbcMicro
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
 
             // Read the image to execute
-            IImageLoader imageLoader = null;
-            if (args[0] == "core.bin")
-            {
-                imageLoader = new CoreFileLoader(cpu);
-            }
-            else
-            {
-                imageLoader = new DasmLoaderType2(addressSpace);
-            }
-            var imageInfo = imageLoader.Load(args[0]);
+            //IImageLoader imageLoader = null;
+            //if (args[0] == "core.bin")
+            //{
+            //    imageLoader = new CoreFileLoader(cpu);
+            //}
+            //else
+            //{
+            //    imageLoader = new DasmLoaderType2(addressSpace);
+            //}
+            //var imageInfo = imageLoader.Load(args[0]);
 
-            //var loader = new ROMLoader();
-            //loader.Load("/Development/BBCRoms/OS-1.2.rom", 0xC000, addressSpace);
-            //cpu.PC = 0xda42;// addressSpace.GetNativeWord(0xFFFC);
+            var loader = new ROMLoader();
+            loader.Load("/Development/BBCRoms/MOS010", 0xC000, addressSpace);
+            loader.Load("/Development/BBCRoms/Basic1.rom", 0x8000, addressSpace);
+
+            cpu.PC = 0xda42;// addressSpace.GetNativeWord(0xFFFC);
 
             // Run the loaded image
-            cpu.PC = imageInfo.EntryPoint;
+            //cpu.PC = imageInfo.EntryPoint;
             cpu.ExecuteToBrk();
         }
     }

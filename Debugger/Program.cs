@@ -3,6 +3,7 @@ using BbcMicro.Cpu;
 using BbcMicro.Memory;
 using BbcMicro.OS.Image;
 using BbcMicro.OS.Image.Abstractions;
+using OS.Image;
 
 namespace BbcMicro.Debugger
 {
@@ -23,19 +24,24 @@ namespace BbcMicro.Debugger
             _cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
 
             // Read the image to execute
-            IImageLoader imageLoader = null;
-            if (args[0] == "core.bin")
-            {
-                imageLoader = new CoreFileLoader(_cpu);
-            }
-            else
-            {
-                imageLoader = new DasmLoaderType2(_addressSpace);
-            }
-            var imageInfo = imageLoader.Load(args[0]);
+            //IImageLoader imageLoader = null;
+            //if (args[0] == "core.bin")
+            //{
+            //    imageLoader = new CoreFileLoader(_cpu);
+            //}
+            //else
+            //{
+            //    imageLoader = new DasmLoaderType2(_addressSpace);
+            //}
+            //var imageInfo = imageLoader.Load(args[0]);
+
+            var loader = new ROMLoader();
+            loader.Load("/Development/BBCRoms/OS-1.2.rom", 0xC000, _addressSpace);
+            loader.Load("/Development/BBCRoms/BASIC2.rom", 0x8000, _addressSpace);
 
             // Set the entry point address the loaded image
-            _cpu.PC = imageInfo.EntryPoint;
+            //_cpu.PC = imageInfo.EntryPoint;
+            _cpu.PC = 0xda42;
 
             // Single step mode
             _debugger = new Debugger(_cpu);

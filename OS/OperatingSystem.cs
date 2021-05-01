@@ -8,7 +8,7 @@
         {
             _interceptorDispatcher.AddInterceptor(EntryPoints.OSWRCH, TextOutput.OSWRCH);
             _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, Keyboard.OSRDCH);
-            
+            _interceptorDispatcher.AddInterceptor(EntryPoints.OSASCI, TextOutput.OSASCI);
         }
 
         public InterceptorDispatcher InterceptorDispatcher { get { return _interceptorDispatcher; } }

@@ -1,5 +1,4 @@
 ﻿using BbcMicro.Cpu;
-using BbcMicro.Memory.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -105,6 +104,18 @@ namespace BbcMicro.Debugger
             return ok;
         }
 
+        private bool ParseHDecInt(string value, out int parsed)
+        {
+            var ok = int.TryParse(value, out parsed);
+
+            if (!ok)
+            {
+                Error($"Could not parse '{value}' as dec.");
+            }
+
+            return ok;
+        }
+
         private const string EXIT_CMD = "x";
         private const string EXIT_USAGE = EXIT_CMD + " - Exit";
 
@@ -127,7 +138,7 @@ namespace BbcMicro.Debugger
         private const string SET_BP_USAGE = SET_BP_CMD + " [addr] - Set breakpoint";
 
         private const string LIST_BP_CMD = "lb";
-        private const string LIST_CP_USAGE = LIST_BP_CMD + " - List breakpoints";
+        private const string LIST_BP_USAGE = LIST_BP_CMD + " - List breakpoints";
 
         private const string CLEAR_BP_CMD = "cb";
         private const string CLEAR_BP_USAGE = CLEAR_BP_CMD + " <id> - Clear breakpoint";
@@ -202,7 +213,7 @@ namespace BbcMicro.Debugger
             }
             else
             {
-                Error();
+                Error(LIST_BP_USAGE);
             }
         }
 
@@ -210,7 +221,7 @@ namespace BbcMicro.Debugger
         {
             if (command.Count == 2)
             {
-                if (int.TryParse(command[1], out var operand))
+                if (ParseHDecInt(command[1], out var operand))
                 {
                     if (operand < _breakPoints.Count)
                     {
@@ -225,7 +236,7 @@ namespace BbcMicro.Debugger
             }
             else
             {
-                _display.WriteError("Breakpoint");
+                Error(CLEAR_BP_USAGE);
             }
         }
 
@@ -261,11 +272,8 @@ namespace BbcMicro.Debugger
                     catch (Exception)
                     {
                         illegal = true;
+                        Error($"Illegal instruction ${_cpu.Memory.GetByte(address):X2} at ${address:X4}");
                     }
-                }
-                if (illegal)
-                {
-                    Error($"Illegal instruction ${_cpu.Memory.GetByte(address):X2} at ${address:X4}");
                 }
             }
 
@@ -448,7 +456,7 @@ namespace BbcMicro.Debugger
             _display.WriteResult(RUN_TO_RTS_CMD_USAGE);
             _display.WriteResult(SET_USAGE);
             _display.WriteResult(SET_BP_USAGE);
-            _display.WriteResult(LIST_CP_USAGE);
+            _display.WriteResult(LIST_BP_USAGE);
             _display.WriteResult(CLEAR_BP_USAGE);
             _display.WriteResult(SET_BPMW_USAGE);
             _display.WriteResult(LIST_CPMW_USAGE);
