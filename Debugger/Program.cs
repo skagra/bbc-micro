@@ -36,19 +36,20 @@ namespace BbcMicro.Debugger
             //var imageInfo = imageLoader.Load(args[0]);
 
             var loader = new ROMLoader();
-            loader.Load("/Development/BBCRoms/OS-1.2.rom", 0xC000, _addressSpace);
-            loader.Load("/Development/BBCRoms/BASIC2.rom", 0x8000, _addressSpace);
+            loader.Load("/Development/bbc-micro-roms/Os-1.2.ROM", 0xC000, _addressSpace);
+            loader.Load("/Development/bbc-micro-roms/BASIC1.rom", 0x8000, _addressSpace);
 
             // Set the entry point address the loaded image
             //_cpu.PC = imageInfo.EntryPoint;
             _cpu.PC = 0xda42;
+            _cpu.PC = 0xd9cd;
 
             // Single step mode
             _debugger = new Debugger(_cpu);
 
             // TODO
             Console.SetCursorPosition(0, 36);
-            Console.Write("Output > ");
+            //Console.Write("Output > ");
 
             _debugger.Run();
         }

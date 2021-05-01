@@ -31,14 +31,15 @@ namespace BbcMicro
             //var imageInfo = imageLoader.Load(args[0]);
 
             var loader = new ROMLoader();
-            loader.Load("/Development/BBCRoms/MOS010", 0xC000, addressSpace);
-            loader.Load("/Development/BBCRoms/Basic1.rom", 0x8000, addressSpace);
+            loader.Load("/Development/bbc-micro-roms/Os12.ROM", 0xC000, addressSpace);
+            // loader.Load("/Development/bbc-micro-roms/BASIC1.rom", 0x8000, addressSpace);
+            loader.Load("/Development/bbc-micro-roms/BASIC2.rom", 0x8000, addressSpace);
 
             cpu.PC = 0xda42;// addressSpace.GetNativeWord(0xFFFC);
 
             // Run the loaded image
             //cpu.PC = imageInfo.EntryPoint;
-            cpu.ExecuteToBrk();
+            cpu.Execute();
         }
     }
 }

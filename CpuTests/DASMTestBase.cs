@@ -18,7 +18,7 @@ namespace BbcMicro.CpuTests
 
         protected void Run()
         {
-            _cpu.ExecuteToBrk();
+            _cpu.Execute();
         }
     }
 }

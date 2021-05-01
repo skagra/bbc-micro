@@ -117,9 +117,9 @@ namespace BbcMicro.Cpu
             }
         }
 
-        public void ExecuteToBrk()
+        public void Execute()
         {
-            while (Memory.GetByte(PC) != 0x00)
+            while (true)
             {
                 ExecuteNextInstruction();
             }
@@ -330,10 +330,23 @@ namespace BbcMicro.Cpu
          * functions, etc.).
          */
 
-        private void BRK(ushort operandAddress, AddressingMode addressingMode)
+        private void BRK(ushort operand, AddressingMode addressingMode)
         {
-            // TODO
-            throw new NotImplementedException("BRK");
+            // Operand is in host machine byte order, it is always the absolute address to target
+            ushort addressToPush = PC;
+            byte operandLSB = (byte)addressToPush;
+            byte operandMSB = (byte)(addressToPush >> 8);
+
+            // Push the return address onto the stack
+            // MSB first to match little endian byte order as the stack grows downwards
+            PushByte(operandMSB);
+            PushByte(operandLSB);
+
+            // Push status
+            PushByte(P);
+
+            // Jump via the vector
+            PC = Memory.GetNativeWord(0xFFFE);
         }
 
         /*
@@ -432,7 +445,7 @@ namespace BbcMicro.Cpu
         private void CPX(ushort operand, AddressingMode addressingMode)
         {
             byte operandValue = GetByteValue(operand, addressingMode);
-            PSet(PFlags.N, X < operandValue);   
+            PSet(PFlags.N, X < operandValue);
             PSet(PFlags.C, X >= operandValue);
             PSet(PFlags.Z, X == operandValue);
         }
@@ -447,7 +460,7 @@ namespace BbcMicro.Cpu
         private void CPY(ushort operand, AddressingMode addressingMode)
         {
             byte operandValue = GetByteValue(operand, addressingMode);
-            PSet(PFlags.N, Y < operandValue); 
+            PSet(PFlags.N, Y < operandValue);
             PSet(PFlags.C, Y >= operandValue);
             PSet(PFlags.Z, Y == operandValue);
         }
@@ -562,7 +575,7 @@ namespace BbcMicro.Cpu
          */
 
         private void JMP(ushort operand, AddressingMode addressingMode)
-        {   
+        {
             PC = operand;
         }
 
@@ -638,7 +651,7 @@ namespace BbcMicro.Cpu
 
         private void LSR(ushort operand, AddressingMode addressingMode)
         {
-            if (addressingMode==AddressingMode.Accumulator)
+            if (addressingMode == AddressingMode.Accumulator)
             {
                 PSet(PFlags.C, (A & 00000_0001) != 0);
                 A = (byte)(A >> 1);
@@ -710,7 +723,7 @@ namespace BbcMicro.Cpu
 
         private void PLA(ushort operandAddress, AddressingMode addressingMode)
         {
-            A=PopByte();
+            A = PopByte();
             UpdateFlags(A, PFlags.N | PFlags.Z);
         }
 
@@ -738,11 +751,10 @@ namespace BbcMicro.Cpu
         {
             if (addressingMode == AddressingMode.Accumulator)
             {
-                byte operandValue=A;
+                byte operandValue = A;
                 A = (byte)((byte)(A << 1) | (byte)(PIsSet(PFlags.C) ? 0b0000_0001 : 0b0000_0000));
                 PSet(PFlags.C, (operandValue & 0b1000_0000) != 0);
                 UpdateFlags(A, PFlags.N | PFlags.Z);
-
             }
             else
             {
@@ -766,7 +778,7 @@ namespace BbcMicro.Cpu
         {
             if (addressingMode == AddressingMode.Accumulator)
             {
-                byte operandValue=A;
+                byte operandValue = A;
                 A = (byte)((byte)(A >> 1) | (byte)(PIsSet(PFlags.C) ? 0b1000_0000 : 0b0000_000));
                 PSet(PFlags.C, (operandValue & 0b0000_0001) != 0);
                 UpdateFlags(A, PFlags.N | PFlags.Z);
@@ -791,7 +803,8 @@ namespace BbcMicro.Cpu
 
         private void RTI(ushort operand, AddressingMode addressingMode)
         {
-            throw new NotImplementedException();
+            PC = (ushort)(PopByte() + (PopByte() << 8));
+            P = PopByte();
         }
 
         /*
@@ -1068,7 +1081,7 @@ namespace BbcMicro.Cpu
                 AddressingMode.Relative => (byte)operand,
                 AddressingMode.Absolute => Memory.GetByte(operand),
                 AddressingMode.ZeroPage => Memory.GetByte(operand),
-                AddressingMode.Indirect => 0, 
+                AddressingMode.Indirect => 0,
                 AddressingMode.AbsoluteIndexedX => Memory.GetByte(operand),
                 AddressingMode.AbsoluteIndexedY => Memory.GetByte(operand),
                 AddressingMode.ZeroPageIndexedX => Memory.GetByte(operand),

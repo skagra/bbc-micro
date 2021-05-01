@@ -39,7 +39,7 @@ namespace BbcMicro.CpuTests
             SetMem(ADC_IMMEDIATE);
             SetMem(inImmediate);
 
-            _cpu.ExecuteToBrk();
+            _cpu.Execute();
 
             Assert.Equal(outA, _cpu.A);
             Assert.Equal(outC, _cpu.PIsSet(CPU.PFlags.C));
@@ -61,7 +61,7 @@ namespace BbcMicro.CpuTests
             SetMem(ADC_IMMEDIATE);
             SetMem((byte)inImmediate);
 
-            _cpu.ExecuteToBrk();
+            _cpu.Execute();
 
             Assert.Equal(outA, _cpu.A);
             Assert.Equal(outC, _cpu.PIsSet(CPU.PFlags.C));
@@ -81,7 +81,7 @@ namespace BbcMicro.CpuTests
             SetMem(inImmediate);
 
             _cpu.PSet(CPU.PFlags.C, inC);
-            _cpu.ExecuteToBrk();
+            _cpu.Execute();
 
             Assert.Equal(outA, _cpu.A);
             Assert.Equal(outC, _cpu.PIsSet(CPU.PFlags.C));

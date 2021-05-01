@@ -12,6 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildConfig", "BuildConfig"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{7A60722D-B40E-4461-831F-B1BFFBB20F94}"
 	ProjectSection(SolutionItems) = preProject
+		Basic Samples.md = Basic Samples.md
 		Notes.md = Notes.md
 		README.md = README.md
 	EndProjectSection
@@ -26,7 +27,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Memory", "Memory\Memory.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleWindowing", "ConsoleWindowing\ConsoleWindowing.csproj", "{FD6D049F-1C4B-4BE0-950A-E7DCC68782CB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Debugger", "Debugger\Debugger.csproj", "{5164570B-339C-49D6-91D3-C646FB6226D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Debugger", "Debugger\Debugger.csproj", "{5164570B-339C-49D6-91D3-C646FB6226D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -32,7 +32,19 @@ counter (PC) with their content.
 * [Examples to use to test emulator](https://www.assemblytutorial.com/6502/)
 * [Annotated ROM disassembly](https://tobylobster.github.io/mos/)
 
+# Manuals
+
+* [User Guide](http://bbc.nvg.org/doc/BBCUserGuide-1.00.pdf)
+* [Advanced User Guide](http://www.primrosebank.net/computers/bbc/documents/BBC%20Microcomputer%20Advanced%20User%20Guide.pdf
+)
+
 ## ROMS
 
-* http://bbc.nvg.org/rom/Acorn/os/
+* [General ROMS](http://bbc.nvg.org/rom/Acorn/os/)
+
+# Emulators
+
+* [Online](https://bbc.godbolt.org/)
+
+
 

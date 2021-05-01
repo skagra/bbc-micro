@@ -1,8 +1,12 @@
 ﻿using BbcMicro.ConsoleWindowing;
 using BbcMicro.Cpu;
+using BbcMicro.Memory.Abstractions;
+using BbcMicro.Memory.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace BbcMicro.Debugger
 {
@@ -307,6 +311,60 @@ namespace BbcMicro.Debugger
             Console.CursorTop = 0;
             Console.CursorLeft = 0;
             Console.WriteLine("6502 Processor Emulator");
+        }
+
+        private const int SCR_VP_LEFT = STK_VP_LEFT + STK_VP_WIDTH + 2;
+        private const int SCR_VP_TOP = STK_VP_TOP;
+        private const int SCR_VP_WIDTH = 40;
+        private const int SCR_VP_HEIGHT = 25;
+
+        private readonly Viewport _screenViewport =
+          new Viewport(SCR_VP_TOP, SCR_VP_LEFT, SCR_VP_WIDTH, SCR_VP_HEIGHT, FG_COLOR, BG_COLOR);
+
+        private const int SCREEN_BASE = 0x7C00;
+
+        public void InitScreen(IAddressSpace memory)
+        {
+            _screenViewport.Clear();
+
+            Task.Run(() =>
+            {
+                while (true)
+                {
+                    Console.SetCursorPosition(SCR_VP_LEFT + SCR_VP_WIDTH + 4, SCR_VP_TOP);
+
+                    Console.Write($"{memory.GetByte(0x351):X2}");
+                    Console.Write($"{memory.GetByte(0x350):X2}");
+
+                    Console.CursorVisible = false;
+
+                    var screenBase = memory.GetNativeWord(0x350);
+
+                    for (int row = 0; row < 25; row++)
+                    {
+                        Console.SetCursorPosition(SCR_VP_LEFT, SCR_VP_TOP + row);
+                        for (int col = 0; col < 40; col++)
+                        {
+                            ushort charAddr = (ushort)(screenBase + row * 40 + col);
+                            if (charAddr > 40 * 25 + 0x7C00)
+                            {
+                                charAddr = (ushort)(charAddr - 40 * 25);
+                            }
+
+                            var currentChar = memory.GetByte(charAddr);
+                            if (currentChar >= 0x20 && currentChar <= 0x7E)
+                            {
+                                Console.Write((char)currentChar);
+                            }
+                            else
+                            {
+                                Console.Write(" ");
+                            }
+                        }
+                    }
+                    Thread.Sleep(100);
+                }
+            });
         }
     }
 }

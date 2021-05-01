@@ -11,7 +11,7 @@ namespace BbcMicro.Debugger
     {
         private readonly CPU _cpu;
         private readonly Disassembler _dis = new Disassembler();
-        private readonly Decoder _decoder = new Cpu.Decoder();
+        private readonly Decoder _decoder = new Decoder();
         private readonly Display _display = new Display();
 
         public Debugger(CPU cpu)
@@ -23,6 +23,8 @@ namespace BbcMicro.Debugger
 
             UpdateCPU();
             UpdateDis();
+
+            _display.InitScreen(_cpu.Memory);
         }
 
         private void UpdateCPU()
@@ -67,19 +69,25 @@ namespace BbcMicro.Debugger
 
         private void DisplayMemory(byte newVal, byte oldVal, ushort address)
         {
-            var message = new StringBuilder($"${address:X4} <= ${newVal:X2} (${oldVal:X2})");
-
-            if (address <= 0x01FF && address >= 0x0100)
+            if (_doVisualUpdates)
             {
-                message.Append(" [stack]");
+                var message = new StringBuilder($"${address:X4} <= ${newVal:X2} (${oldVal:X2})");
+
+                if (address <= 0x01FF && address >= 0x0100)
+                {
+                    message.Append(" [stack]");
+                }
+                _display.WriteMemory(message.ToString());
             }
-            _display.WriteMemory(message.ToString());
         }
 
         private void DisplayCallback(CPU cpu, OpCode opCode, AddressingMode addressingMode)
         {
-            UpdateCPU();
-            UpdateDis();
+            if (_doVisualUpdates)
+            {
+                UpdateCPU();
+                UpdateDis();
+            }
         }
 
         private void Error(string value = "Error")
@@ -393,10 +401,16 @@ namespace BbcMicro.Debugger
             }
         }
 
-        private bool ExecuteToBreakPoint(bool stopAfterRts)
+        private bool _doVisualUpdates = true;
+
+        private void Execute(bool stopAfterRts)
         {
-            // Done if we hit a brk
-            var hitBrk = false;
+            // Clear all and stop updates
+            _doVisualUpdates = false;
+            _display.ClearCommand();
+            _display.ClearMemory();
+            _display.ClearCPU();
+            _display.ClearDis();
 
             // Have we run until an RTS
             var rtsDone = false;
@@ -418,14 +432,7 @@ namespace BbcMicro.Debugger
                 // If so we might be done dependign on the depth of the stack
                 var executedRts = curByte == (byte)0X60;
 
-                // Is this a BRK
-                hitBrk = curByte == (byte)0;
-
-                if (!hitBrk)
-                {
-                    // Run the current instuction
-                    _cpu.ExecuteNextInstruction();
-                }
+                _cpu.ExecuteNextInstruction();
 
                 // We are done because of an RTS if we've executed an RTS
                 // and the stack is at the right level
@@ -433,7 +440,7 @@ namespace BbcMicro.Debugger
 
                 // We are done because of a breakpoint if we have hit one!
                 bpDone = _breakPoints.Contains(_cpu.PC);
-            } while (!hitBrk && !rtsDone && !bpDone);
+            } while (!rtsDone && !bpDone);
 
             if (bpDone)
             {
@@ -444,7 +451,9 @@ namespace BbcMicro.Debugger
                 _display.WriteResult($"Returned from subroutine");
             }
 
-            return hitBrk;
+            UpdateCPU();
+            UpdateDis();
+            _doVisualUpdates = true;
         }
 
         private void Help()
@@ -484,12 +493,12 @@ namespace BbcMicro.Debugger
 
                 case RUN_CMD:
                     _display.WriteResult("Running until breakpoint");
-                    done = ExecuteToBreakPoint(false);
+                    Execute(false);
                     break;
 
                 case RUN_TO_RTS_CMD:
                     _display.WriteResult("Returning from subroutine");
-                    done = ExecuteToBreakPoint(true);
+                    Execute(true);
                     break;
 
                 case SET_CMD:
@@ -592,7 +601,7 @@ namespace BbcMicro.Debugger
                 }
                 else if (firstKey >= ConsoleKey.A && firstKey < ConsoleKey.Z)
                 {
-                    done = ProcessCommandLine(GetCommandLine(firstKey));
+                    ProcessCommandLine(GetCommandLine(firstKey));
                 }
                 else
                 {

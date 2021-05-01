@@ -42,7 +42,7 @@ namespace BbcMicro.CpuTests
             _addressSpace.SetByte(inImmediate, 1);
             _cpu.PSet(CPU.PFlags.C, inC);
 
-            _cpu.ExecuteToBrk();
+            _cpu.Execute();
 
             Assert.Equal(outA, _cpu.A);
             Assert.Equal(outC, _cpu.PIsSet(CPU.PFlags.C));
