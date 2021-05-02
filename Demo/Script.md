@@ -139,7 +139,7 @@ Talk through the load and boot process.
 Switch to mode 7
 
 ```
-MODE 7`
+MODE 7
 ```
 
 Explain we are seeing the emulated screen.

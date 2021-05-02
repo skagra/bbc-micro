@@ -7,6 +7,7 @@
         public OperatingSystem(bool interceptIo = false)
         {
             _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, Keyboard.OSRDCH);
+            _interceptorDispatcher.AddInterceptor(EntryPoints.INTERROGATE_KEYBOARD, Keyboard.INTERROGATE_KEYBOARD);
             if (interceptIo)
             {
                 _interceptorDispatcher.AddInterceptor(EntryPoints.OSWRCH, TextOutput.OSWRCH);
