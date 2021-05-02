@@ -63,7 +63,9 @@ hello:      DC "Hello World"
 printvec:   DS 2
 ```
 
-Assembly it into machine code:
+Explain the programme.
+
+Assemble it into machine code:
 
 ```
 dasm BBCMicro\Asm\HelloWorldJsr.asm -f2 -IBBCMicro\Asm
@@ -117,7 +119,7 @@ Now run again against core
 dotnet run -p Debugger a.out
 ```
 
-And note it is where we left of,  then start single stepping again. 
+And note we where we left of,  then start single stepping again. 
 Note the rest of the output characters.
 
 # Demo 2 - BBC Emulator
@@ -135,12 +137,6 @@ Talk through the load and boot process.
 * OS ROM paged in
 * Language (BBC Basic) ROM paged in
 * Boot (hard reset CPU => direct via 0xFFFC)
-
-Switch to mode 7
-
-```
-MODE 7
-```
 
 Explain we are seeing the emulated screen.
 
@@ -222,7 +218,7 @@ This one to calculate square roots:
 300 @%=10:PRINT:REPORT:PRINT
 ```
 
-Now show some other ROMs,
+Now show some other ROMs.
 
 For example FORTH.
 
