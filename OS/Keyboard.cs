@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using BbcMicro.Cpu;
 
@@ -14,11 +15,16 @@ namespace BbcMicro.OS
         }
 
         /*
-         * return X = $80 + internal key number) if key pressed (or zero otherwise)
+         * This interceptor is supply the values of the keyboard dip switches used at boot time
+         *
+         * Returns X = $80 + internal key number if key pressed (or zero otherwise)
+         *
          * 8-6   bit 0-2        9,8,7           Together these bits determine the startup MODE
          * 8     bit 3            6             Set if the SHIFT-BREAK action is reversed with BREAK
          * 4-3   bit 4-5         5,4            Sets disc drive timings (depends on make of drive)
          * 2-1   bit 6-7         3,2            unused
+         *
+         * This is called at boot time https://tobylobster.github.io/mos/mos/S-s10.html#SP6
          */
 
         public static bool INTERROGATE_KEYBOARD(CPU cpu, OpCode opCode, AddressingMode addressingMode, ushort operand)
@@ -26,10 +32,10 @@ namespace BbcMicro.OS
             var handled = false;
             if (cpu.X >= 1 && cpu.X <= 9)
             {
-                Console.CursorLeft = 50;
-                Console.Write($"Checking key {cpu.X:X2}");
+                // TODO: This seems backwards to me!
                 handled = true;
-                if (cpu.X >= 7 && cpu.X <= 9)
+
+                if (cpu.X >= 1 && cpu.X <= 3)
                 {
                     cpu.X = (byte)(0X80 | cpu.X);
                 }
@@ -37,7 +43,10 @@ namespace BbcMicro.OS
                 {
                     cpu.X = 0;
                 }
-                Console.WriteLine($"Returning {cpu.X:X2}");
+                using (var f = new StreamWriter("/temp/log.txt", true))
+                {
+                    f.WriteLine($"{cpu.Memory.GetByte(0x028E):X2}");
+                }
             }
             return handled;
         }

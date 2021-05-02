@@ -19,9 +19,6 @@ namespace BbcMicro.CpuTests
             _stdOut = stdOut;
             _addressSpace = new FlatAddressSpace();
             _cpu = new CPU(_addressSpace);
-
-            var os = new OS.OperatingSystem();
-            _cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
         }
 
         protected byte GetByte(ushort address)

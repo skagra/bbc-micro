@@ -25,12 +25,6 @@ namespace BbcMicro
             var cpu = new CPU(addressSpace);
             Console.WriteLine("done.");
 
-            // Set up the OS
-            Console.Write("Setting up OS routine interception...");
-            var os = new OS.OperatingSystem();
-            cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
-            Console.WriteLine("done.");
-
             // Load images for OS and Basic
             var loader = new ROMLoader();
 
@@ -40,6 +34,12 @@ namespace BbcMicro
 
             Console.Write($"Loading BASIC from '{LANG_ROM}'");
             loader.Load(LANG_ROM, 0x8000, addressSpace);
+            Console.WriteLine("done.");
+
+            // Set up the OS
+            Console.Write("Setting up OS routine interception...");
+            var os = new OS.OperatingSystem(addressSpace);
+            cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
             Console.WriteLine("done.");
 
             // Start the CPU
@@ -56,7 +56,6 @@ namespace BbcMicro
             Console.Clear();
             Console.WriteLine("BBC Microcomputer Emulator");
 
-            // Start screen drawing thread
             screen.StartScan();
 
             // Run OS
