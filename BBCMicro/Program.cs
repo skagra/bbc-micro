@@ -1,4 +1,5 @@
-﻿using BbcMicro.Cpu;
+﻿using BbcMicro.ConsoleWindowing;
+using BbcMicro.Cpu;
 using BbcMicro.Memory;
 using BbcMicro.Memory.Extensions;
 using OS.Image;
@@ -33,42 +34,42 @@ namespace BbcMicro
                 }
             }
 
+            var infoViewpoint = new Viewport(0, 42, 30, 20, ConsoleColor.DarkGray, ConsoleColor.Black);
+            infoViewpoint.Write("BBC Microcomputer Emulator").NewLine().NewLine();
+
             // Create CPU and address space
-            Console.Write("Creating address space...");
+            infoViewpoint.Write("Creating address space...");
             var addressSpace = new FlatAddressSpace();
-            Console.WriteLine("done.");
-            Console.Write("Creating CPU emulator...");
+            infoViewpoint.Write("done.").NewLine();
+            infoViewpoint.Write("Creating CPU...");
             var cpu = new CPU(addressSpace);
-            Console.WriteLine("done.");
+            infoViewpoint.Write("done.").NewLine();
 
             // Load images for OS and Basic
             var loader = new ROMLoader();
 
-            Console.Write($"Loading operating system from '{osRom}'...");
+            infoViewpoint.Write($"Loading OS from '{osRom}'...");
             loader.Load(Path.Combine(OS_ROM_DIR, osRom), 0xC000, addressSpace);
-            Console.WriteLine("done.");
+            infoViewpoint.Write("done.").NewLine();
 
-            Console.Write($"Loading BASIC from '{langRom}'");
+            infoViewpoint.Write($"Loading language from '{langRom}'...");
             loader.Load(Path.Combine(LANG_ROM_DIR, langRom), 0x8000, addressSpace);
-            Console.WriteLine("done.");
+            infoViewpoint.Write("done.").NewLine();
 
             // Set up the OS
-            Console.Write("Setting up OS routine interception...");
+            infoViewpoint.Write("Installing OS traps...");
             var os = new OS.OperatingSystem(addressSpace);
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
-            Console.WriteLine("done.");
+            infoViewpoint.Write("done.").NewLine();
+
+            infoViewpoint.Write("Creating screen...");
+            var screen = new Mode7Screen(addressSpace, 100, 0, 0);
+            infoViewpoint.Write("done.").NewLine();
 
             // Start the CPU
-            Console.WriteLine($"Starting emulation.");
+            infoViewpoint.Write($"Handing control to emulator.").NewLine(); ;
             cpu.PC = addressSpace.GetNativeWord(0xFFFC);
 
-            Thread.Sleep(2000);
-
-            Console.Write("Creating screen emulation...");
-            var screen = new Mode7Screen(addressSpace, 100, 0, 0);
-            Console.WriteLine("done.");
-
-            Console.Clear();
             screen.StartScan();
 
             // Run OS

@@ -39,14 +39,8 @@ namespace Screen
 
             var buffer = new StringBuilder();
 
-            //Console.ForegroundColor = ConsoleColor.Yellow;
-            //Console.BackgroundColor = ConsoleColor.Black;
-
             for (int row = 0; row < 25; row++)
             {
-                //Console.CursorLeft = _left;
-                //Console.CursorTop = _top + row;
-
                 buffer.Clear();
 
                 _screenViewport.CursorLeft = 0;

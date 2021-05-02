@@ -7,10 +7,31 @@ namespace BbcMicro.OS
 {
     public sealed class Keyboard
     {
+        // https://tobylobster.github.io/mos/mos/S-s2.html#SP2
         public static bool OSRDCH(CPU cpu, OpCode opCode, AddressingMode addressingMode, ushort operand)
         {
-            var key = Console.ReadKey(true).KeyChar;
-            cpu.A = Encoding.ASCII.GetBytes(new char[] { key })[0];
+            var keyInfo = Console.ReadKey(true);
+            if (keyInfo.Key == ConsoleKey.Backspace)
+            {
+                cpu.A = 127;
+            }
+            else
+            if (keyInfo.Key == ConsoleKey.G && ((keyInfo.Modifiers & ConsoleModifiers.Control) != 0))
+            {
+                Console.Beep();
+                cpu.A = 7;
+            }
+            else
+            if (keyInfo.Key == ConsoleKey.Escape)
+            {
+                cpu.A = 27;
+                // TODO: Make escape work properly
+                // cpu.Memory.SetByte(0x80, 0x00FF);
+            }
+            else
+            {
+                cpu.A = Encoding.ASCII.GetBytes(new char[] { keyInfo.KeyChar })[0];
+            }
             return true;
         }
 
