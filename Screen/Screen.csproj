@@ -1,18 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>BbcMicro,Debugger</AssemblyName>
-    <RootNamespace>BbcMicro,Debugger</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ConsoleWindowing\ConsoleWindowing.csproj" />
-    <ProjectReference Include="..\Cpu\Cpu.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
-    <ProjectReference Include="..\OS\OS.csproj" />
-    <ProjectReference Include="..\Screen\Screen.csproj" />
   </ItemGroup>
 
 </Project>

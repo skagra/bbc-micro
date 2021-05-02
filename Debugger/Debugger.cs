@@ -1,4 +1,5 @@
 ﻿using BbcMicro.Cpu;
+using Screen;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,8 +24,6 @@ namespace BbcMicro.Debugger
 
             UpdateCPU();
             UpdateDis();
-
-            _display.InitScreen(_cpu.Memory);
         }
 
         private void UpdateCPU()

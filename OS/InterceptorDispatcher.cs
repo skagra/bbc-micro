@@ -19,15 +19,6 @@ namespace BbcMicro.OS
         {
             var handled = false;
 
-            //if (opCode == OpCode.JMP)
-            //{
-            //    // OSWRCH without vector TODO
-            //    if (operand == 0xe0a4)
-            //    {
-            //        Console.Write((char)cpu.A);
-            //    }
-            //}
-            //else
             if (opCode == OpCode.JSR)
             {
                 Func<CPU, OpCode, AddressingMode, ushort, bool> interceptor;

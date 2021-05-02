@@ -313,58 +313,55 @@ namespace BbcMicro.Debugger
             Console.WriteLine("6502 Processor Emulator");
         }
 
-        private const int SCR_VP_LEFT = STK_VP_LEFT + STK_VP_WIDTH + 2;
-        private const int SCR_VP_TOP = STK_VP_TOP;
-        private const int SCR_VP_WIDTH = 40;
-        private const int SCR_VP_HEIGHT = 25;
+        //private const int SCR_VP_LEFT = STK_VP_LEFT + STK_VP_WIDTH + 2;
+        //private const int SCR_VP_TOP = STK_VP_TOP;
+        //private const int SCR_VP_WIDTH = 40;
+        //private const int SCR_VP_HEIGHT = 25;
 
-        private readonly Viewport _screenViewport =
-          new Viewport(SCR_VP_TOP, SCR_VP_LEFT, SCR_VP_WIDTH, SCR_VP_HEIGHT, FG_COLOR, BG_COLOR);
+        //private readonly Viewport _screenViewport =
+        //  new Viewport(SCR_VP_TOP, SCR_VP_LEFT, SCR_VP_WIDTH, SCR_VP_HEIGHT, FG_COLOR, BG_COLOR);
 
-        private const int SCREEN_BASE = 0x7C00;
+        //private const int SCREEN_BASE = 0x7C00;
+        //private const int SCREEN_MEM_SIZE = 40 * 25;
+        //private const int SCREEN_MEM_END = SCREEN_BASE + SCREEN_MEM_SIZE;
 
-        public void InitScreen(IAddressSpace memory)
-        {
-            _screenViewport.Clear();
+        //public void InitScreen(IAddressSpace memory)
+        //{
+        //    _screenViewport.Clear();
+        //    Task.Run(() =>
+        //    {
+        //        while (true)
+        //        {
+        //            var screenBase = memory.GetNativeWord(0x350);
+        //            Console.CursorVisible = false;
+        //            _screenViewport.CursorLeft = 0;
+        //            _screenViewport.CursorTop = 0;
 
-            Task.Run(() =>
-            {
-                while (true)
-                {
-                    Console.SetCursorPosition(SCR_VP_LEFT + SCR_VP_WIDTH + 4, SCR_VP_TOP);
+        //            for (int row = 0; row < 25; row++)
+        //            {
+        //                for (int col = 0; col < 40; col++)
+        //                {
+        //                    ushort charAddr = (ushort)(screenBase + row * 40 + col);
+        //                    if (charAddr > SCREEN_MEM_END + 23)
+        //                    {
+        //                        charAddr = (ushort)(charAddr - SCREEN_MEM_SIZE - 24);
+        //                    }
 
-                    Console.Write($"{memory.GetByte(0x351):X2}");
-                    Console.Write($"{memory.GetByte(0x350):X2}");
-
-                    Console.CursorVisible = false;
-
-                    var screenBase = memory.GetNativeWord(0x350);
-
-                    for (int row = 0; row < 25; row++)
-                    {
-                        Console.SetCursorPosition(SCR_VP_LEFT, SCR_VP_TOP + row);
-                        for (int col = 0; col < 40; col++)
-                        {
-                            ushort charAddr = (ushort)(screenBase + row * 40 + col);
-                            if (charAddr > 40 * 25 + 0x7C00)
-                            {
-                                charAddr = (ushort)(charAddr - 40 * 25);
-                            }
-
-                            var currentChar = memory.GetByte(charAddr);
-                            if (currentChar >= 0x20 && currentChar <= 0x7E)
-                            {
-                                Console.Write((char)currentChar);
-                            }
-                            else
-                            {
-                                Console.Write(" ");
-                            }
-                        }
-                    }
-                    Thread.Sleep(100);
-                }
-            });
-        }
+        //                    var currentChar = memory.GetByte(charAddr);
+        //                    if (currentChar >= 0x20 && currentChar <= 0x7E)
+        //                    {
+        //                        _screenViewport.Write(((char)currentChar).ToString());
+        //                    }
+        //                    else
+        //                    {
+        //                        _screenViewport.Write(" ");
+        //                    }
+        //                }
+        //                _screenViewport.NewLine();
+        //            }
+        //            Thread.Sleep(100);
+        //        }
+        //    });
+        //}
     }
 }

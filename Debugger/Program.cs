@@ -1,57 +1,46 @@
-﻿using System;
-using BbcMicro.Cpu;
+﻿using BbcMicro.Cpu;
 using BbcMicro.Memory;
 using BbcMicro.OS.Image;
 using BbcMicro.OS.Image.Abstractions;
 using OS.Image;
+using Screen;
+using System;
 
 namespace BbcMicro.Debugger
 {
     internal class Program
     {
-        private static CPU _cpu;
-        private static FlatAddressSpace _addressSpace;
-        private static Debugger _debugger;
-
         private static void Main(string[] args)
         {
             // Create CPU and address space
-            _addressSpace = new FlatAddressSpace();
-            _cpu = new CPU(_addressSpace);
+            var addressSpace = new FlatAddressSpace();
+            var cpu = new CPU(addressSpace);
 
             // Set up the OS
-            var os = new OS.OperatingSystem();
-            _cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
+            var os = new OS.OperatingSystem(true);
+            cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
 
             // Read the image to execute
-            //IImageLoader imageLoader = null;
-            //if (args[0] == "core.bin")
-            //{
-            //    imageLoader = new CoreFileLoader(_cpu);
-            //}
-            //else
-            //{
-            //    imageLoader = new DasmLoaderType2(_addressSpace);
-            //}
-            //var imageInfo = imageLoader.Load(args[0]);
-
-            var loader = new ROMLoader();
-            loader.Load("/Development/bbc-micro-roms/Os-1.2.ROM", 0xC000, _addressSpace);
-            loader.Load("/Development/bbc-micro-roms/BASIC1.rom", 0x8000, _addressSpace);
+            IImageLoader imageLoader = null;
+            if (args[0] == "core.bin")
+            {
+                imageLoader = new CoreFileLoader(cpu);
+            }
+            else
+            {
+                imageLoader = new DasmLoaderType2(addressSpace);
+            }
+            var imageInfo = imageLoader.Load(args[0]);
 
             // Set the entry point address the loaded image
-            //_cpu.PC = imageInfo.EntryPoint;
-            _cpu.PC = 0xda42;
-            _cpu.PC = 0xd9cd;
+            cpu.PC = imageInfo.EntryPoint;
 
             // Single step mode
-            _debugger = new Debugger(_cpu);
+            var debugger = new Debugger(cpu);
 
-            // TODO
             Console.SetCursorPosition(0, 36);
-            //Console.Write("Output > ");
 
-            _debugger.Run();
+            debugger.Run();
         }
     }
 }
