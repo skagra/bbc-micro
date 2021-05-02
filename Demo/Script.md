@@ -222,6 +222,27 @@ This one to calculate square roots:
 300 @%=10:PRINT:REPORT:PRINT
 ```
 
+Now show some other ROMs,
+
+For example FORTH.
+
+```
+dotnet run -p BBCMicro Forth.ROM
+```
+
+Then add some numbers:
+
+```
+10
+30
++
+.
+```
+
+
+
+
+
 
 
 
