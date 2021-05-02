@@ -29,7 +29,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleWindowing", "Console
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Debugger", "Debugger\Debugger.csproj", "{5164570B-339C-49D6-91D3-C646FB6226D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Screen", "Screen\Screen.csproj", "{05F6D38E-C094-444E-AC1B-C8D5CCA20B95}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Screen", "Screen\Screen.csproj", "{05F6D38E-C094-444E-AC1B-C8D5CCA20B95}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demo", "Demo", "{64AC3A37-DD2C-4273-B9D1-0C4033387BD9}"
+	ProjectSection(SolutionItems) = preProject
+		Script.md = Script.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

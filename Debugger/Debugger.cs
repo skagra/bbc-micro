@@ -1,4 +1,5 @@
 ﻿using BbcMicro.Cpu;
+using BbcMicro.Cpu.Diagnostics;
 using Screen;
 using System;
 using System.Collections.Generic;
@@ -182,6 +183,9 @@ namespace BbcMicro.Debugger
 
         private const string LD_CMD = "ld";
         private const string LD_USAGE = LD_CMD + " [addr] [length] - List disassembly";
+
+        private const string C_CMD = "c";
+        private const string C_USAGE = C_CMD + " - Dump core image";
 
         private const string HELP_CMD = "h";
 
@@ -455,6 +459,11 @@ namespace BbcMicro.Debugger
             _doVisualUpdates = true;
         }
 
+        private void DumpCore()
+        {
+            CoreDumper.DumpCore(_cpu);
+        }
+
         private void Help()
         {
             _display.WriteResult(EXIT_USAGE);
@@ -466,15 +475,16 @@ namespace BbcMicro.Debugger
             _display.WriteResult(SET_BP_USAGE);
             _display.WriteResult(LIST_BP_USAGE);
             _display.WriteResult(CLEAR_BP_USAGE);
-            _display.WriteResult(SET_BPMW_USAGE);
-            _display.WriteResult(LIST_CPMW_USAGE);
-            _display.WriteResult(CLEAR_BPMW_USAGE);
-            _display.WriteResult(SET_BPMR_USAGE);
-            _display.WriteResult(LIST_CPMR_USAGE);
-            _display.WriteResult(CLEAR_BPMR_USAGE);
-            _display.WriteResult(SET_MM_USAGE);
-            _display.WriteResult(LIST_MM_USAGE);
-            _display.WriteResult(CLEAR_MM_USAGE);
+            _display.WriteResult(C_USAGE);
+            //_display.WriteResult(SET_BPMW_USAGE);
+            //_display.WriteResult(LIST_CPMW_USAGE);
+            //_display.WriteResult(CLEAR_BPMW_USAGE);
+            //_display.WriteResult(SET_BPMR_USAGE);
+            //_display.WriteResult(LIST_CPMR_USAGE);
+            //_display.WriteResult(CLEAR_BPMR_USAGE);
+            //_display.WriteResult(SET_MM_USAGE);
+            //_display.WriteResult(LIST_MM_USAGE);
+            //_display.WriteResult(CLEAR_MM_USAGE);
             _display.WriteResult(LM_USGE);
             _display.WriteResult(LD_USAGE);
         }
@@ -522,6 +532,11 @@ namespace BbcMicro.Debugger
 
                 case LD_CMD:
                     ListDis(commandParts);
+                    break;
+
+                case C_CMD:
+                    _display.WriteResult("Dumping core");
+                    DumpCore();
                     break;
 
                 case HELP_CMD:
@@ -600,7 +615,7 @@ namespace BbcMicro.Debugger
                 }
                 else if (firstKey >= ConsoleKey.A && firstKey < ConsoleKey.Z)
                 {
-                    ProcessCommandLine(GetCommandLine(firstKey));
+                    done = ProcessCommandLine(GetCommandLine(firstKey));
                 }
                 else
                 {
