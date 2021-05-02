@@ -12,8 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildConfig", "BuildConfig"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{7A60722D-B40E-4461-831F-B1BFFBB20F94}"
 	ProjectSection(SolutionItems) = preProject
-		BasicSamples.md = BasicSamples.md
-		Notes.md = Notes.md
+		Docs\Notes.md = Docs\Notes.md
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -33,7 +32,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Screen", "Screen\Screen.csp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demo", "Demo", "{64AC3A37-DD2C-4273-B9D1-0C4033387BD9}"
 	ProjectSection(SolutionItems) = preProject
-		Script.md = Script.md
+		Demo\BasicSamples.md = Demo\BasicSamples.md
+		Demo\BBCMicro.pptx = Demo\BBCMicro.pptx
+		Demo\Script.md = Demo\Script.md
 	EndProjectSection
 EndProject
 Global
