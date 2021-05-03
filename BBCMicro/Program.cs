@@ -7,6 +7,7 @@ using Screen;
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace BbcMicro
 {
@@ -66,11 +67,18 @@ namespace BbcMicro
             var screen = new Mode7Screen(addressSpace, 100, 0, 0);
             infoViewpoint.Write("done.").NewLine();
 
+            Task.Run(() =>
+            {
+                // A frig to ensure we've booted before we start
+                // scanning the screen
+                Thread.Sleep(500);
+                infoViewpoint.Write("Starting screen refresh.").NewLine();
+                screen.StartScan();
+            });
+
             // Start the CPU
             infoViewpoint.Write($"Handing control to emulator.").NewLine(); ;
             cpu.PC = addressSpace.GetNativeWord(0xFFFC);
-
-            screen.StartScan();
 
             // Run OS
             cpu.Execute();
