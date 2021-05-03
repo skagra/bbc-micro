@@ -9,6 +9,7 @@ namespace BbcMicro.OS
         // https://tobylobster.github.io/mos/mos/S-s2.html#SP2
         public static bool OSRDCH(CPU cpu, OpCode opCode, AddressingMode addressingMode, ushort operand)
         {
+            cpu.PReset(CPU.PFlags.C);
             var keyInfo = Console.ReadKey(true);
             if (keyInfo.Key == ConsoleKey.Backspace)
             {
@@ -23,9 +24,10 @@ namespace BbcMicro.OS
             else
             if (keyInfo.Key == ConsoleKey.Escape)
             {
-                cpu.A = 27;
                 // TODO: Make escape work properly
-                //cpu.Memory.SetByte(0x80, 0x00FF);
+                cpu.A = 0x1B;
+                cpu.PSet(CPU.PFlags.C);
+                cpu.Memory.SetByte(0xFF, 0x00FF);
             }
             else
             {
