@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BbcMicro.Memory.Extensions;
-using System.IO;
 
 namespace BbcMicro.Cpu
 {
@@ -63,12 +62,16 @@ namespace BbcMicro.Cpu
             // Is this a valid op code?
             try
             {
-                // TODO: If interrupts are reenabled with CLI, any pending interrupts do not happen until the instruction after the CLI has finished running.
+                // TODO: If interrupts are re-enabled with CLI, any pending interrupts
+                // do not happen until the instruction after the CLI has finished running.
                 // Is this true?  If so we need to add a "last was irq" flag
-                if (_interruptsToTrigger > 0 && !PIsSet(PFlags.I))
+                // This is emulate sampling the interrupt line not sure this will hack it!
+                if (_interruptLineActivated && !PIsSet(PFlags.I))
                 {
+                    // If there's another interrupt of this one is not serviced the external device
+                    // needs to hold the line low
+                    _interruptLineActivated = false;
                     ProcessIRQ();
-                    _interruptsToTrigger--;
                 }
                 else
                 {
@@ -139,11 +142,11 @@ namespace BbcMicro.Cpu
 
         // This is to mimic the interrupt line being held low
         // I am not convinced this is going to work
-        private volatile int _interruptsToTrigger = 0;
+        private volatile bool _interruptLineActivated = false;
 
-        public void TriggerInterrupt()
+        public void ActiveateInterruptLine()
         {
-            _interruptsToTrigger++;
+            _interruptLineActivated = true;
         }
 
         private void ProcessIRQ()
