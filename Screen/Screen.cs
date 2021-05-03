@@ -14,9 +14,6 @@ namespace Screen
         private const int SCREEN_MEM_SIZE = 40 * 25;
         private const int SCREEN_MEM_END = SCREEN_BASE + SCREEN_MEM_SIZE;
 
-        private readonly int _top;
-        private readonly int _left;
-
         private readonly IAddressSpace _memory;
         private readonly int _scanSleep;
 
@@ -25,8 +22,6 @@ namespace Screen
         public Mode7Screen(IAddressSpace memory, int frequencyHz = 10, int top = 0, int left = 0)
         {
             _memory = memory;
-            _left = left;
-            _top = top;
             _scanSleep = 1000 / frequencyHz;
 
             _screenViewport = new Viewport(top, left, 40, 25, ConsoleColor.White, ConsoleColor.Black);
@@ -59,40 +54,26 @@ namespace Screen
                     if (currentChar >= 0x20 && currentChar <= 0x7E)
                     {
                         buffer.Append((char)currentChar);
-                        //_screenViewport.Write(((char)currentChar).ToString());
                     }
                     else
                     {
                         buffer.Append(" ");
-                        // _screenViewport.Write(" ");
                     }
                 }
                 _screenViewport.Write(buffer.ToString());
             }
         }
 
-        private volatile bool _changed = false;
-
         public void StartScan()
         {
             _screenViewport.Clear();
-            _memory.AddSetByteCallback((newVal, oldVal, address) =>
-            {
-                if (address >= SCREEN_BASE || address <= SCREEN_MEM_END + 24)
-                {
-                    _changed = true;
-                }
-            });
 
             Task.Run(() =>
             {
                 while (true)
                 {
-                    if (_changed)
-                    {
-                        Draw();
-                        Thread.Sleep(_scanSleep);
-                    }
+                    Draw();
+                    Thread.Sleep(_scanSleep);
                 }
             });
         }
