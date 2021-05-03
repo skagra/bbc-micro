@@ -25,6 +25,8 @@ namespace BbcMicro.OS
             if (keyInfo.Key == ConsoleKey.Escape)
             {
                 // TODO: Make escape work properly
+                // I suspect I'll need to emulator the keyboard at a lower level
+                // in order that games function.
                 cpu.A = 0x1B;
                 cpu.PSet(CPU.PFlags.C);
                 cpu.Memory.SetByte(0xFF, 0x00FF);
