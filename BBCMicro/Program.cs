@@ -58,7 +58,7 @@ namespace BbcMicro
 
             // Set up the OS
             infoViewpoint.Write("Installing OS traps...");
-            var os = new OS.OperatingSystem(addressSpace);
+            var os = new OS.OperatingSystem(addressSpace, false);
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
             infoViewpoint.Write("done.").NewLine();
 

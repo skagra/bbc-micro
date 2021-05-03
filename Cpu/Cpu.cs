@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BbcMicro.Memory.Extensions;
+using System.IO;
 
 namespace BbcMicro.Cpu
 {
@@ -330,20 +331,23 @@ namespace BbcMicro.Cpu
          * functions, etc.).
          */
 
+        // Assemble language programming for the BBC Micro has the correct ordering of
+        // pushing and setting flags on page 264
         private void BRK(ushort operand, AddressingMode addressingMode)
         {
-            // Operand is in host machine byte order, it is always the absolute address to target
-            ushort addressToPush = PC;
-            byte operandLSB = (byte)addressToPush;
-            byte operandMSB = (byte)(addressToPush >> 8);
-
             // Push the return address onto the stack
             // MSB first to match little endian byte order as the stack grows downwards
-            PushByte(operandMSB);
-            PushByte(operandLSB);
+            PushByte((byte)(PC >> 8));
+            PushByte((byte)PC);
+
+            // Set the break flag
+            PSet(PFlags.B);
 
             // Push status
             PushByte(P);
+
+            // Mask interrupts
+            PSet(PFlags.I);
 
             // Jump via the vector
             PC = Memory.GetNativeWord(0xFFFE);
@@ -591,13 +595,11 @@ namespace BbcMicro.Cpu
         {
             // Operand is in host machine byte order, it is always the absolute address to target
             ushort addressToPush = (ushort)(PC - 1); // This is what the 6502 does!
-            byte operandLSB = (byte)addressToPush;
-            byte operandMSB = (byte)(addressToPush >> 8);
 
             // Push the return address onto the stack
             // MSB first to match little endian byte order as the stack grows downwards
-            PushByte(operandMSB);
-            PushByte(operandLSB);
+            PushByte((byte)(addressToPush >> 8));
+            PushByte((byte)addressToPush);
 
             PC = operand;
         }
@@ -803,8 +805,11 @@ namespace BbcMicro.Cpu
 
         private void RTI(ushort operand, AddressingMode addressingMode)
         {
-            PC = (ushort)(PopByte() + (PopByte() << 8));
+            // Pop the status flag
             P = PopByte();
+
+            // Pop the return address - LSB first
+            PC = (ushort)(PopByte() + (PopByte() << 8));
         }
 
         /*
@@ -816,6 +821,8 @@ namespace BbcMicro.Cpu
 
         private void RTS(ushort operandAddress, AddressingMode addressingMode)
         {
+            // Pop the return address - LSB first
+            // Add one to compensate for the -1 when the address was pushed
             PC = (ushort)(PopByte() + (PopByte() << 8) + 1);
         }
 

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Text;
 using BbcMicro.Cpu;
 
@@ -26,7 +25,7 @@ namespace BbcMicro.OS
             {
                 cpu.A = 27;
                 // TODO: Make escape work properly
-                // cpu.Memory.SetByte(0x80, 0x00FF);
+                //cpu.Memory.SetByte(0x80, 0x00FF);
             }
             else
             {
@@ -63,10 +62,6 @@ namespace BbcMicro.OS
                 else
                 {
                     cpu.X = 0;
-                }
-                using (var f = new StreamWriter("/temp/log.txt", true))
-                {
-                    f.WriteLine($"{cpu.Memory.GetByte(0x028E):X2}");
                 }
             }
             return handled;
