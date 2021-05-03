@@ -5,7 +5,7 @@ An enumulator of the *BBC Model B Microcomputer*.
 Work to date has focused on the 6502 CPU, with current status as follows:
 
 * `6502` CPU emulation.
-  * *BCD* mode still to do.
+  * Still to do - `BCD` and interrupt triggering.
 * Loading of binary images:
   * `DASM` assembled image files - type 1 and type 2
   * Loading core dump files
