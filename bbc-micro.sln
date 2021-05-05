@@ -39,11 +39,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demo", "Demo", "{64AC3A37-D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Diagnostics", "Investigation\Diagnostics.csproj", "{B0786AB1-2C4D-412D-BDBF-BC186762655F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keyboard", "Keyboard\Keyboard.csproj", "{250E0AD3-A26A-4ED0-A868-7070AE30DEF4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WPFKeyboard", "Keyboard\WPFKeyboard.csproj", "{250E0AD3-A26A-4ED0-A868-7070AE30DEF4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScreenTest", "ScreenTest\ScreenTest.csproj", "{4C4F0C40-5782-4C64-9C5B-3EE0038D7282}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScreenTest", "ScreenTest\ScreenTest.csproj", "{4C4F0C40-5782-4C64-9C5B-3EE0038D7282}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BBCMicroMode0", "BBCMicroMode0\BBCMicroMode0.csproj", "{0FA153A2-C78A-44FD-989C-26EEC4944502}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BBCMicroMode0", "BBCMicroMode0\BBCMicroMode0.csproj", "{0FA153A2-C78A-44FD-989C-26EEC4944502}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

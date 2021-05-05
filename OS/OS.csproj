@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>BbcMicro,OS</AssemblyName>
-    <RootNamespace>BbcMicro,OS</RootNamespace>
+    <AssemblyName>BbcMicro.OS</AssemblyName>
+    <RootNamespace>BbcMicro.OS</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
-    <ProjectReference Include="..\Keyboard\Keyboard.csproj" />
+    <ProjectReference Include="..\Keyboard\WPFKeyboard.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
   </ItemGroup>
 

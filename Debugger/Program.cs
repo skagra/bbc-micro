@@ -1,5 +1,6 @@
 ﻿using BbcMicro.Cpu;
 using BbcMicro.Memory;
+using BbcMicro.OS;
 using BbcMicro.OS.Image;
 using BbcMicro.OS.Image.Abstractions;
 using System;
@@ -15,7 +16,7 @@ namespace BbcMicro.Debugger
             var cpu = new CPU(addressSpace);
 
             // Set up the OS
-            var os = new OS.OperatingSystem(addressSpace, null, true);
+            var os = new OS.OperatingSystem(addressSpace, OSMode.Debug);
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
 
             // Read the image to execute

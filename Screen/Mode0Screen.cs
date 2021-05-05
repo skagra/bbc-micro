@@ -93,7 +93,6 @@ public class Mode0Screen
         ushort screenBaseAddr = 0X3000;
 
         // Pixel colours
-
         int fgColor = 255 << 16; // R
         fgColor |= 255 << 8;   // G
         fgColor |= 255 << 0;   // B
@@ -155,44 +154,6 @@ public class Mode0Screen
             }
             // Invalidate the whole rect
             writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, 640, 256));
-        }
-        finally
-        {
-            // Release the back buffer and make it available for display.
-            writeableBitmap.Unlock();
-        }
-    }
-
-    public void DrawPixel(int x, int y)
-    {
-        int column = (int)x;
-        int row = (int)y;
-
-        try
-        {
-            // Reserve the back buffer for updates.
-            writeableBitmap.Lock();
-
-            unsafe
-            {
-                // Get a pointer to the back buffer.
-                IntPtr pBackBuffer = writeableBitmap.BackBuffer;
-
-                // Find the address of the pixel to draw.
-                pBackBuffer += row * writeableBitmap.BackBufferStride;
-                pBackBuffer += column * 4;
-
-                // Compute the pixel's color.
-                int color_data = 255 << 16; // R
-                color_data |= 0 << 8;   // G
-                color_data |= 0 << 0;   // B
-
-                // Assign the color data to the pixel.
-                *((int*)pBackBuffer) = color_data;
-            }
-
-            // Specify the area of the bitmap that changed.
-            writeableBitmap.AddDirtyRect(new Int32Rect(column, row, 1, 1));
         }
         finally
         {

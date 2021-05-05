@@ -1,9 +1,9 @@
 ﻿using BbcMicro.Memory.Abstractions;
-using Keyboard;
+using BbcMicro.WPF;
 
 namespace BbcMicro.OS
 {
-    public class OperatingSystem
+    public sealed class OperatingSystem
     {
         private readonly InterceptorDispatcher _interceptorDispatcher = new InterceptorDispatcher();
 
@@ -21,20 +21,28 @@ namespace BbcMicro.OS
             addressSpace.SetByte(0x0, MemoryLocations.SYSTEM_VIA_INTERRUPT_ENABLE_REGISTER);
         }
 
-        public OperatingSystem(IAddressSpace addressSpace, KeyboardEmu keyboardEmu = null, bool interceptIo = false)
+        public OperatingSystem(IAddressSpace addressSpace, OSMode osMode, WPFKeyboardEmu keyboardEmu = null)
         {
             InitOsValues(addressSpace);
 
-            var keyBoard = new Keyboard(keyboardEmu);
+            if (osMode == OSMode.WPF)
+            {
+                var keyboardInput = new KeyboardInput(keyboardEmu);
+                _interceptorDispatcher.AddInterceptor(EntryPoints.INTERROGATE_KEYBOARD, keyboardInput.INTERROGATE_KEYBOARD_WFP);
+                _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, keyboardInput.OSRDCH_WPF);
+            }
+            else
+            {
+                var keyboardInput = new KeyboardInput();
+                _interceptorDispatcher.AddInterceptor(EntryPoints.INTERROGATE_KEYBOARD, keyboardInput.INTERROGATE_KEYBOARD_CONSOLE);
+                _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, keyboardInput.OSRDCH_CONSOLE);
+            }
 
-            _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, keyBoard.OSRDCH);
-            _interceptorDispatcher.AddInterceptor(EntryPoints.INTERROGATE_KEYBOARD, keyBoard.INTERROGATE_KEYBOARD);
-            if (interceptIo)
+            if (osMode == OSMode.Debug)
             {
                 _interceptorDispatcher.AddInterceptor(EntryPoints.OSWRCH, TextOutput.OSWRCH);
                 _interceptorDispatcher.AddInterceptor(EntryPoints.OSASCI, TextOutput.OSASCI);
             }
-            //_interceptorDispatcher.AddInterceptor(EntryPoints.VDUCHR, TextOutput.VDUCHR);
         }
 
         public InterceptorDispatcher InterceptorDispatcher { get { return _interceptorDispatcher; } }

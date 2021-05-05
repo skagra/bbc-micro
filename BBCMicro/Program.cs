@@ -3,6 +3,7 @@ using BbcMicro.Cpu;
 using BbcMicro.Diagnostics;
 using BbcMicro.Memory;
 using BbcMicro.Memory.Extensions;
+using BbcMicro.OS;
 using OS.Image;
 using Screen;
 using System;
@@ -60,7 +61,7 @@ namespace BbcMicro
 
             // Set up the OS
             infoViewpoint.Write("Installing OS traps...");
-            var os = new OS.OperatingSystem(addressSpace, null, false);
+            var os = new OS.OperatingSystem(addressSpace, OSMode.Mode7);
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
             infoViewpoint.Write("done.").NewLine();
 

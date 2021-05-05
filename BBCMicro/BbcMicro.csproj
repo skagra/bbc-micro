@@ -14,7 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
     <ProjectReference Include="..\Investigation\Diagnostics.csproj" />
-    <ProjectReference Include="..\Keyboard\Keyboard.csproj" />
+    <ProjectReference Include="..\Keyboard\WPFKeyboard.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
     <ProjectReference Include="..\OS\OS.csproj" />
     <ProjectReference Include="..\Screen\Screen.csproj" />
