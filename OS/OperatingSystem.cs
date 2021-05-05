@@ -1,4 +1,5 @@
 ﻿using BbcMicro.Memory.Abstractions;
+using Keyboard;
 
 namespace BbcMicro.OS
 {
@@ -20,12 +21,14 @@ namespace BbcMicro.OS
             addressSpace.SetByte(0x0, MemoryLocations.SYSTEM_VIA_INTERRUPT_ENABLE_REGISTER);
         }
 
-        public OperatingSystem(IAddressSpace addressSpace, bool interceptIo = false)
+        public OperatingSystem(IAddressSpace addressSpace, KeyboardEmu keyboardEmu = null, bool interceptIo = false)
         {
             InitOsValues(addressSpace);
 
-            _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, Keyboard.OSRDCH);
-            _interceptorDispatcher.AddInterceptor(EntryPoints.INTERROGATE_KEYBOARD, Keyboard.INTERROGATE_KEYBOARD);
+            var keyBoard = new Keyboard(keyboardEmu);
+
+            _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, keyBoard.OSRDCH);
+            _interceptorDispatcher.AddInterceptor(EntryPoints.INTERROGATE_KEYBOARD, keyBoard.INTERROGATE_KEYBOARD);
             if (interceptIo)
             {
                 _interceptorDispatcher.AddInterceptor(EntryPoints.OSWRCH, TextOutput.OSWRCH);

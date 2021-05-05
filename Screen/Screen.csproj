@@ -2,11 +2,21 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="nlog" Version="4.7.9" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ConsoleWindowing\ConsoleWindowing.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
+    <ProjectReference Include="..\OS\OS.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,8 +1,7 @@
 {
   "profiles": {
     "BbcMicro": {
-      "commandName": "Project",
-      "commandLineArgs": "$(ProjectDir)bin\\Asm\\HelloWorldJsr.out"
+      "commandName": "Project"
     }
   }
 }

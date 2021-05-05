@@ -1,5 +1,6 @@
 ﻿using BbcMicro.ConsoleWindowing;
 using BbcMicro.Cpu;
+using BbcMicro.Diagnostics;
 using BbcMicro.Memory;
 using BbcMicro.Memory.Extensions;
 using OS.Image;
@@ -59,12 +60,13 @@ namespace BbcMicro
 
             // Set up the OS
             infoViewpoint.Write("Installing OS traps...");
-            var os = new OS.OperatingSystem(addressSpace, false);
+            var os = new OS.OperatingSystem(addressSpace, null, false);
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
             infoViewpoint.Write("done.").NewLine();
 
             infoViewpoint.Write("Creating screen...");
             var screen = new Mode7Screen(addressSpace, 100, 0, 0);
+
             infoViewpoint.Write("done.").NewLine();
 
             Task.Run(() =>
@@ -79,6 +81,9 @@ namespace BbcMicro
             // Start the CPU
             infoViewpoint.Write($"Handing control to emulator.").NewLine(); ;
             cpu.PC = addressSpace.GetNativeWord(0xFFFC);
+
+            //var mon = new MemoryMonitor(addressSpace);
+            //mon.AddRange(0x3000, 0x8000, "Screen");
 
             // Run OS
             cpu.Execute();

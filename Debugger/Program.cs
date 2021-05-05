@@ -15,7 +15,7 @@ namespace BbcMicro.Debugger
             var cpu = new CPU(addressSpace);
 
             // Set up the OS
-            var os = new OS.OperatingSystem(addressSpace, true);
+            var os = new OS.OperatingSystem(addressSpace, null, true);
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
 
             // Read the image to execute

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
+    <ProjectReference Include="..\Keyboard\Keyboard.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
   </ItemGroup>
 
