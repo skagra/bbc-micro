@@ -94,8 +94,8 @@ public class Mode0Screen
 
         // Pixel colours
         int fgColor = 255 << 16; // R
-        fgColor |= 255 << 8;   // G
-        fgColor |= 255 << 0;   // B
+        fgColor |= 255 << 8;     // G
+        fgColor |= 255 << 0;     // B
 
         int bgColor = 0;
 

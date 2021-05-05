@@ -4,11 +4,15 @@ using System.Text;
 using BbcMicro.Cpu;
 using System.Windows.Input;
 using BbcMicro.WPF;
+using System.Windows;
+using NLog;
 
 namespace BbcMicro.OS
 {
     public sealed class KeyboardInput
     {
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+
         private WPFKeyboardEmu _wpfKeyboardEmu;
 
         public KeyboardInput(WPFKeyboardEmu wpfKeyboardEmu = null)
@@ -283,6 +287,8 @@ namespace BbcMicro.OS
          * 2-1   bit 6-7         3,2            unused
          *
          * This is called at boot time https://tobylobster.github.io/mos/mos/S-s10.html#SP6
+         *
+         * Bit directions are inverted - at least for the screen mode
          */
 
         public bool INTERROGATE_KEYBOARD_CONSOLE(CPU cpu, OpCode opCode, AddressingMode addressingMode, ushort operand)
@@ -291,16 +297,7 @@ namespace BbcMicro.OS
             if (cpu.X >= 1 && cpu.X <= 9)
             {
                 handled = true;
-
-                // TODO: This seems backwards to me!
-                if (cpu.X >= 1 && cpu.X <= 3)
-                {
-                    cpu.X = (byte)(0X80 | cpu.X);
-                }
-                else
-                {
-                    cpu.X = 0;
-                }
+                cpu.X = (byte)0;
             }
             return handled;
         }
@@ -310,16 +307,15 @@ namespace BbcMicro.OS
             var handled = false;
             if (cpu.X >= 1 && cpu.X <= 9)
             {
-                // TODO: This seems backwards to me!
                 handled = true;
 
-                if (cpu.X >= 1 && cpu.X <= 3)
+                if (cpu.X >= 7 && cpu.X <= 9)
                 {
-                    cpu.X = cpu.X;
+                    cpu.X = (byte)(0X80 | cpu.X);
                 }
                 else
                 {
-                    cpu.X = (byte)(0X80 | cpu.X);
+                    cpu.X = (byte)0;
                 }
             }
             return handled;

@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="nlog" Version="4.7.9" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
     <ProjectReference Include="..\Keyboard\WPFKeyboard.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
