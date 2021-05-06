@@ -56,6 +56,10 @@ counter (PC) with their content.
 
 * [Online](https://bbc.godbolt.org/)
 
+## Examples
+
+* [BBC Basic Examples](https://central.kaserver5.org/Kasoft/Typeset/BBC/Ch06.html)
+
 # Development
 
 ## Libraries
