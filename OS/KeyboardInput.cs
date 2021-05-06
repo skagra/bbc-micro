@@ -263,7 +263,7 @@ namespace BbcMicro.OS
                 // Dump display memory
                 using (var writer = new BinaryWriter(new FileStream("/temp/display.bin", FileMode.Create)))
                 {
-                    for (ushort address = 0X3000; address < 0x8000; address++)
+                    for (ushort address = 0X3000; address < 0x3100; address++)
                     {
                         writer.Write(cpu.Memory.GetByte(address));
                     }

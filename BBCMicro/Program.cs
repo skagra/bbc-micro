@@ -83,8 +83,8 @@ namespace BbcMicro
             infoViewpoint.Write($"Handing control to emulator.").NewLine(); ;
             cpu.PC = addressSpace.GetNativeWord(0xFFFC);
 
-            //var mon = new MemoryMonitor(addressSpace);
-            //mon.AddRange(0x3000, 0x8000, "Screen");
+            var mon = new MemoryMonitor(addressSpace);
+            mon.AddRange(0x7B00, 0x7FFF, "Screen");
 
             // Run OS
             cpu.Execute();

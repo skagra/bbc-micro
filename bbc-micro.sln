@@ -45,6 +45,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScreenTest", "ScreenTest\Sc
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BBCMicroMode0", "BBCMicroMode0\BBCMicroMode0.csproj", "{0FA153A2-C78A-44FD-989C-26EEC4944502}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestColorMapping", "TestColorMapping\TestColorMapping.csproj", "{14A6628F-5340-4F83-9F8B-19CC4B95072F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -199,6 +201,18 @@ Global
 		{0FA153A2-C78A-44FD-989C-26EEC4944502}.Release|x64.Build.0 = Release|Any CPU
 		{0FA153A2-C78A-44FD-989C-26EEC4944502}.Release|x86.ActiveCfg = Release|Any CPU
 		{0FA153A2-C78A-44FD-989C-26EEC4944502}.Release|x86.Build.0 = Release|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Debug|x64.Build.0 = Debug|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Debug|x86.Build.0 = Debug|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Release|x64.ActiveCfg = Release|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Release|x64.Build.0 = Release|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Release|x86.ActiveCfg = Release|Any CPU
+		{14A6628F-5340-4F83-9F8B-19CC4B95072F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

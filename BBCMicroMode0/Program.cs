@@ -58,7 +58,7 @@ namespace BbcMicroMode0
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
 
             // Create the screen emuator for WPF
-            var screen = new Mode0Screen(addressSpace);
+            var screen = new GenericScreen(addressSpace);
 
             // Create the WPF application
             var app = new Application();
@@ -81,6 +81,9 @@ namespace BbcMicroMode0
 
             // Point the CPU at the reset vector
             cpu.PC = addressSpace.GetNativeWord(0xFFFC);
+
+            //var mon = new MemoryMonitor(addressSpace);
+            //mon.AddRange(0x3000, 0x07FFF, "Screen");
 
             // Start the CPU
             Task.Run(() =>

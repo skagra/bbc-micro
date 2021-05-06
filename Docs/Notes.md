@@ -37,12 +37,12 @@ counter (PC) with their content.
 
 # BBC Micro
 
-# ROM Disassemblies
+## ROM Disassemblies
 
 * [Annotated OS ROM disassembly](https://tobylobster.github.io/mos/)
 * [Annotated Basic ROM disassembly](http://mdfs.net/Info/Comp/Acorn/Source/Basic.htm)
 
-# Manuals
+## Manuals
 
 * [User Guide](http://bbc.nvg.org/doc/BBCUserGuide-1.00.pdf)
 * [Advanced User Guide](http://www.primrosebank.net/computers/bbc/documents/BBC%20Microcomputer%20Advanced%20User%20Guide.pdf
@@ -52,9 +52,13 @@ counter (PC) with their content.
 
 * [General ROMS](http://bbc.nvg.org/rom/)
 
-# Emulators
+## Emulators
 
 * [Online](https://bbc.godbolt.org/)
 
+# Development
 
+## Libraries
 
+* [Writable bitmap extensions](https://github.com/reneschulte/WriteableBitmapEx)
+* [NAudio](https://github.com/naudio/NAudio)

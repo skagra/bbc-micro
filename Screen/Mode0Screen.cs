@@ -12,52 +12,58 @@ public class Mode0Screen
 {
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-    private WriteableBitmap writeableBitmap;
-    private Window w;
-    private Image i;
+    private WriteableBitmap _writeableBitmap;
+    private readonly Window _window;
+    private readonly Image _image;
     private readonly IAddressSpace _addressSpace;
 
     public Window GetWindow()
     {
-        return w;
+        return _window;
     }
+
+    private const int WINDOW_WIDTH = 1280;
+    private const int WINDOW_HEIGHT = 1024;
 
     public Mode0Screen(IAddressSpace addressSpace)
     {
         _addressSpace = addressSpace;
 
-        i = new Image();
-        RenderOptions.SetBitmapScalingMode(i, BitmapScalingMode.NearestNeighbor);
-        RenderOptions.SetEdgeMode(i, EdgeMode.Aliased);
-        var m = i.RenderTransform.Value;
+        // Create an image control to hold the screen
+        _image = new Image();
+        RenderOptions.SetBitmapScalingMode(_image, BitmapScalingMode.NearestNeighbor);
+        RenderOptions.SetEdgeMode(_image, EdgeMode.Aliased);
 
-        m.Scale(2, 4);
-        i.RenderTransform = new MatrixTransform(m);
+        // Have the image scale its content
+        var transformationMatrix = _image.RenderTransform.Value;
+        transformationMatrix.Scale(2, 4);
+        _image.RenderTransform = new MatrixTransform(transformationMatrix);
 
-        w = new Window
+        // Create top level window and add the image control
+        _window = new Window
         {
-            Width = 1280,
-            Height = 1024,
-            Content = i,
-            BorderThickness = new Thickness(0)
+            Width = WINDOW_WIDTH,
+            Height = WINDOW_HEIGHT,
+            Content = _image
         };
 
-        writeableBitmap = new WriteableBitmap(
-
-            (int)w.Width,
-            (int)w.Height,
+        // Create a writable bitmap to hold the screen
+        _writeableBitmap = new WriteableBitmap(
+            (int)_window.Width,
+            (int)_window.Height,
             96,
             96,
             PixelFormats.Bgr32,
             null);
 
-        i.Source = writeableBitmap;
+        // Assign the bitmap to the image control
+        _image.Source = _writeableBitmap;
 
-        i.Stretch = Stretch.Fill;
-        i.HorizontalAlignment = HorizontalAlignment.Left;
-        i.VerticalAlignment = VerticalAlignment.Top;
+        _image.Stretch = Stretch.Fill;
+        _image.HorizontalAlignment = HorizontalAlignment.Left;
+        _image.VerticalAlignment = VerticalAlignment.Top;
 
-        w.Show();
+        _window.Show();
     }
 
     public void StartScan()
@@ -66,7 +72,7 @@ public class Mode0Screen
         {
             while (true)
             {
-                w.Dispatcher.BeginInvoke(new Action(() =>
+                _window.Dispatcher.BeginInvoke(new Action(() =>
                 {
                     DrawScreen();
                 }));
@@ -104,7 +110,7 @@ public class Mode0Screen
             var addr = screenBaseAddr;
 
             // Reserve the back buffer for updates.
-            writeableBitmap.Lock();
+            _writeableBitmap.Lock();
 
             for (int row = 0; row < 32; row++)
             {
@@ -118,7 +124,7 @@ public class Mode0Screen
                             // var y = 255 - (row * 8 + pixelByte);
                             var y = (row * 8 + pixelByte);
                             // Get a pointer to the back buffer.
-                            IntPtr pBackBuffer = writeableBitmap.BackBuffer;
+                            IntPtr pBackBuffer = _writeableBitmap.BackBuffer;
 
                             // Grab current byte from screen memory
                             var currentByte = _addressSpace.GetByte(addr);
@@ -133,7 +139,7 @@ public class Mode0Screen
 
                                 // Find the address of the pixel to draw.
                                 IntPtr pixAddr = pBackBuffer +
-                                    (y * writeableBitmap.BackBufferStride) +
+                                    (y * _writeableBitmap.BackBufferStride) +
                                     (x * 4);
 
                                 // Plot the pixel as either foreground or background
@@ -153,12 +159,12 @@ public class Mode0Screen
                 }
             }
             // Invalidate the whole rect
-            writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, 640, 256));
+            _writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, 640, 256));
         }
         finally
         {
             // Release the back buffer and make it available for display.
-            writeableBitmap.Unlock();
+            _writeableBitmap.Unlock();
         }
     }
 }

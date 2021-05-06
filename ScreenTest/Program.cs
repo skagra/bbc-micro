@@ -21,29 +21,14 @@ namespace WriteableBitmapDemo
             Random r = new Random();
 
             var addressSpace = new FlatAddressSpace();
-            var ts = new Mode0Screen(addressSpace);
+            var screen = new Mode1Screen(addressSpace);
 
             Application app = new Application();
 
-            //ts.w.KeyDown += new KeyEventHandler((sender, b) =>
-            //{
-            //    //DrawPixel(r.Next(256), r.Next(160));
-            //});
-
-            ts.StartScan();
+            screen.StartScan();
 
             var loader = new ROMLoader();
             loader.Load("/temp/display.bin", 0x3000, addressSpace);
-
-            r = new Random();
-            //Task.Run(() =>
-            //{
-            //    while (true)
-            //    {
-            //        addressSpace.SetByte((byte)r.Next(255), (ushort)(r.Next(20000) + 0x3000));
-            //        Thread.Sleep(1000);
-            //    }
-            //});
 
             app.Run();
         }
