@@ -14,6 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{7A60722D-B
 	ProjectSection(SolutionItems) = preProject
 		Docs\Notes.md = Docs\Notes.md
 		README.md = README.md
+		Docs\SceenMemoryMap.pptx = Docs\SceenMemoryMap.pptx
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CpuTests", "CpuTests\CpuTests.csproj", "{D6384A7A-BC8B-4EDB-A7AF-541051819865}"
@@ -45,7 +46,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BbcMicroMode7", "BBCMicromM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BBCMicro", "BBCMicro\BBCMicro.csproj", "{766BF1EA-2B69-4C02-B17E-47FE1A3AB023}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image", "Image\Image.csproj", "{1020E0B0-08EC-4CFF-A3CC-40439A5AC8B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Image", "Image\Image.csproj", "{1020E0B0-08EC-4CFF-A3CC-40439A5AC8B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

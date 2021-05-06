@@ -62,3 +62,5 @@ counter (PC) with their content.
 
 * [Writable bitmap extensions](https://github.com/reneschulte/WriteableBitmapEx)
 * [NAudio](https://github.com/naudio/NAudio)
+* [WPF Imaging](https://docs.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/imaging-overview?view=netframeworkdesktop-4.8)
+
