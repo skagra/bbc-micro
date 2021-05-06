@@ -4,6 +4,8 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>BbcMicro.Cpu</RootNamespace>
     <AssemblyName>BbcMicro.Cpu</AssemblyName>
+    <Authors>Paul Harvey</Authors>
+    <Company>N/A</Company>
     <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 

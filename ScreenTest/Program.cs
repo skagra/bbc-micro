@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Windows;
 using BbcMicro.Memory;
-using OS.Image;
+using BbcMicro.Screen;
+using BbcMicro.Image;
 
-namespace WriteableBitmapDemo
+namespace BbcMicro.ScreenTest
 {
     internal class Program
     {

@@ -4,6 +4,8 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>BbcMicro.ConsoleWindowing</AssemblyName>
     <RootNamespace>BbcMicro.ConsoleWindowing</RootNamespace>
+    <Authors>Paul Harvey</Authors>
+    <Company>N/A</Company>
   </PropertyGroup>
 
 </Project>

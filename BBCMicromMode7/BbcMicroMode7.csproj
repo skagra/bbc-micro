@@ -3,7 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>BbcMicro</RootNamespace>
+    <RootNamespace>BbcMicroMode7</RootNamespace>
+    <Authors>Paul Harvey</Authors>
+    <Company>N/A</Company>
   </PropertyGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

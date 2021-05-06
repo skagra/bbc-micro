@@ -1,4 +1,4 @@
-﻿using BbcMicro.OS.Image;
+﻿using BbcMicro.Image;
 using Xunit.Abstractions;
 
 namespace BbcMicro.CpuTests

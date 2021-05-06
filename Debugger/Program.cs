@@ -1,8 +1,8 @@
 ﻿using BbcMicro.Cpu;
 using BbcMicro.Memory;
 using BbcMicro.OS;
-using BbcMicro.OS.Image;
-using BbcMicro.OS.Image.Abstractions;
+using BbcMicro.Image;
+using BbcMicro.Image.Abstractions;
 using System;
 
 namespace BbcMicro.Debugger

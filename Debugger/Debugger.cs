@@ -1,6 +1,5 @@
 ﻿using BbcMicro.Cpu;
 using BbcMicro.Cpu.Diagnostics;
-using Screen;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -8,96 +8,98 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-public class GenericScreen
+namespace BbcMicro.Screen
 {
-    private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-
-    private WriteableBitmap _writeableBitmap;
-    private readonly Window _window;
-    private readonly Image _image;
-    private readonly IAddressSpace _addressSpace;
-
-    public Window GetWindow()
+    public class GenericScreen
     {
-        return _window;
-    }
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-    private const int WINDOW_WIDTH = 1280;
-    private const int WINDOW_HEIGHT = 1024;
+        private WriteableBitmap _writeableBitmap;
+        private readonly Window _window;
+        private readonly Image _image;
+        private readonly IAddressSpace _addressSpace;
 
-    private readonly int _frameSleepTime;
-
-    public GenericScreen(IAddressSpace addressSpace, int frequency = 25)
-    {
-        _addressSpace = addressSpace;
-        _frameSleepTime = (int)(1000.0 / (double)frequency);
-
-        // Create an image control to hold the screen
-        _image = new Image();
-
-        RenderOptions.SetBitmapScalingMode(_image, BitmapScalingMode.NearestNeighbor);
-        RenderOptions.SetEdgeMode(_image, EdgeMode.Aliased);
-
-        // Create top level window and add the image control
-        _window = new Window
+        public Window GetWindow()
         {
-            Width = WINDOW_WIDTH,
-            Height = WINDOW_HEIGHT,
-            Content = _image
-        };
+            return _window;
+        }
 
-        // Create a writable bitmap to hold the screen
-        _writeableBitmap = new WriteableBitmap(
-            (int)_window.Width, (int)_window.Height,
-            96, 96,
-            PixelFormats.Bgr32,
-            null);
+        private const int WINDOW_WIDTH = 1280;
+        private const int WINDOW_HEIGHT = 1024;
 
-        // Assign the bitmap to the image control
-        _image.Source = _writeableBitmap;
-        _image.Stretch = Stretch.Fill;
-        _image.HorizontalAlignment = HorizontalAlignment.Left;
-        _image.VerticalAlignment = VerticalAlignment.Top;
+        private readonly int _frameSleepTime;
 
-        _window.Show();
-    }
-
-    public void StartScan()
-    {
-        Task.Run(() =>
+        public GenericScreen(IAddressSpace addressSpace, int frequency = 25)
         {
-            while (true)
+            _addressSpace = addressSpace;
+            _frameSleepTime = (int)(1000.0 / (double)frequency);
+
+            // Create an image control to hold the screen
+            _image = new Image();
+
+            RenderOptions.SetBitmapScalingMode(_image, BitmapScalingMode.NearestNeighbor);
+            RenderOptions.SetEdgeMode(_image, EdgeMode.Aliased);
+
+            // Create top level window and add the image control
+            _window = new Window
             {
-                _window.Dispatcher.BeginInvoke(new Action(() =>
+                Width = WINDOW_WIDTH,
+                Height = WINDOW_HEIGHT,
+                Content = _image
+            };
+
+            // Create a writable bitmap to hold the screen
+            _writeableBitmap = new WriteableBitmap(
+                (int)_window.Width, (int)_window.Height,
+                96, 96,
+                PixelFormats.Bgr32,
+                null);
+
+            // Assign the bitmap to the image control
+            _image.Source = _writeableBitmap;
+            _image.Stretch = Stretch.Fill;
+            _image.HorizontalAlignment = HorizontalAlignment.Left;
+            _image.VerticalAlignment = VerticalAlignment.Top;
+
+            _window.Show();
+        }
+
+        public void StartScan()
+        {
+            Task.Run(() =>
+            {
+                while (true)
                 {
-                    DrawScreen();
-                }));
+                    _window.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        DrawScreen();
+                    }));
 
-                Thread.Sleep(_frameSleepTime);
-            }
-        });
-    }
+                    Thread.Sleep(_frameSleepTime);
+                }
+            });
+        }
 
-    // Pixel colors
+        // Pixel colors
 
-    private const int RED = 255 << 16;
-    private const int GREEN = 255 << 8;
-    private const int BLUE = 255;
-    private const int BLACK = 0;
+        private const int RED = 255 << 16;
+        private const int GREEN = 255 << 8;
+        private const int BLUE = 255;
+        private const int BLACK = 0;
 
-    private static readonly int[] _eightPixelsPerByteColours = new int[] {
+        private static readonly int[] _eightPixelsPerByteColours = new int[] {
            BLACK,              // Black
            RED | GREEN | BLUE  // White
         };
 
-    private static readonly int[] _fourPixelsPerByteColours = new int[] {
+        private static readonly int[] _fourPixelsPerByteColours = new int[] {
            BLACK,             // Black
            RED,               // Red
            RED | GREEN,       // Yellow
            RED | GREEN | BLUE // White
         };
 
-    private static readonly int[] _twoPixelsPerByteColours = new int[] {
+        private static readonly int[] _twoPixelsPerByteColours = new int[] {
            BLACK,              // Black
            RED,                // Red
            GREEN,              // Green
@@ -117,8 +119,8 @@ public class GenericScreen
            RED | BLUE | GREEN  // White
         };
 
-    // Masks to extract pixel values from pixel bytes
-    private static readonly byte[] _eightPixelsPerByteMasks = new byte[] {
+        // Masks to extract pixel values from pixel bytes
+        private static readonly byte[] _eightPixelsPerByteMasks = new byte[] {
             0b1000_0000,
             0b0100_0000,
             0b0010_0000,
@@ -129,60 +131,60 @@ public class GenericScreen
             0b0000_0001
         };
 
-    private static readonly byte[] _fourPixelsPerByteMasks = new byte[] {
+        private static readonly byte[] _fourPixelsPerByteMasks = new byte[] {
             0b1000_1000,
             0b0100_0100,
             0b0010_0010,
             0b0001_0001
         };
 
-    private static readonly byte[] _twoPixelsPerByteMasks = new byte[] {
+        private static readonly byte[] _twoPixelsPerByteMasks = new byte[] {
             0b1010_1010,
             0b0101_0101
         };
 
-    private class ModeSettings
-    {
-        public ushort ScreenBaseAddress { get; }
-
-        public ushort ScreenMemorySize { get; }
-
-        public ushort PixelsPerByte { get; }
-
-        public int[] Colours { get; }
-
-        public byte[] BitMasks { get; }
-
-        public int NumberOfXPixels { get; }
-
-        public int NumberOfYPixels { get; }
-
-        public MatrixTransform Transform { get; }
-
-        public int Rows { get; }
-
-        public int Cols { get; }
-
-        public ModeSettings(ushort screenMemorySize, byte pixelsPerByte,
-            int[] colours, byte[] bitMasks,
-            int numberOfXPixels, int numberOfYPixels
-            )
+        private class ModeSettings
         {
-            ScreenMemorySize = screenMemorySize;
-            ScreenBaseAddress = (ushort)(0x8000 - screenMemorySize);
-            PixelsPerByte = pixelsPerByte;
-            Colours = colours;
-            BitMasks = bitMasks;
-            NumberOfXPixels = numberOfXPixels;
-            NumberOfYPixels = numberOfYPixels;
-            Transform = new MatrixTransform(new Matrix(WINDOW_WIDTH / (double)numberOfXPixels, 0, 0,
-                WINDOW_HEIGHT / (double)numberOfYPixels, 0, 0));
-            Rows = NumberOfYPixels / PixelsPerByte;
-            Cols = NumberOfXPixels / PixelsPerByte;
-        }
-    }
+            public ushort ScreenBaseAddress { get; }
 
-    private static readonly ModeSettings[] _modes = new ModeSettings[] {
+            public ushort ScreenMemorySize { get; }
+
+            public ushort PixelsPerByte { get; }
+
+            public int[] Colours { get; }
+
+            public byte[] BitMasks { get; }
+
+            public int NumberOfXPixels { get; }
+
+            public int NumberOfYPixels { get; }
+
+            public MatrixTransform Transform { get; }
+
+            public int Rows { get; }
+
+            public int Cols { get; }
+
+            public ModeSettings(ushort screenMemorySize, byte pixelsPerByte,
+                int[] colours, byte[] bitMasks,
+                int numberOfXPixels, int numberOfYPixels
+                )
+            {
+                ScreenMemorySize = screenMemorySize;
+                ScreenBaseAddress = (ushort)(0x8000 - screenMemorySize);
+                PixelsPerByte = pixelsPerByte;
+                Colours = colours;
+                BitMasks = bitMasks;
+                NumberOfXPixels = numberOfXPixels;
+                NumberOfYPixels = numberOfYPixels;
+                Transform = new MatrixTransform(new Matrix(WINDOW_WIDTH / (double)numberOfXPixels, 0, 0,
+                    WINDOW_HEIGHT / (double)numberOfYPixels, 0, 0));
+                Rows = NumberOfYPixels / PixelsPerByte;
+                Cols = NumberOfXPixels / PixelsPerByte;
+            }
+        }
+
+        private static readonly ModeSettings[] _modes = new ModeSettings[] {
         new ModeSettings( // MODE 0
             screenMemorySize: 0x5000,
             pixelsPerByte: 8,
@@ -241,99 +243,100 @@ public class GenericScreen
         )
     };
 
-    private int GetColor(byte pixelsByte, int bitOffsetFromMsb, ModeSettings modeInfo)
-    {
-        // Masked color index with values and shift left so the first bit of interest is always in the MSB
-        var maskedColIndex = (pixelsByte & modeInfo.BitMasks[bitOffsetFromMsb]) << bitOffsetFromMsb;
-
-        int colorIndex = 0;
-
-        switch (modeInfo.PixelsPerByte)
+        private int GetColor(byte pixelsByte, int bitOffsetFromMsb, ModeSettings modeInfo)
         {
-            case 8:
-                colorIndex = maskedColIndex >> 7;
-                break;
+            // Masked color index with values and shift left so the first bit of interest is always in the MSB
+            var maskedColIndex = (pixelsByte & modeInfo.BitMasks[bitOffsetFromMsb]) << bitOffsetFromMsb;
 
-            case 4:
-                colorIndex = ((maskedColIndex & 0b1000_0000) >> 6) |
-                    ((maskedColIndex & 0b0000_1000) >> 3);
-                break;
+            int colorIndex = 0;
 
-            case 2:
-                colorIndex = ((maskedColIndex & 0b1000_0000) >> 4) |
-                    ((maskedColIndex & 0b0010_0000) >> 3) |
-                    ((maskedColIndex & 0b0000_1000) >> 2) |
-                    ((maskedColIndex & 0b0000_0010) >> 1);
-                break;
+            switch (modeInfo.PixelsPerByte)
+            {
+                case 8:
+                    colorIndex = maskedColIndex >> 7;
+                    break;
+
+                case 4:
+                    colorIndex = ((maskedColIndex & 0b1000_0000) >> 6) |
+                        ((maskedColIndex & 0b0000_1000) >> 3);
+                    break;
+
+                case 2:
+                    colorIndex = ((maskedColIndex & 0b1000_0000) >> 4) |
+                        ((maskedColIndex & 0b0010_0000) >> 3) |
+                        ((maskedColIndex & 0b0000_1000) >> 2) |
+                        ((maskedColIndex & 0b0000_0010) >> 1);
+                    break;
+            }
+
+            return modeInfo.Colours[colorIndex];
         }
 
-        return modeInfo.Colours[colorIndex];
-    }
-
-    public void DrawScreen()
-    {
-        var mode = _addressSpace.GetByte(BbcMicro.OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
-        var modeInfo = _modes[mode];
-
-        try
+        public void DrawScreen()
         {
-            _image.RenderTransform = modeInfo.Transform;
+            var mode = _addressSpace.GetByte(BbcMicro.OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
+            var modeInfo = _modes[mode];
 
-            var addr = modeInfo.ScreenBaseAddress;
-
-            // Reserve the back buffer for updates.
-            _writeableBitmap.Lock();
-
-            for (int row = 0; row < modeInfo.Rows; row++)
+            try
             {
-                for (int col = 0; col < modeInfo.Cols; col++)
+                _image.RenderTransform = modeInfo.Transform;
+
+                var addr = modeInfo.ScreenBaseAddress;
+
+                // Reserve the back buffer for updates.
+                _writeableBitmap.Lock();
+
+                for (int row = 0; row < modeInfo.Rows; row++)
                 {
-                    // Each cell always contains 8 bytes - and always increses y by 1
-                    // for each byte in the cell
-                    for (int pixelByte = 0; pixelByte < 8; pixelByte++)
+                    for (int col = 0; col < modeInfo.Cols; col++)
                     {
-                        unsafe
+                        // Each cell always contains 8 bytes - and always increses y by 1
+                        // for each byte in the cell
+                        for (int pixelByte = 0; pixelByte < 8; pixelByte++)
                         {
-                            // The xcoord is common to all these 8 bytes
-                            // column * pixels per byte
-                            var xPixelByteStart = col * modeInfo.PixelsPerByte;
-
-                            // Each cell always cover 8 in y dimension
-                            var y = row * 8 + pixelByte;
-
-                            // Get a pointer to the back buffer.
-                            IntPtr pBackBuffer = _writeableBitmap.BackBuffer;
-
-                            // Grab current byte from screen memory
-                            var currentByte = _addressSpace.GetByte(addr);
-
-                            // For each pixel bit in the currrent byte
-                            for (var bitPos = 0; bitPos < modeInfo.PixelsPerByte; bitPos++)
+                            unsafe
                             {
-                                var color = GetColor(currentByte, bitPos, modeInfo);
+                                // The xcoord is common to all these 8 bytes
+                                // column * pixels per byte
+                                var xPixelByteStart = col * modeInfo.PixelsPerByte;
 
-                                var x = xPixelByteStart + bitPos;
+                                // Each cell always cover 8 in y dimension
+                                var y = row * 8 + pixelByte;
 
-                                // Find the address of the pixel to draw.
-                                IntPtr pixAddr = pBackBuffer +
-                                    (y * _writeableBitmap.BackBufferStride) +
-                                    (x * 4);
+                                // Get a pointer to the back buffer.
+                                IntPtr pBackBuffer = _writeableBitmap.BackBuffer;
 
-                                // Plot the pixel
-                                *((int*)pixAddr) = color;
+                                // Grab current byte from screen memory
+                                var currentByte = _addressSpace.GetByte(addr);
+
+                                // For each pixel bit in the currrent byte
+                                for (var bitPos = 0; bitPos < modeInfo.PixelsPerByte; bitPos++)
+                                {
+                                    var color = GetColor(currentByte, bitPos, modeInfo);
+
+                                    var x = xPixelByteStart + bitPos;
+
+                                    // Find the address of the pixel to draw.
+                                    IntPtr pixAddr = pBackBuffer +
+                                        (y * _writeableBitmap.BackBufferStride) +
+                                        (x * 4);
+
+                                    // Plot the pixel
+                                    *((int*)pixAddr) = color;
+                                }
                             }
+                            addr++;
                         }
-                        addr++;
                     }
                 }
+                // Invalidate the whole rect
+                _writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, 640, 256));
             }
-            // Invalidate the whole rect
-            _writeableBitmap.AddDirtyRect(new Int32Rect(0, 0, 640, 256));
-        }
-        finally
-        {
-            // Release the back buffer and make it available for display.
-            _writeableBitmap.Unlock();
+            finally
+            {
+                // Release the back buffer and make it available for display.
+                _writeableBitmap.Unlock();
+            }
         }
     }
 }

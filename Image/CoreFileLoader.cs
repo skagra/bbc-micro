@@ -1,9 +1,9 @@
 ﻿using BbcMicro.Cpu;
-using BbcMicro.OS.Image.Abstractions;
+using BbcMicro.Image.Abstractions;
 using System;
 using System.IO;
 
-namespace BbcMicro.OS.Image
+namespace BbcMicro.Image
 {
     public sealed class CoreFileLoader : IImageLoader
     {

@@ -1,9 +1,9 @@
 ﻿using BbcMicro.Memory.Abstractions;
-using BbcMicro.OS.Image.Abstractions;
 using System.IO;
 using System;
+using BbcMicro.Image.Abstractions;
 
-namespace BbcMicro.OS.Image
+namespace BbcMicro.Image
 {
     public sealed class DasmLoaderType1 : IImageLoader
     {

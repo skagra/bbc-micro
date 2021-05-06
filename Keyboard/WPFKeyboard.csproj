@@ -5,6 +5,8 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>BbcMicro.WPF</AssemblyName>
     <RootNamespace>BbcMicro.WPF</RootNamespace>
+    <Authors>Paul Harvey</Authors>
+    <Company>N/A</Company>
   </PropertyGroup>
 
 </Project>

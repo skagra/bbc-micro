@@ -2,8 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>BbcMicro,Memory</AssemblyName>
-    <RootNamespace>BbcMicro,Memory</RootNamespace>
+    <AssemblyName>BbcMicro.Memory</AssemblyName>
+    <RootNamespace>BbcMicro.Memory</RootNamespace>
+    <Authors>Paul Harvey</Authors>
+    <Company>N/A</Company>
   </PropertyGroup>
 
 </Project>

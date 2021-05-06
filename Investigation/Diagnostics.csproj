@@ -4,6 +4,8 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>BbcMicro.Diagnostics</AssemblyName>
     <RootNamespace>BbcMicro.Diagnostics</RootNamespace>
+    <Authors>Paul Harvey</Authors>
+    <Company>N/A</Company>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cpu\Cpu.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
   </ItemGroup>
 

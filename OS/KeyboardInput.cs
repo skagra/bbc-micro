@@ -4,7 +4,6 @@ using System.Text;
 using BbcMicro.Cpu;
 using System.Windows.Input;
 using BbcMicro.WPF;
-using System.Windows;
 using NLog;
 
 namespace BbcMicro.OS

@@ -4,15 +4,16 @@ using BbcMicro.Memory.Extensions;
 using BbcMicro.OS;
 using BbcMicro.WPF;
 using NLog;
-using OS.Image;
+using BbcMicro.Image;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using BbcMicro.Screen;
 
-namespace BbcMicroMode0
+namespace BBCMicro
 {
     internal class Program
     {
