@@ -1,17 +1,18 @@
-﻿using BbcMicro.ConsoleWindowing;
-using BbcMicro.Cpu;
-using BbcMicro.Diagnostics;
+﻿using BbcMicro.Cpu;
 using BbcMicro.Memory;
 using BbcMicro.Memory.Extensions;
 using BbcMicro.OS;
+using BbcMicro.WPF;
+using NLog;
 using OS.Image;
-using Screen;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
 
-namespace BbcMicro
+namespace BbcMicroMode0
 {
     internal class Program
     {
@@ -21,9 +22,10 @@ namespace BbcMicro
         private const string LANG_ROM_DIR = "/Development/bbc-micro-roms/Lang/";
         private const string DEFAULT_LANG_ROM = "BASIC2.rom";
 
+        [STAThread]
         private static void Main(string[] args)
         {
-            Console.Clear();
+            var logger = LogManager.GetCurrentClassLogger();
 
             var langRom = DEFAULT_LANG_ROM;
             var osRom = DEFAULT_OS_ROM;
@@ -37,57 +39,71 @@ namespace BbcMicro
                 }
             }
 
-            var infoViewpoint = new Viewport(0, 42, 30, 20, ConsoleColor.DarkGray, ConsoleColor.Black);
-            infoViewpoint.Write("BBC Microcomputer Emulator").NewLine().NewLine();
-
-            // Create CPU and address space
-            infoViewpoint.Write("Creating address space...");
+            // Create the emulated RAM
             var addressSpace = new FlatAddressSpace();
-            infoViewpoint.Write("done.").NewLine();
-            infoViewpoint.Write("Creating CPU...");
+
+            // Create the emulated CPU
             var cpu = new CPU(addressSpace);
-            infoViewpoint.Write("done.").NewLine();
 
             // Load images for OS and Basic
             var loader = new ROMLoader();
 
-            infoViewpoint.Write($"Loading OS from '{osRom}'...");
             loader.Load(Path.Combine(OS_ROM_DIR, osRom), 0xC000, addressSpace);
-            infoViewpoint.Write("done.").NewLine();
-
-            infoViewpoint.Write($"Loading language from '{langRom}'...");
             loader.Load(Path.Combine(LANG_ROM_DIR, langRom), 0x8000, addressSpace);
-            infoViewpoint.Write("done.").NewLine();
 
-            // Set up the OS
-            infoViewpoint.Write("Installing OS traps...");
-            var os = new OS.OperatingSystem(addressSpace, OSMode.Mode7);
+            // Create the keyboard emulation for WPF
+            var keyboardEmu = new WPFKeyboardEmu();
+
+            // Install the operating system settings and traps
+            var os = new BbcMicro.OS.OperatingSystem(addressSpace, OSMode.WPF, keyboardEmu);
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
-            infoViewpoint.Write("done.").NewLine();
 
-            infoViewpoint.Write("Creating screen...");
-            var screen = new Mode7Screen(addressSpace, 100, 0, 0);
+            // Create the screen emuator for WPF
+            var screen = new GenericScreen(addressSpace);
 
-            infoViewpoint.Write("done.").NewLine();
+            // Create the WPF application
+            var app = new Application();
 
+            // Grab key events and send through to the buffer
+            screen.GetWindow().KeyDown += new KeyEventHandler((sender, keyEventArgs) =>
+            {
+                keyboardEmu.PushToBuffer(new WPFKeyDetails
+                {
+                    CapsLock = Keyboard.IsKeyToggled(Key.CapsLock),
+                    Key = keyEventArgs.Key,
+                    Modifiers = Keyboard.Modifiers
+                });
+
+                keyEventArgs.Handled = true;
+            });
+
+            // Start scanning screen memory and drawing the emulated screen
             Task.Run(() =>
             {
                 // A frig to ensure we've booted before we start
                 // scanning the screen
                 Thread.Sleep(500);
-                infoViewpoint.Write("Starting screen refresh.").NewLine();
                 screen.StartScan();
             });
 
-            // Start the CPU
-            infoViewpoint.Write($"Handing control to emulator.").NewLine(); ;
+            // Point the CPU at the reset vector
             cpu.PC = addressSpace.GetNativeWord(0xFFFC);
 
-            var mon = new MemoryMonitor(addressSpace);
-            mon.AddRange(0x7B00, 0x7FFF, "Screen");
+            // Start the CPU
+            Task.Run(() =>
+            {
+                cpu.Execute();
+            });
 
-            // Run OS
-            cpu.Execute();
+            // Start the WPF application
+            try
+            {
+                app.Run();
+            }
+            catch (Exception e)
+            {
+                logger.Error(e);
+            }
         }
     }
 }

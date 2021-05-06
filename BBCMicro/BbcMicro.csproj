@@ -1,20 +1,19 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>BbcMicro</RootNamespace>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="dasm $(ProjectDir)Asm\HelloWorld.asm -f2 -o$(OutDir)HelloWorld.out -l$(OutDir)HelloWorld.txt -I$(ProjectDir)Asm" />
-    <Exec Command="dasm $(ProjectDir)Asm\HelloWorldJsr.asm -f2 -o$(OutDir)HelloWorldJsr.out -l$(OutDir)JsrHelloWorld.txt -I$(ProjectDir)Asm" />
-  </Target>
+  <ItemGroup>
+    <PackageReference Include="nlog" Version="4.7.9" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
+    <ProjectReference Include="..\Image\Image.csproj" />
     <ProjectReference Include="..\Investigation\Diagnostics.csproj" />
-    <ProjectReference Include="..\Keyboard\WPFKeyboard.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
     <ProjectReference Include="..\OS\OS.csproj" />
     <ProjectReference Include="..\Screen\Screen.csproj" />
@@ -27,4 +26,3 @@
   </ItemGroup>
 
 </Project>
- 

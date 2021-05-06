@@ -1,13 +1,5 @@
 ﻿using System;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Input;
-using System.Threading.Tasks;
-using System.Threading;
-using System.IO;
-using System.ComponentModel;
 using BbcMicro.Memory;
 using OS.Image;
 
@@ -18,10 +10,8 @@ namespace WriteableBitmapDemo
         [STAThread]
         private static void Main(string[] args)
         {
-            Random r = new Random();
-
             var addressSpace = new FlatAddressSpace();
-            var screen = new Mode1Screen(addressSpace);
+            var screen = new GenericScreen(addressSpace);
 
             Application app = new Application();
 

@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
+    <ProjectReference Include="..\Image\Image.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
     <ProjectReference Include="..\OS\OS.csproj" />
   </ItemGroup>

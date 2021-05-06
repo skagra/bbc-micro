@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Image\Image.csproj" />
     <ProjectReference Include="..\Screen\Screen.csproj" />
   </ItemGroup>
 

@@ -26,7 +26,6 @@ public class GenericScreen
     private const int WINDOW_HEIGHT = 1024;
 
     private readonly int _frameSleepTime;
-    private int _mode = 0;
 
     public GenericScreen(IAddressSpace addressSpace, int frequency = 25)
     {
@@ -59,7 +58,6 @@ public class GenericScreen
         _image.Stretch = Stretch.Fill;
         _image.HorizontalAlignment = HorizontalAlignment.Left;
         _image.VerticalAlignment = VerticalAlignment.Top;
-        _image.SnapsToDevicePixels = true;
 
         _window.Show();
     }
@@ -145,89 +143,112 @@ public class GenericScreen
 
     private class ModeSettings
     {
-        public ushort screenBaseAddress;
-        public ushort pixelsPerByte;
-        public int[] colours;
-        public byte[] bitMasks;
-        public int numberOfXPixels;
-        public int numberOfYPixels;
-        public MatrixTransform transformation;
+        public ushort ScreenBaseAddress { get; }
+
+        public ushort ScreenMemorySize { get; }
+
+        public ushort PixelsPerByte { get; }
+
+        public int[] Colours { get; }
+
+        public byte[] BitMasks { get; }
+
+        public int NumberOfXPixels { get; }
+
+        public int NumberOfYPixels { get; }
+
+        public MatrixTransform Transform { get; }
+
+        public int Rows { get; }
+
+        public int Cols { get; }
+
+        public ModeSettings(ushort screenMemorySize, byte pixelsPerByte,
+            int[] colours, byte[] bitMasks,
+            int numberOfXPixels, int numberOfYPixels
+            )
+        {
+            ScreenMemorySize = screenMemorySize;
+            ScreenBaseAddress = (ushort)(0x8000 - screenMemorySize);
+            PixelsPerByte = pixelsPerByte;
+            Colours = colours;
+            BitMasks = bitMasks;
+            NumberOfXPixels = numberOfXPixels;
+            NumberOfYPixels = numberOfYPixels;
+            Transform = new MatrixTransform(new Matrix(WINDOW_WIDTH / (double)numberOfXPixels, 0, 0,
+                WINDOW_HEIGHT / (double)numberOfYPixels, 0, 0));
+            Rows = NumberOfYPixels / PixelsPerByte;
+            Cols = NumberOfXPixels / PixelsPerByte;
+        }
     }
 
     private static readonly ModeSettings[] _modes = new ModeSettings[] {
-        new ModeSettings { // MODE 0 - This could become size!
-            screenBaseAddress = 0x3000,
-            pixelsPerByte = 8,
-            bitMasks = _eightPixelsPerByteMasks,
-            colours = _eightPixelsPerByteColours,
-            numberOfXPixels = 640,
-            numberOfYPixels = 256,
-            transformation=new MatrixTransform(new Matrix(2,0,0,4,0,0))
-        },
-        new ModeSettings { // MODE 1
-            screenBaseAddress = 0x3000,
-            pixelsPerByte = 4,
-            bitMasks = _fourPixelsPerByteMasks,
-            colours = _fourPixelsPerByteColours,
-            numberOfXPixels = 320,
-            numberOfYPixels = 256,
-            transformation=new MatrixTransform(new Matrix(4,0,0,4,0,0))
-        },
-         new ModeSettings { // MODE 2
-            screenBaseAddress = 0x3000,
-            pixelsPerByte = 2,
-            bitMasks = _twoPixelsPerByteMasks,
-            colours = _twoPixelsPerByteColours,
-            numberOfXPixels = 160,
-            numberOfYPixels = 256,
-            transformation=new MatrixTransform(new Matrix(8,0,0,4,0,0))
-        },
-         new ModeSettings { // MODE 3 - TODO Scrolling is screwed
-            screenBaseAddress = 0x4000,
-            pixelsPerByte = 8,
-            bitMasks = _eightPixelsPerByteMasks,
-            colours = _eightPixelsPerByteColours,
-            numberOfXPixels = 640,
-            numberOfYPixels = 200,
-            transformation=new MatrixTransform(new Matrix(2,0,0,4,0,0))
-        },
-        new ModeSettings { // MODE 4
-            screenBaseAddress = 0x5800,
-            pixelsPerByte = 8,
-            bitMasks = _eightPixelsPerByteMasks,
-            colours = _eightPixelsPerByteColours,
-            numberOfXPixels = 320,
-            numberOfYPixels = 256,
-            transformation=new MatrixTransform(new Matrix(4,0,0,4,0,0))
-        },
-         new ModeSettings { // MODE 5
-            screenBaseAddress = 0x5800,
-            pixelsPerByte = 4,
-            bitMasks = _fourPixelsPerByteMasks,
-            colours = _fourPixelsPerByteColours,
-            numberOfXPixels = 160,
-            numberOfYPixels = 256,
-            transformation=new MatrixTransform(new Matrix(8,0,0,4,0,0))
-        },
-         new ModeSettings { // MODE 6 - TODO Scrolling is screwed
-            screenBaseAddress = 0x6000,
-            pixelsPerByte = 8,
-            bitMasks = _eightPixelsPerByteMasks,
-            colours = _eightPixelsPerByteColours,
-            numberOfXPixels = 320,
-            numberOfYPixels = 200,
-            transformation=new MatrixTransform(new Matrix(4,0,0,4,0,0))
-        }
+        new ModeSettings( // MODE 0
+            screenMemorySize: 0x5000,
+            pixelsPerByte: 8,
+            bitMasks: _eightPixelsPerByteMasks,
+            colours: _eightPixelsPerByteColours,
+            numberOfXPixels: 640,
+            numberOfYPixels: 256
+        ),
+        new ModeSettings ( // MODE 1
+            screenMemorySize: 0x5000,
+            pixelsPerByte: 4,
+            bitMasks: _fourPixelsPerByteMasks,
+            colours: _fourPixelsPerByteColours,
+            numberOfXPixels: 320,
+            numberOfYPixels: 256
+        ),
+         new ModeSettings ( // MODE 2
+            screenMemorySize: 0x5000,
+            pixelsPerByte: 2,
+            bitMasks: _twoPixelsPerByteMasks,
+            colours:_twoPixelsPerByteColours,
+            numberOfXPixels: 160,
+            numberOfYPixels: 256
+        ),
+         new ModeSettings ( // MODE 3 - TODO Scrolling is screwed
+            screenMemorySize: 0x4000,
+            pixelsPerByte: 8,
+            bitMasks: _eightPixelsPerByteMasks,
+            colours: _eightPixelsPerByteColours,
+            numberOfXPixels: 640,
+            numberOfYPixels: 200
+        ),
+        new ModeSettings ( // MODE 4
+            screenMemorySize: 0x2800,
+            pixelsPerByte: 8,
+            bitMasks: _eightPixelsPerByteMasks,
+            colours: _eightPixelsPerByteColours,
+            numberOfXPixels: 320,
+            numberOfYPixels: 256
+         ),
+         new ModeSettings ( // MODE 5
+            screenMemorySize: 0x2800,
+            pixelsPerByte: 4,
+            bitMasks: _fourPixelsPerByteMasks,
+            colours: _fourPixelsPerByteColours,
+            numberOfXPixels: 160,
+            numberOfYPixels: 256
+         ),
+         new ModeSettings ( // MODE 6 - TODO Scrolling is screwed
+            screenMemorySize: 0x2000,
+            pixelsPerByte: 8,
+            bitMasks: _eightPixelsPerByteMasks,
+            colours: _eightPixelsPerByteColours,
+            numberOfXPixels: 320,
+            numberOfYPixels:200
+        )
     };
 
-    private int GetColor(byte pixelsByte, int bitOffsetFromMsb)
+    private int GetColor(byte pixelsByte, int bitOffsetFromMsb, ModeSettings modeInfo)
     {
-        // Masked color index with values of interest in MSBs of both nibbles
-        var maskedColIndex = (pixelsByte & _modes[_mode].bitMasks[bitOffsetFromMsb]) << bitOffsetFromMsb;
+        // Masked color index with values and shift left so the first bit of interest is always in the MSB
+        var maskedColIndex = (pixelsByte & modeInfo.BitMasks[bitOffsetFromMsb]) << bitOffsetFromMsb;
 
         int colorIndex = 0;
 
-        switch (_modes[_mode].pixelsPerByte)
+        switch (modeInfo.PixelsPerByte)
         {
             case 8:
                 colorIndex = maskedColIndex >> 7;
@@ -246,41 +267,36 @@ public class GenericScreen
                 break;
         }
 
-        return _modes[_mode].colours[colorIndex];
+        return modeInfo.Colours[colorIndex];
     }
 
     public void DrawScreen()
     {
-        _mode = _addressSpace.GetByte(BbcMicro.OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
+        var mode = _addressSpace.GetByte(BbcMicro.OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
+        var modeInfo = _modes[mode];
 
         try
         {
-            _image.RenderTransform = _modes[_mode].transformation;
+            _image.RenderTransform = modeInfo.Transform;
 
-            var addr = _modes[_mode].screenBaseAddress;
+            var addr = modeInfo.ScreenBaseAddress;
 
             // Reserve the back buffer for updates.
             _writeableBitmap.Lock();
 
-            // 64 rows of 4 pixels = 256 y pixels
-            // So set this to num pixels / pixels per byte
-            // Really is the genuine number of "cell" rows
-            for (int row = 0; row < _modes[_mode].numberOfYPixels / _modes[_mode].pixelsPerByte; row++)
+            for (int row = 0; row < modeInfo.Rows; row++)
             {
-                // 80 columns of 4 pixels = 320 x pixels
-                // Set this to num pixels / pixels per byte
-                // Really is the genuine number of cell columns
-                for (int col = 0; col < _modes[_mode].numberOfXPixels / _modes[_mode].pixelsPerByte; col++)
+                for (int col = 0; col < modeInfo.Cols; col++)
                 {
-                    // Each cell always contains 8 bytes - and always move y by 1
-                    // independent of the number of bits per pixel (it is x that varies)
+                    // Each cell always contains 8 bytes - and always increses y by 1
+                    // for each byte in the cell
                     for (int pixelByte = 0; pixelByte < 8; pixelByte++)
                     {
                         unsafe
                         {
                             // The xcoord is common to all these 8 bytes
                             // column * pixels per byte
-                            var xPixelByteStart = col * _modes[_mode].pixelsPerByte;
+                            var xPixelByteStart = col * modeInfo.PixelsPerByte;
 
                             // Each cell always cover 8 in y dimension
                             var y = row * 8 + pixelByte;
@@ -292,9 +308,9 @@ public class GenericScreen
                             var currentByte = _addressSpace.GetByte(addr);
 
                             // For each pixel bit in the currrent byte
-                            for (var bitPos = 0; bitPos < _modes[_mode].pixelsPerByte; bitPos++)
+                            for (var bitPos = 0; bitPos < modeInfo.PixelsPerByte; bitPos++)
                             {
-                                var color = GetColor(currentByte, bitPos);
+                                var color = GetColor(currentByte, bitPos, modeInfo);
 
                                 var x = xPixelByteStart + bitPos;
 

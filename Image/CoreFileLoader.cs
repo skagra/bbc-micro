@@ -1,5 +1,4 @@
 ﻿using BbcMicro.Cpu;
-using BbcMicro.Memory.Abstractions;
 using BbcMicro.OS.Image.Abstractions;
 using System;
 using System.IO;
