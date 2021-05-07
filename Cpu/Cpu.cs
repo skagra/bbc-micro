@@ -127,7 +127,7 @@ namespace BbcMicro.Cpu
             }
         }
 
-        private void ProcessIRQ()
+        public void ProcessIRQ()
         {
             // Push the return address onto the stack
             // MSB first to match little endian byte order as the stack grows downwards
@@ -139,6 +139,9 @@ namespace BbcMicro.Cpu
 
             // Mask interrupts
             PSet(PFlags.I);
+
+            // Clear the BRK flag TODO: Don't know if this is needed or correct even
+            PReset(PFlags.B);
 
             // Jump via the vector
             PC = Memory.GetNativeWord(0xFFFE);

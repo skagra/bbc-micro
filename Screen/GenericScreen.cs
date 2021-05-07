@@ -1,4 +1,5 @@
-﻿using BbcMicro.Memory.Abstractions;
+﻿using BbcMicro.Cpu;
+using BbcMicro.Memory.Abstractions;
 using NLog;
 using System;
 using System.Threading;
@@ -274,7 +275,16 @@ namespace BbcMicro.Screen
 
         public void DrawScreen()
         {
-            var mode = _addressSpace.GetByte(BbcMicro.OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
+            var mode = _addressSpace.GetByte(OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
+
+            // TODO - just to stop crashes for now
+            // A better hack would be to arrang to call .initialiseVDUVariablesAndSetMODE
+            if (mode == 7)
+            {
+                _addressSpace.SetByte(0, OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
+                mode = 0;
+            }
+
             var modeInfo = _modes[mode];
 
             try

@@ -19,6 +19,7 @@
     <ProjectReference Include="..\Memory\Memory.csproj" />
     <ProjectReference Include="..\OS\OS.csproj" />
     <ProjectReference Include="..\Screen\Screen.csproj" />
+    <ProjectReference Include="..\Timers\Timers.csproj" />
   </ItemGroup>
 
   <ItemGroup>

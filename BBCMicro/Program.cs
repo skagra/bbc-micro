@@ -68,13 +68,22 @@ namespace BBCMicro
             // Grab key events and send through to the buffer
             screen.GetWindow().KeyDown += new KeyEventHandler((sender, keyEventArgs) =>
             {
-                keyboardEmu.PushToBuffer(new WPFKeyDetails
+                if (keyEventArgs.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
-                    CapsLock = Keyboard.IsKeyToggled(Key.CapsLock),
-                    Key = keyEventArgs.Key,
-                    Modifiers = Keyboard.Modifiers
-                });
-
+                    if (Clipboard.ContainsText())
+                    {
+                        keyboardEmu.PushToBuffer(Clipboard.GetText());
+                    }
+                }
+                else
+                {
+                    keyboardEmu.PushToBuffer(new WPFKeyDetails
+                    {
+                        CapsLock = Keyboard.IsKeyToggled(Key.CapsLock),
+                        Key = keyEventArgs.Key,
+                        Modifiers = Keyboard.Modifiers
+                    });
+                }
                 keyEventArgs.Handled = true;
             });
 
@@ -94,6 +103,21 @@ namespace BBCMicro
             Task.Run(() =>
             {
                 cpu.Execute();
+            });
+
+            // Initial timer frig
+            // https://tobylobster.github.io/mos/mos/S-s11.html#SP16
+            Task.Run(() =>
+            {
+                Thread.Sleep(2000);
+                var timer = new BbcMicro.Timers.Timer(addressSpace);
+
+                while (true)
+                {
+                    timer.Tick();
+                    // Clock resolution is 10ms
+                    Thread.Sleep(5);
+                }
             });
 
             // Start the WPF application

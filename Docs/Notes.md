@@ -59,6 +59,7 @@ counter (PC) with their content.
 ## Examples
 
 * [BBC Basic Examples](https://central.kaserver5.org/Kasoft/Typeset/BBC/Ch06.html)
+* [Welcome Tape](http://bbcmicro.co.uk/explore.php?id=2874)
 
 # Development
 
