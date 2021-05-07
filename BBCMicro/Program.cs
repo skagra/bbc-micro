@@ -109,9 +109,7 @@ namespace BBCMicro
             // https://tobylobster.github.io/mos/mos/S-s11.html#SP16
             Task.Run(() =>
             {
-                Thread.Sleep(2000);
                 var timer = new BbcMicro.Timers.Timer(addressSpace);
-
                 while (true)
                 {
                     timer.Tick();

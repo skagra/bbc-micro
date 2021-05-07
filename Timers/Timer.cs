@@ -20,6 +20,18 @@ namespace BbcMicro.Timers
         public Timer(IAddressSpace addressSpace)
         {
             _addressSpace = addressSpace;
+
+            ZeroClock(timeClockA);
+            ZeroClock(timeClockB);
+        }
+
+        private void ZeroClock(ushort address)
+        {
+            _addressSpace.SetByte(0, address);
+            _addressSpace.SetByte(0, (ushort)(address + 1));
+            _addressSpace.SetByte(0, (ushort)(address + 2));
+            _addressSpace.SetByte(0, (ushort)(address + 3));
+            _addressSpace.SetByte(0, (ushort)(address + 4));
         }
 
         // BBC clock is not real time - it is zero's att boot and then increments
