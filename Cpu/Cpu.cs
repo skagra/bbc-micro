@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BbcMicro.Memory.Extensions;
-using System.Collections.Concurrent;
 
 namespace BbcMicro.Cpu
 {
@@ -127,7 +126,7 @@ namespace BbcMicro.Cpu
             }
         }
 
-        public void ProcessIRQ()
+        private void ProcessIRQ()
         {
             // Push the return address onto the stack
             // MSB first to match little endian byte order as the stack grows downwards

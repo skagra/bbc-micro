@@ -8,7 +8,7 @@ namespace BbcMicro.Diagnostics
     {
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-        public class MonitorPoint
+        private class MonitorPoint
         {
             public ushort start;
             public ushort end;
@@ -31,7 +31,12 @@ namespace BbcMicro.Diagnostics
             });
         }
 
-        public void AddRange(ushort start, ushort end, string tag)
+        public void AddMonitor(string tag, ushort addr)
+        {
+            AddMonitor(tag, addr, addr);
+        }
+
+        public void AddMonitor(string tag, ushort start, ushort end)
         {
             _monitorPoints.Add(new MonitorPoint { start = start, end = end, tag = tag });
         }
