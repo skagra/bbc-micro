@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using BbcMicro.Screen;
+using BbcMicro.Diagnostics;
 
 namespace BBCMicro
 {
@@ -107,14 +108,63 @@ namespace BBCMicro
 
             // Initial timer frig
             // https://tobylobster.github.io/mos/mos/S-s11.html#SP16
+            //Task.Run(() =>
+            //{
+            //    var timer = new BbcMicro.Timers.Timer(addressSpace);
+            //    while (true)
+            //    {
+            //        timer.Tick();
+            //        // Clock resolution is 10ms
+            //        Thread.Sleep(5);
+            //    }
+            //});
+
+            var cpuMon = new CpuAddressMonitor(cpu);
+            cpuMon.AddMonitor(".irqEntryPoint", 0xdc1c);
+            cpuMon.AddMonitor(".irq1Handler", 0xdc93);
+            cpuMon.AddMonitor(".irq1CheckACIA", 0xdca2);
+            cpuMon.AddMonitor(".irq1CheckSystemVIA", 0xdd06);
+            cpuMon.AddMonitor(".irq1CheckUserVIA", 0xdd47);
+            cpuMon.AddMonitor(".irq1CheckSystemVIA100HzTimer", 0xddca);
+            cpuMon.AddMonitor(".eventEntryPoint ", 0xe494);
+            cpuMon.AddMonitor(".irq1CheckSystemVIAADCEndConversion", 0xde47);
+            cpuMon.AddMonitor(".irq1CheckSystemVIASpeech", 0xdd69);
+
+            const ushort timeClockSwitch = 0X0283;
+            const ushort timeClockA = 0X0292;
+            const ushort timeClockB = 0X0297;
+            const ushort systemVIAIRQBitMask = 0X0297;
+
+            // https://tobylobster.github.io/mos/mos/S-s3.html#SP19;
+            const ushort systemVIAInterruptFlagRegister = 0XFE4D;
+            const ushort acia6850StatusRegister = 0XFE08;
+
+            var memMon = new MemoryMonitor(addressSpace);
+            memMon.AddRange(timeClockSwitch, timeClockSwitch, "timeClockSwitch");
+            memMon.AddRange(timeClockA, timeClockA + 4, "timeClockA");
+            memMon.AddRange(timeClockB, timeClockB + 4, "timeClockB");
+            memMon.AddRange(systemVIAInterruptFlagRegister, systemVIAInterruptFlagRegister, "systemVIAInterruptFlagRegister");
+
+            // Timer code .irq1CheckSystemVIA100HzTimer
             Task.Run(() =>
             {
-                var timer = new BbcMicro.Timers.Timer(addressSpace);
+                Thread.Sleep(500);
+
+                addressSpace.SetByte(10, timeClockSwitch);
                 while (true)
                 {
-                    timer.Tick();
-                    // Clock resolution is 10ms
-                    Thread.Sleep(5);
+                    cpu.TriggerIRQ(() =>
+                    {
+                        addressSpace.SetByte(0xFF, systemVIAIRQBitMask);
+
+                        // ACIA did not generate the interrupt
+                        addressSpace.SetByte(0b0000_0000, acia6850StatusRegister);
+
+                        // 100Hz timer interrupt 0b1100_0000
+                        addressSpace.SetByte(0b1100_0000, systemVIAInterruptFlagRegister);
+                    });
+
+                    Thread.Sleep(100);
                 }
             });
 
