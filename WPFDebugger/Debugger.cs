@@ -81,9 +81,25 @@ namespace BbcMicro.WPFDebugger
             _display.AddDis(_cpu.PC, memory, dis);
         }
 
+        private void UpdateStack()
+        {
+            var stack = new byte[0XFF - _cpu.S];
+
+            for (var offset = 0; offset < stack.Length; offset++)
+            {
+                stack[offset] = _cpu.Memory.GetByte((ushort)(0X1FF - offset));
+            }
+            _display.UpdateStack(stack.Reverse().ToArray());
+        }
+
         private void DisplayMemory(byte newVal, byte oldVal, ushort address)
         {
             _display.AddMem(oldVal, newVal, address);
+            // Stack changed?
+            if (address >= 0x100 && address <= 0x1FF)
+            {
+                UpdateStack();
+            }
         }
 
         private void DisplayCallback(CPU cpu, OpCode opCode, AddressingMode addressingMode)
@@ -120,14 +136,14 @@ namespace BbcMicro.WPFDebugger
 
             if (!ok)
             {
-                Error($"Could not parse '{value}' as dec.");
+                Error($"Could not parse '{value}' as base 10 integer.");
             }
 
             return ok;
         }
 
-        private const string EXIT_CMD = "x";
-        private const string EXIT_USAGE = EXIT_CMD + " - Exit";
+        private const string BREAK_CMD = "b";
+        private const string BREAK_USAGE = BREAK_CMD + " - Break into execution";
 
         private const string STEP_IN_CMD = "s";
         private const string STEP_IN_USAGE = STEP_IN_CMD + " - Single step in";
@@ -409,12 +425,8 @@ namespace BbcMicro.WPFDebugger
         private void Execute(bool stopAfterRts)
         {
             // Clear all and stop updates
-            //_display.ClearCommand();
-            //_display.ClearMemory();
-            //_display.ClearCPU();
-            //_display.ClearDis();
-
             RemoveCallbacks();
+            _display.Background();
 
             // Have we run until an RTS
             var rtsDone = false;
@@ -461,11 +473,11 @@ namespace BbcMicro.WPFDebugger
             }
 
             AddCallbacks();
+            _display.Foreground();
 
+            UpdateStack();
             UpdateCPU();
             UpdateDis();
-
-            _doVisualUpdates = true;
         }
 
         private volatile bool _break;
@@ -477,7 +489,8 @@ namespace BbcMicro.WPFDebugger
 
         private void Help()
         {
-            _display.AddMessage(EXIT_USAGE);
+            _display.AddMessage("Commands", true);
+            _display.AddMessage(BREAK_USAGE);
             _display.AddMessage(STEP_IN_USAGE);
             _display.AddMessage(STEP_OVER_USAGE);
             _display.AddMessage(RUN_USAGE);
@@ -511,17 +524,13 @@ namespace BbcMicro.WPFDebugger
 
             switch (commandParts.ElementAt(0).ToLower())
             {
-                case "b":
+                case BREAK_CMD:
                     _display.AddMessage("Breaking into execution");
                     _break = true;
                     break;
 
                 case STEP_IN_CMD:
                     _cpu.ExecuteNextInstruction();
-                    break;
-
-                case EXIT_CMD:
-                    _display.AddMessage("Exiting");
                     break;
 
                 case RUN_CMD:
@@ -568,7 +577,7 @@ namespace BbcMicro.WPFDebugger
                     break;
 
                 default:
-                    Error($"No such command '{commandLine}'.");
+                    Error($"No such command '{commandLine}'");
                     break;
             }
         }

@@ -24,7 +24,8 @@ namespace BbcMicro.WPF
                 key == Key.OemQuestion |
                 key == Key.OemOpenBrackets ||
                 key == Key.Oem6 ||
-                key == Key.OemQuotes;
+                key == Key.OemQuotes ||
+                key == Key.Escape;
         }
 
         public void PushToBuffer(WPFKeyDetails keyDetails)
@@ -260,6 +261,11 @@ namespace BbcMicro.WPF
                 {
                     result = (byte)'#';
                 }
+            }
+            else
+            if (key == Key.Escape)
+            {
+                result = 27;
             }
 
             return result;

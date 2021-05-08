@@ -1,6 +1,7 @@
 ﻿using BbcMicro.Cpu;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -8,7 +9,6 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace BbcMicro.WPFDebugger
 {
@@ -30,6 +30,8 @@ namespace BbcMicro.WPFDebugger
         private readonly SolidColorBrush _bgBrush = Brushes.Black;
         private readonly SolidColorBrush _fgChangedBrush = Brushes.Yellow;
         private readonly SolidColorBrush _fgErrorBrush = Brushes.Red;
+        private readonly SolidColorBrush _controlBackground = new SolidColorBrush(Color.FromRgb(30, 30, 30));
+        private readonly Brush _backgroundedBrush = new SolidColorBrush(Color.FromRgb(70, 70, 70));
 
         private Window _window;
 
@@ -91,7 +93,7 @@ namespace BbcMicro.WPFDebugger
             var textBlock = new TextBlock
             {
                 FontFamily = _mainFont,
-                Background = _bgBrush,
+                Background = _controlBackground,
                 Foreground = _fgBrush,
                 FontSize = MAIN_FONT_SIZE,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -186,7 +188,7 @@ namespace BbcMicro.WPFDebugger
             _mainMessageArea = new FlowDocument
             {
                 FontFamily = _mainFont,
-                Background = _bgBrush,
+                Background = _controlBackground,
                 Foreground = _fgBrush,
                 FontSize = MAIN_FONT_SIZE
             };
@@ -215,7 +217,7 @@ namespace BbcMicro.WPFDebugger
             _disDisplay = new ListView
             {
                 FontFamily = _mainFont,
-                Background = _bgBrush,
+                Background = _controlBackground,
                 Foreground = _fgBrush,
                 FontSize = MAIN_FONT_SIZE,
                 Margin = _standardMargin,
@@ -238,7 +240,7 @@ namespace BbcMicro.WPFDebugger
             _stackDisplay = new ListView
             {
                 FontFamily = _mainFont,
-                Background = _bgBrush,
+                Background = _controlBackground,
                 Foreground = _fgBrush,
                 FontSize = MAIN_FONT_SIZE,
                 Margin = _standardMargin,
@@ -261,7 +263,7 @@ namespace BbcMicro.WPFDebugger
             _memDisplay = new ListView
             {
                 FontFamily = _mainFont,
-                Background = _bgBrush,
+                Background = _controlBackground,
                 Foreground = _fgBrush,
                 FontSize = MAIN_FONT_SIZE,
                 Margin = _standardMargin,
@@ -283,7 +285,7 @@ namespace BbcMicro.WPFDebugger
                 BorderThickness = _borderThickness,
                 FontFamily = _mainFont,
                 FontSize = MAIN_FONT_SIZE,
-                Background = _bgBrush,
+                Background = _controlBackground,
                 Foreground = _fgBrush,
                 Height = MAIN_FONT_SIZE + STANDARD_PADDING_SIZE,
                 Margin = new Thickness(STANDARD_MARGIN_SIZE, 0, STANDARD_MARGIN_SIZE, 0),
@@ -393,6 +395,12 @@ namespace BbcMicro.WPFDebugger
                 //   Icon = new BitmapImage(new Uri("pack://application:,,,/BbcMicro.WPFDebugger;component/debuggericon.png", UriKind.RelativeOrAbsolute)),
                 SnapsToDevicePixels = true
             };
+
+            _window.Closing += new CancelEventHandler((source, e) =>
+            {
+                _window.Hide();
+                e.Cancel = true;
+            });
         }
 
         /*
@@ -403,6 +411,60 @@ namespace BbcMicro.WPFDebugger
 
         #region UI Behaviour
 
+        public void Background()
+        {
+            _window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _disDisplay.Background = _backgroundedBrush;
+                _memDisplay.Background = _backgroundedBrush;
+                _stackDisplay.Background = _backgroundedBrush;
+                _mainMessageArea.Background = _backgroundedBrush;
+                _pcDisplay.Background = _backgroundedBrush;
+                _sDisplay.Background = _backgroundedBrush;
+                _aDisplay.Background = _backgroundedBrush;
+                _xDisplay.Background = _backgroundedBrush;
+                _yDisplay.Background = _backgroundedBrush;
+                _pDisplay.Background = _backgroundedBrush;
+            }));
+        }
+
+        public void Foreground()
+        {
+            _window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _disDisplay.Background = _controlBackground;
+                _memDisplay.Background = _controlBackground;
+                _stackDisplay.Background = _controlBackground;
+                _mainMessageArea.Background = _controlBackground;
+                _pcDisplay.Background = _controlBackground;
+                _sDisplay.Background = _controlBackground;
+                _aDisplay.Background = _controlBackground;
+                _xDisplay.Background = _controlBackground;
+                _yDisplay.Background = _controlBackground;
+                _pDisplay.Background = _controlBackground;
+            }));
+        }
+
+        public class RefString
+        {
+            private string _val;
+
+            public RefString(string val)
+            {
+                _val = val;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return ReferenceEquals(this, obj);
+            }
+
+            public override string ToString()
+            {
+                return _val;
+            }
+        }
+
         public void AddDis(ushort address, byte[] memory, string dis)
         {
             _window.Dispatcher.BeginInvoke(new Action(() =>
@@ -412,8 +474,8 @@ namespace BbcMicro.WPFDebugger
                     _disDisplay.Items.RemoveAt(0);
                 }
                 var formattedMemory = string.Join(" ", memory.Select(m => $"0x{m:X2}"));
-                _disDisplay.Items.Add($"0x{address,-7:X4} {formattedMemory,-16} {dis}");
-
+                _disDisplay.Items.Add(new RefString($"0x{address,-7:X4} {formattedMemory,-16} {dis}"));
+                _disDisplay.UpdateLayout();
                 _disDisplay.ScrollIntoView(_disDisplay.Items.GetItemAt(_disDisplay.Items.Count - 1));
             }));
         }
@@ -427,25 +489,21 @@ namespace BbcMicro.WPFDebugger
                     _memDisplay.Items.RemoveAt(0);
                 }
 
-                _memDisplay.Items.Add($"0x{address:X4} <- 0x{newVal:X2} (0x{oldVal:X2})");
+                _memDisplay.Items.Add(new RefString($"0x{address:X4} <- 0x{newVal:X2} (0x{oldVal:X2})"));
 
                 _memDisplay.ScrollIntoView(_memDisplay.Items.GetItemAt(_memDisplay.Items.Count - 1));
             }));
         }
 
-        public void PushStack(byte val)
+        public void UpdateStack(byte[] stack)
         {
             _window.Dispatcher.BeginInvoke(new Action(() =>
             {
-                _stackDisplay.Items.Insert(0, "${val:X2}");
-            }));
-        }
-
-        public void PopStack(byte val)
-        {
-            _window.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                _stackDisplay.Items.RemoveAt(0);
+                _stackDisplay.Items.Clear();
+                for (int i = 0; i < stack.Length; i++)
+                {
+                    _stackDisplay.Items.Add(new RefString($"{i,3} 0x01{(0xFF - stack.Length + i + 1):X2} 0x{stack[i]:X2}"));
+                }
             }));
         }
 
@@ -453,6 +511,16 @@ namespace BbcMicro.WPFDebugger
         {
             SetUpDisplay();
             _window.Show();
+        }
+
+        public void Show()
+        {
+            _window.Show();
+        }
+
+        public void Hide()
+        {
+            _window.Hide();
         }
 
         private void ParagraphLoaded(object sender, RoutedEventArgs e)

@@ -88,6 +88,12 @@ namespace BBCMicro
                     }
                 }
                 else
+
+                if (keyEventArgs.Key == Key.D && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                {
+                    debuggerDisplay.Show();
+                }
+                else
                 {
                     keyboardEmu.PushToBuffer(new WPFKeyDetails
                     {
