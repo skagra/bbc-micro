@@ -406,12 +406,9 @@ namespace BbcMicro.WPFDebugger
             }
         }
 
-        private bool _doVisualUpdates = true;
-
         private void Execute(bool stopAfterRts)
         {
             // Clear all and stop updates
-            _doVisualUpdates = false;
             //_display.ClearCommand();
             //_display.ClearMemory();
             //_display.ClearCPU();
@@ -447,7 +444,7 @@ namespace BbcMicro.WPFDebugger
 
                 // We are done because of a breakpoint if we have hit one!
                 bpDone = _breakPoints.Contains(_cpu.PC);
-            } while (!rtsDone && !bpDone);
+            } while (!rtsDone && !bpDone && !_break);
 
             if (bpDone)
             {
@@ -457,6 +454,11 @@ namespace BbcMicro.WPFDebugger
             {
                 _display.AddMessage($"Returned from subroutine");
             }
+            else if (_break)
+            {
+                _display.AddMessage($"Broken into execution");
+                _break = false;
+            }
 
             AddCallbacks();
 
@@ -465,6 +467,8 @@ namespace BbcMicro.WPFDebugger
 
             _doVisualUpdates = true;
         }
+
+        private volatile bool _break;
 
         private void DumpCore()
         {
@@ -499,8 +503,19 @@ namespace BbcMicro.WPFDebugger
         private void ProcessCommandLine(string commandLine, DebuggerDisplay source)
         {
             var commandParts = commandLine.Split(" ").Select(word => word.Trim()).ToList();
+            if (commandParts.Count == 0 || (commandParts.Count == 1 && commandParts[0].Length == 0))
+            {
+                // Default command
+                commandParts = new List<string> { STEP_IN_CMD };
+            }
+
             switch (commandParts.ElementAt(0).ToLower())
             {
+                case "b":
+                    _display.AddMessage("Breaking into execution");
+                    _break = true;
+                    break;
+
                 case STEP_IN_CMD:
                     _cpu.ExecuteNextInstruction();
                     break;

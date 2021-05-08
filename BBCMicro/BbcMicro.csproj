@@ -10,11 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="DebuggerIcon.png" />
-    <None Remove="DebuggerIcon.png" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="nlog" Version="4.7.9" />
   </ItemGroup>
 

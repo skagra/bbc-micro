@@ -300,17 +300,17 @@ namespace BbcMicro.WPFDebugger
                     if (text.Length > 0)
                     {
                         AddMessage(text);
-                        textBox.Clear();
-                        e.Handled = true;
-
-                        Task.Run(() =>
-                        {
-                            foreach (var cb in _callbacks)
-                            {
-                                cb(text, this);
-                            }
-                        });
                     }
+                    textBox.Clear();
+                    e.Handled = true;
+
+                    Task.Run(() =>
+                    {
+                        foreach (var cb in _callbacks)
+                        {
+                            cb(text, this);
+                        }
+                    });
                 }
             });
 
@@ -389,6 +389,7 @@ namespace BbcMicro.WPFDebugger
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Width = 1100,
                 Height = 800,
+                // TODO
                 //   Icon = new BitmapImage(new Uri("pack://application:,,,/BbcMicro.WPFDebugger;component/debuggericon.png", UriKind.RelativeOrAbsolute)),
                 SnapsToDevicePixels = true
             };
@@ -421,7 +422,7 @@ namespace BbcMicro.WPFDebugger
         {
             _window.Dispatcher.BeginInvoke(new Action(() =>
             {
-                if (_memDisplay.Items.Count > 500)
+                if (_memDisplay.Items.Count > SCROLL_BUFFER_SIZE)
                 {
                     _memDisplay.Items.RemoveAt(0);
                 }
