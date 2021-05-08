@@ -52,9 +52,19 @@ namespace BbcMicro.Cpu
             _preExecutionCallbacks.Add(callback);
         }
 
+        public void RemovePreExecutionCallback(Action<CPU, OpCode, AddressingMode> callback)
+        {
+            _preExecutionCallbacks.Remove(callback);
+        }
+
         public void AddPostExecutionCallback(Action<CPU, OpCode, AddressingMode> callback)
         {
             _postExecutionCallbacks.Add(callback);
+        }
+
+        public void RemovePostExecutionCallback(Action<CPU, OpCode, AddressingMode> callback)
+        {
+            _postExecutionCallbacks.Remove(callback);
         }
 
         public void ExecuteNextInstruction()

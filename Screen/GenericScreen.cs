@@ -278,7 +278,7 @@ namespace BbcMicro.Screen
             var mode = _addressSpace.GetByte(OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
 
             // TODO - just to stop crashes for now
-            // A better hack would be to arrang to call .initialiseVDUVariablesAndSetMODE
+            // A better hack would be to arrange to call .initialiseVDUVariablesAndSetMODE
             if (mode == 7)
             {
                 _addressSpace.SetByte(0, OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
@@ -300,7 +300,7 @@ namespace BbcMicro.Screen
                 {
                     for (int col = 0; col < modeInfo.Cols; col++)
                     {
-                        // Each cell always contains 8 bytes - and always increses y by 1
+                        // Each cell always contains 8 bytes - and always increases y by 1
                         // for each byte in the cell
                         for (int pixelByte = 0; pixelByte < 8; pixelByte++)
                         {
@@ -319,7 +319,7 @@ namespace BbcMicro.Screen
                                 // Grab current byte from screen memory
                                 var currentByte = _addressSpace.GetByte(addr);
 
-                                // For each pixel bit in the currrent byte
+                                // For each pixel bit in the current byte
                                 for (var bitPos = 0; bitPos < modeInfo.PixelsPerByte; bitPos++)
                                 {
                                     var color = GetColor(currentByte, bitPos, modeInfo);

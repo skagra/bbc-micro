@@ -6,7 +6,13 @@
     <UseWPF>true</UseWPF>
     <Authors>Paul Harvey</Authors>
     <Company>N/A</Company>
+    <PackageIcon></PackageIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="DebuggerIcon.png" />
+    <None Remove="DebuggerIcon.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="nlog" Version="4.7.9" />

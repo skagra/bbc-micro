@@ -28,6 +28,11 @@ namespace BbcMicro.Memory
             _setByteCallbacks.Add(callback);
         }
 
+        public void RemoveSetByteCallback(Action<byte, byte, ushort> callback)
+        {
+            _setByteCallbacks.Remove(callback);
+        }
+
         public void Flush()
         {
             Array.Clear(_memory, 0, _memory.Length);

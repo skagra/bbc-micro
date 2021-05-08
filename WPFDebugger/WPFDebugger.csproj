@@ -14,4 +14,8 @@
     <ProjectReference Include="..\Memory\Memory.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
 </Project>

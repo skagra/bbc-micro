@@ -12,6 +12,8 @@ namespace BbcMicro.Memory.Abstractions
 
         void AddSetByteCallback(Action<byte, byte, ushort> callback);
 
+        void RemoveSetByteCallback(Action<byte, byte, ushort> callback);
+
         string ToString(ushort start, ushort length);
     }
 }
