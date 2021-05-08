@@ -12,6 +12,11 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using BbcMicro.Screen;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using BbcMicro.WPFDebugger;
 
 namespace BBCMicro
 {
@@ -28,6 +33,9 @@ namespace BBCMicro
         {
             var logger = LogManager.GetCurrentClassLogger();
 
+            // Create the debugger window
+            var debugger = new Debugger();
+
             var langRom = DEFAULT_LANG_ROM;
             var osRom = DEFAULT_OS_ROM;
 
@@ -40,26 +48,34 @@ namespace BBCMicro
                 }
             }
 
+            debugger.AddMessage("BBC Microcomputer Emulator", true);
+
             // Create the emulated RAM
+            debugger.AddMessage("Creating address space");
             var addressSpace = new FlatAddressSpace();
 
             // Create the emulated CPU
+            debugger.AddMessage("Creating CPU");
             var cpu = new CPU(addressSpace);
 
             // Load images for OS and Basic
             var loader = new ROMLoader();
-
+            debugger.AddMessage($"Loading OS ROM from '{osRom}'");
             loader.Load(Path.Combine(OS_ROM_DIR, osRom), 0xC000, addressSpace);
+            debugger.AddMessage($"Loading language ROM from '{langRom}'");
             loader.Load(Path.Combine(LANG_ROM_DIR, langRom), 0x8000, addressSpace);
 
             // Create the keyboard emulation for WPF
+            debugger.AddMessage("Creating keyboard");
             var keyboardEmu = new WPFKeyboardEmu();
 
             // Install the operating system settings and traps
+            debugger.AddMessage("Installing OS traps");
             var os = new BbcMicro.OS.OperatingSystem(addressSpace, OSMode.WPF, keyboardEmu);
             cpu.AddInterceptionCallback(os.InterceptorDispatcher.Dispatch);
 
             // Create the screen emuator for WPF
+            debugger.AddMessage("Creating screen");
             var screen = new GenericScreen(addressSpace);
 
             // Create the WPF application
@@ -88,6 +104,7 @@ namespace BBCMicro
             });
 
             // Start scanning screen memory and drawing the emulated screen
+            debugger.AddMessage("Starting screen scanning");
             Task.Run(() =>
             {
                 // A frig to ensure we've booted before we start
@@ -97,6 +114,7 @@ namespace BBCMicro
             });
 
             // Point the CPU at the reset vector
+            debugger.AddMessage("Starting the CPU");
             cpu.PC = addressSpace.GetNativeWord(0xFFFC);
 
             // Start the CPU
@@ -117,6 +135,26 @@ namespace BBCMicro
                     Thread.Sleep(5);
                 }
             });
+
+            debugger.UpdateCpu(new ProcessorState
+            {
+                A = 10,
+                P = 20,
+                PC = 2233,
+                S = 45,
+                X = 9,
+                Y = 10
+            }, new byte[] { });
+
+            for (var i = 0; i < 100; i++)
+            {
+                debugger.AddDis((ushort)i, new byte[] { 22, 4, 55 }, "LDX 22");
+                debugger.AddDis((ushort)i, new byte[] { 22, 4 }, "LDX 22 longer");
+            }
+            for (var i = 0; i < 50; i++)
+            {
+                debugger.AddMem((byte)i, (byte)i, (ushort)(i * i));
+            }
 
             // Start the WPF application
             try

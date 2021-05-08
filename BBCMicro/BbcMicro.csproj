@@ -20,6 +20,7 @@
     <ProjectReference Include="..\OS\OS.csproj" />
     <ProjectReference Include="..\Screen\Screen.csproj" />
     <ProjectReference Include="..\Timers\Timers.csproj" />
+    <ProjectReference Include="..\WPFDebugger\WPFDebugger.csproj" />
   </ItemGroup>
 
   <ItemGroup>
