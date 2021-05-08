@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AssemblyName>BbcMicro.WPFDebugger</AssemblyName>
+    <RootNamespace>BbcMicro.WPFDebugger</RootNamespace>
+    <UseWPF>true</UseWPF>
+    <Authors>Paul Harvey</Authors>
+    <Company>N/A</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cpu\Cpu.csproj" />
+    <ProjectReference Include="..\Memory\Memory.csproj" />
+  </ItemGroup>
+
+</Project>
