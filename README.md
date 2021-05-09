@@ -1,15 +1,17 @@
 # BBC Micro
 
-An enumulator of the *BBC Model B Microcomputer*.
+**This project is very much a work in progress.**
 
-Work to date has focused on the 6502 CPU, with current status as follows:
+An emulator of the *BBC Model B Microcomputer*.
 
 * `6502` CPU emulation.
-  * Still to do - `BCD` and interrupt triggering.
+  * Still to do
+    * `BCD`
+    * `IRQ` handling 
 * Loading of binary images:
   * `DASM` assembled image files - type 1 and type 2
-  * Loading core dump files
-  * Loading of paged ROM images.
+  * Core dump files
+  * Paged ROM images
 * Debugger
   * Display of:
     * Memory
@@ -17,12 +19,8 @@ Work to date has focused on the 6502 CPU, with current status as follows:
     * CPU Registers
     * Stack
     * Memory changes
-    * Debugger output
-    * Programme outout
   * Instructions:
-     * `x` - Exit
      * `s` - Single step in
-     * `o` - Single step over
      * `r` - Run
      * `t` - Return from subroutine
      * `set` - Set value of register or memory
@@ -35,9 +33,11 @@ Work to date has focused on the 6502 CPU, with current status as follows:
 * OS call interception
   * Very basic text output device (approx. mimics BBC OS `OSWRCH`)
   * Very basic keyboard device (approx. mimics BBC OS `OSRDCH`)
-* Very simple 6845 CRTC emulation for MODE 7 display
+* 6845 CRTC
+  * Full support for rendering of MODES 0-6 
+  * Very simple MODE 7 display
 * Load and boot BBC OS
-* Sideload BBC Basic
+* Sideload BBC Basic and other language ROMs
   * Run BBC Basic applications
 * Minimal tests
   * Including tests based on `DASM` assembled image files

@@ -57,7 +57,6 @@ namespace BbcMicro.Screen
             // Create a writable bitmap to hold the screen
             _writeableBitmap = new WriteableBitmap(
                 CANVAS_WIDTH, CANVAS_HEIGHT,
-                //(int)_window.Width, (int)_window.Height,
                 96, 96,
                 PixelFormats.Bgr32,
                 null);
