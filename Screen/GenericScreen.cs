@@ -25,8 +25,11 @@ namespace BbcMicro.Screen
             return _window;
         }
 
-        private const int WINDOW_WIDTH = 1280;
-        private const int WINDOW_HEIGHT = 1024;
+        //private const int WINDOW_WIDTH = 1280;
+        //private const int WINDOW_HEIGHT = 1024;
+
+        private const int WINDOW_WIDTH = 1024;
+        private const int WINDOW_HEIGHT = 768;
 
         private readonly int _frameSleepTime;
 
@@ -46,7 +49,8 @@ namespace BbcMicro.Screen
             {
                 Width = WINDOW_WIDTH,
                 Height = WINDOW_HEIGHT,
-                Content = _image
+                Content = _image,
+                Title = "BBC Microcomputer Emulator"
             };
 
             // Create a writable bitmap to hold the screen

@@ -117,6 +117,8 @@ namespace BBCMicro
 
             // Point the CPU at the reset vector
             debuggerDisplay.AddMessage("Starting the CPU");
+            debuggerDisplay.Show();
+
             cpu.PC = addressSpace.GetNativeWord(0xFFFC);
 
             // Start the CPU

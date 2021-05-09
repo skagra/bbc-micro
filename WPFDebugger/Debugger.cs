@@ -26,19 +26,29 @@ namespace BbcMicro.WPFDebugger
             UpdateCPU();
             UpdateDis();
 
-            _display.AddCommandCallback(ProcessCommandLine);
+            _display.SetHideCallback(ShowCallback);
+            _display.SetShowCallback(HideCallback);
+            _display.SetCommandCallback(ProcessCommandLine);
+        }
+
+        private void ShowCallback(DebuggerDisplay display)
+        {
+        }
+
+        private void HideCallback(DebuggerDisplay display)
+        {
         }
 
         private void AddCallbacks()
         {
-            _cpu.Memory.AddSetByteCallback(DisplayMemory);
-            _cpu.AddPostExecutionCallback(DisplayCallback);
+            _cpu.Memory.AddSetByteCallback(MemoryChangedCallback);
+            _cpu.AddPostExecutionCallback(CpuChangedCallback);
         }
 
         private void RemoveCallbacks()
         {
-            _cpu.Memory.RemoveSetByteCallback(DisplayMemory);
-            _cpu.RemovePostExecutionCallback(DisplayCallback);
+            _cpu.Memory.RemoveSetByteCallback(MemoryChangedCallback);
+            _cpu.RemovePostExecutionCallback(CpuChangedCallback);
         }
 
         private void UpdateCPU()
@@ -92,20 +102,16 @@ namespace BbcMicro.WPFDebugger
             _display.UpdateStack(stack.Reverse().ToArray());
         }
 
-        private void DisplayMemory(byte newVal, byte oldVal, ushort address)
+        private void MemoryChangedCallback(byte newVal, byte oldVal, ushort address)
         {
             _display.AddMem(oldVal, newVal, address);
-            // Stack changed?
-            if (address >= 0x100 && address <= 0x1FF)
-            {
-                UpdateStack();
-            }
         }
 
-        private void DisplayCallback(CPU cpu, OpCode opCode, AddressingMode addressingMode)
+        private void CpuChangedCallback(CPU cpu, OpCode opCode, AddressingMode addressingMode)
         {
             UpdateCPU();
             UpdateDis();
+            UpdateStack();
         }
 
         private void Error(string value = "Error")
@@ -113,7 +119,7 @@ namespace BbcMicro.WPFDebugger
             _display.AddMessage(value, false, true);
         }
 
-        private List<ushort> _breakPoints = new List<ushort>();
+        private readonly List<ushort> _breakPoints = new List<ushort>();
 
         private bool ParseHexWord(string value, out ushort word)
         {
@@ -130,9 +136,9 @@ namespace BbcMicro.WPFDebugger
             return ok;
         }
 
-        private bool ParseHDecInt(string value, out int parsed)
+        private bool ParseDecInt(string value, out ushort parsed)
         {
-            var ok = int.TryParse(value, out parsed);
+            var ok = ushort.TryParse(value, out parsed);
 
             if (!ok)
             {
@@ -140,6 +146,25 @@ namespace BbcMicro.WPFDebugger
             }
 
             return ok;
+        }
+
+        private bool ParseNumber(string value, out ushort parsed)
+        {
+            var lcValue = value.ToLower().Trim();
+
+            if (lcValue.StartsWith("$"))
+            {
+                return ParseHexWord(value.Substring(1), out parsed);
+            }
+            else
+            if (lcValue.StartsWith("0x"))
+            {
+                return ParseHexWord(value.Substring(2), out parsed);
+            }
+            else
+            {
+                return ParseDecInt(value, out parsed);
+            }
         }
 
         private const string BREAK_CMD = "b";
@@ -216,7 +241,7 @@ namespace BbcMicro.WPFDebugger
 
                 if (command.Count() == 2)
                 {
-                    ok = ParseHexWord(command[1], out breakpointAddress);
+                    ok = ParseNumber(command[1], out breakpointAddress);
                 }
 
                 if (ok)
@@ -250,7 +275,7 @@ namespace BbcMicro.WPFDebugger
         {
             if (command.Count == 2)
             {
-                if (ParseHDecInt(command[1], out var operand))
+                if (ParseDecInt(command[1], out var operand))
                 {
                     if (operand < _breakPoints.Count)
                     {
@@ -278,12 +303,12 @@ namespace BbcMicro.WPFDebugger
 
             if (command.Count() == 3)
             {
-                ok = ParseHexWord(command[2], out count);
+                ok = ParseNumber(command[2], out count);
             }
 
             if (ok && command.Count() >= 2)
             {
-                ok = ParseHexWord(command[1], out baseAddress);
+                ok = ParseNumber(command[1], out baseAddress);
             }
 
             if (ok)
@@ -321,12 +346,12 @@ namespace BbcMicro.WPFDebugger
 
             if (command.Count() == 3)
             {
-                ok = ParseHexWord(command[2], out length);
+                ok = ParseNumber(command[2], out length);
             }
 
             if (ok && command.Count() >= 2)
             {
-                ok = ParseHexWord(command[1], out baseAddress);
+                ok = ParseNumber(command[1], out baseAddress);
             }
 
             if (ok)
@@ -364,7 +389,7 @@ namespace BbcMicro.WPFDebugger
         {
             if (command.Count() == 3)
             {
-                if (ParseHexWord(command[2], out var operand))
+                if (ParseNumber(command[2], out var operand))
                 {
                     switch (command[1].ToLower())
                     {
@@ -400,7 +425,7 @@ namespace BbcMicro.WPFDebugger
                             break;
 
                         default:
-                            if (ParseHexWord(command[1], out var address))
+                            if (ParseNumber(command[1], out var address))
                             {
                                 _cpu.Memory.SetByte((byte)operand, address);
                             }
@@ -427,6 +452,10 @@ namespace BbcMicro.WPFDebugger
             // Clear all and stop updates
             RemoveCallbacks();
             _display.Background();
+            _display.ClearDis();
+            _display.ClearMem();
+            _display.ClearStack();
+            _display.ClearCpu();
 
             // Have we run until an RTS
             var rtsDone = false;
@@ -473,6 +502,7 @@ namespace BbcMicro.WPFDebugger
             }
 
             AddCallbacks();
+
             _display.Foreground();
 
             UpdateStack();
@@ -492,7 +522,7 @@ namespace BbcMicro.WPFDebugger
             _display.AddMessage("Commands", true);
             _display.AddMessage(BREAK_USAGE);
             _display.AddMessage(STEP_IN_USAGE);
-            _display.AddMessage(STEP_OVER_USAGE);
+            //_display.AddMessage(STEP_OVER_USAGE);
             _display.AddMessage(RUN_USAGE);
             _display.AddMessage(RUN_TO_RTS_CMD_USAGE);
             _display.AddMessage(SET_USAGE);

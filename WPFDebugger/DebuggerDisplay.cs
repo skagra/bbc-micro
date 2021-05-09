@@ -28,7 +28,7 @@ namespace BbcMicro.WPFDebugger
         private readonly FontFamily _mainFont = new FontFamily("Courier New");
         private readonly SolidColorBrush _fgBrush = Brushes.White;
         private readonly SolidColorBrush _bgBrush = Brushes.Black;
-        private readonly SolidColorBrush _fgChangedBrush = Brushes.Yellow;
+        private readonly SolidColorBrush _fgChangedBrush = Brushes.Magenta;
         private readonly SolidColorBrush _fgErrorBrush = Brushes.Red;
         private readonly SolidColorBrush _controlBackground = new SolidColorBrush(Color.FromRgb(30, 30, 30));
         private readonly Brush _backgroundedBrush = new SolidColorBrush(Color.FromRgb(70, 70, 70));
@@ -50,7 +50,7 @@ namespace BbcMicro.WPFDebugger
         #region UI Creation
 
         /*
-         * Utility methods --->
+         * UI Building utility methods --->
          */
 
         private TextBox MakeTitle(string title)
@@ -81,7 +81,7 @@ namespace BbcMicro.WPFDebugger
         }
 
         /*
-         * <--- Utility methods
+         * <--- UI Building utility methods
          */
 
         /*
@@ -308,22 +308,12 @@ namespace BbcMicro.WPFDebugger
 
                     Task.Run(() =>
                     {
-                        foreach (var cb in _callbacks)
-                        {
-                            cb(text, this);
-                        }
+                        _callback?.Invoke(text, this);
                     });
                 }
             });
 
             return _inputBox;
-        }
-
-        private List<Action<string, DebuggerDisplay>> _callbacks = new List<Action<string, DebuggerDisplay>>();
-
-        public void AddCommandCallback(Action<string, DebuggerDisplay> callback)
-        {
-            _callbacks.Add(callback);
         }
 
         /*
@@ -391,8 +381,6 @@ namespace BbcMicro.WPFDebugger
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Width = 1100,
                 Height = 800,
-                // TODO
-                //   Icon = new BitmapImage(new Uri("pack://application:,,,/BbcMicro.WPFDebugger;component/debuggericon.png", UriKind.RelativeOrAbsolute)),
                 SnapsToDevicePixels = true
             };
 
@@ -410,6 +398,42 @@ namespace BbcMicro.WPFDebugger
         #endregion UI Creation
 
         #region UI Behaviour
+
+        /*
+         * Generic UI Behaviour --->
+         */
+
+        private Action<DebuggerDisplay> _showCallback;
+
+        public void SetShowCallback(Action<DebuggerDisplay> callback)
+        {
+            _showCallback = callback;
+        }
+
+        public void Show()
+        {
+            _window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _window.Show();
+                _showCallback?.Invoke(this);
+            }));
+        }
+
+        public void Hide()
+        {
+            _window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _window.Hide();
+                _hideCallback?.Invoke(this);
+            }));
+        }
+
+        private Action<DebuggerDisplay> _hideCallback;
+
+        public void SetHideCallback(Action<DebuggerDisplay> callback)
+        {
+            _hideCallback = callback;
+        }
 
         public void Background()
         {
@@ -445,7 +469,10 @@ namespace BbcMicro.WPFDebugger
             }));
         }
 
-        public class RefString
+        // Scroll into view methods in WPF are bugged in that if two items in the list
+        // are "equal" then the first will be made visible.  This class is to
+        // code around that issue
+        private sealed class RefString
         {
             private string _val;
 
@@ -465,6 +492,29 @@ namespace BbcMicro.WPFDebugger
             }
         }
 
+        /*
+        * <--- Generic UI Behaviour
+        */
+
+        /*
+         * Command input --->
+         */
+
+        private Action<string, DebuggerDisplay> _callback = null;
+
+        public void SetCommandCallback(Action<string, DebuggerDisplay> callback)
+        {
+            _callback = callback;
+        }
+
+        /*
+        * <--- Command input
+        */
+
+        /*
+         * Disassembly window --->
+         */
+
         public void AddDis(ushort address, byte[] memory, string dis)
         {
             _window.Dispatcher.BeginInvoke(new Action(() =>
@@ -480,6 +530,22 @@ namespace BbcMicro.WPFDebugger
             }));
         }
 
+        public void ClearDis()
+        {
+            _window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _disDisplay.Items.Clear();
+            }));
+        }
+
+        /*
+         * <--- Disassembly window
+         */
+
+        /*
+         * Memory window --->
+         */
+
         public void AddMem(byte oldVal, byte newVal, ushort address)
         {
             _window.Dispatcher.BeginInvoke(new Action(() =>
@@ -490,10 +556,26 @@ namespace BbcMicro.WPFDebugger
                 }
 
                 _memDisplay.Items.Add(new RefString($"0x{address:X4} <- 0x{newVal:X2} (0x{oldVal:X2})"));
-
+                _memDisplay.UpdateLayout();
                 _memDisplay.ScrollIntoView(_memDisplay.Items.GetItemAt(_memDisplay.Items.Count - 1));
             }));
         }
+
+        public void ClearMem()
+        {
+            _window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _memDisplay.Items.Clear();
+            }));
+        }
+
+        /*
+         * <--- Memory window
+         */
+
+        /*
+         * Stack window --->
+         */
 
         public void UpdateStack(byte[] stack)
         {
@@ -507,21 +589,21 @@ namespace BbcMicro.WPFDebugger
             }));
         }
 
-        public DebuggerDisplay()
+        public void ClearStack()
         {
-            SetUpDisplay();
-            _window.Show();
+            _window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _stackDisplay.Items.Clear();
+            }));
         }
 
-        public void Show()
-        {
-            _window.Show();
-        }
+        /*
+         * <--- Stack window
+         */
 
-        public void Hide()
-        {
-            _window.Hide();
-        }
+        /*
+         * Message window --->
+         */
 
         private void ParagraphLoaded(object sender, RoutedEventArgs e)
         {
@@ -534,8 +616,10 @@ namespace BbcMicro.WPFDebugger
         {
             _window.Dispatcher.BeginInvoke(new Action(() =>
             {
-                Paragraph p = new Paragraph();
-                p.Margin = _zeroThickness;
+                Paragraph p = new Paragraph
+                {
+                    Margin = _zeroThickness
+                };
 
                 var run = new Run(message);
 
@@ -556,6 +640,22 @@ namespace BbcMicro.WPFDebugger
                 p.Loaded += new RoutedEventHandler(ParagraphLoaded);
             }));
         }
+
+        public void ClearMessage()
+        {
+            _window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _mainMessageArea.Blocks.Clear();
+            }));
+        }
+
+        /*
+         * <--- Message window
+         */
+
+        /*
+         * CPU window --->
+         */
 
         private ProcessorState _prevState;
 
@@ -630,6 +730,28 @@ namespace BbcMicro.WPFDebugger
             }));
         }
 
+        public void ClearCpu()
+        {
+            _window.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _pcDisplay.Text = "PC";
+                _sDisplay.Text = "S";
+                _aDisplay.Text = "A";
+                _xDisplay.Text = "X";
+                _yDisplay.Text = "Y";
+                _pDisplay.Text = "P";
+            }));
+        }
+
+        /*
+         * <--- CPU window
+         */
+
         #endregion UI Behaviour
+
+        public DebuggerDisplay()
+        {
+            SetUpDisplay();
+        }
     }
 }
