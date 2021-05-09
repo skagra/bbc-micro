@@ -1,5 +1,6 @@
 ﻿using BbcMicro.Memory.Abstractions;
 using BbcMicro.WPF;
+using BbcMicro.SystemConstants;
 
 namespace BbcMicro.OS
 {
@@ -18,7 +19,7 @@ namespace BbcMicro.OS
             // https://tobylobster.github.io/mos/mos/S-s3.html#SP20
             // Bit 7 needs to be clear to flag a hard reset
             // https://tobylobster.github.io/mos/mos/S-s10.html#SP3
-            addressSpace.SetByte(0x0, MemoryLocations.SYSTEM_VIA_INTERRUPT_ENABLE_REGISTER);
+            addressSpace.SetByte(0x0, VIA.SYSTEM_VIA_INTERRUPT_ENABLE_REGISTER);
         }
 
         public OperatingSystem(IAddressSpace addressSpace, OSMode osMode, WPFKeyboardEmu keyboardEmu = null)

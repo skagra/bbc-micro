@@ -153,7 +153,7 @@ namespace BbcMicro.Cpu
             PReset(PFlags.B);
 
             // Jump via the vector
-            PC = Memory.GetNativeWord(0xFFFE);
+            PC = Memory.GetNativeWord(SystemConstants.CPU.IRQ_VECTOR);
         }
 
         private void UpdateFlags(byte accordingToValue, PFlags flagsToUpdate)
@@ -380,7 +380,7 @@ namespace BbcMicro.Cpu
             PSet(PFlags.I);
 
             // Jump via the vector
-            PC = Memory.GetNativeWord(0xFFFE);
+            PC = Memory.GetNativeWord(SystemConstants.CPU.IRQ_VECTOR);
         }
 
         /*
@@ -1020,7 +1020,7 @@ namespace BbcMicro.Cpu
         public ushort PC { get; set; }
 
         // Stack pointer
-        public byte S { get; set; } = 0xFF;
+        public byte S { get; set; } = SystemConstants.CPU.S_MAX;
 
         // Accumulator
         public byte A { get; set; }
@@ -1074,26 +1074,24 @@ namespace BbcMicro.Cpu
             }
         }
 
-        private const ushort STACK_BASE_ADRESS = 0x100;
-
         public void PushByte(byte value)
         {
-            if (S == 0)
+            if (S == SystemConstants.CPU.S_MIN)
             {
                 throw new CPUStatefulException(this, "Stack overflow", true);
             }
-            Memory.SetByte(value, (ushort)(STACK_BASE_ADRESS + S));
+            Memory.SetByte(value, (ushort)(SystemConstants.CPU.STACK_LOMEM + S));
             S--;
         }
 
         public byte PopByte()
         {
-            if (S == 0xFF)
+            if (S == SystemConstants.CPU.S_MAX)
             {
                 throw new CPUStatefulException(this, "Stack underflow", true);
             }
             S++;
-            return Memory.GetByte((ushort)(STACK_BASE_ADRESS + S));
+            return Memory.GetByte((ushort)(SystemConstants.CPU.STACK_LOMEM + S));
         }
 
         public IAddressSpace Memory { get; }

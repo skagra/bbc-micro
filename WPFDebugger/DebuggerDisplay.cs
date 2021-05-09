@@ -64,7 +64,8 @@ namespace BbcMicro.WPFDebugger
                 FontWeight = FontWeights.Bold,
                 FontSize = TITLE_FONT_SIZE,
                 Margin = new Thickness(STANDARD_MARGIN_SIZE, STANDARD_MARGIN_SIZE, STANDARD_MARGIN_SIZE, 0),
-                BorderThickness = _zeroThickness
+                BorderThickness = _zeroThickness,
+                Focusable = false
             };
         }
 
@@ -190,7 +191,8 @@ namespace BbcMicro.WPFDebugger
                 FontFamily = _mainFont,
                 Background = _controlBackground,
                 Foreground = _fgBrush,
-                FontSize = MAIN_FONT_SIZE
+                FontSize = MAIN_FONT_SIZE,
+                Focusable = false
             };
 
             var mainMessageScroller = new FlowDocumentScrollViewer
@@ -198,7 +200,8 @@ namespace BbcMicro.WPFDebugger
                 Document = _mainMessageArea,
                 Margin = _standardMargin,
                 BorderBrush = _fgBrush,
-                BorderThickness = _borderThickness
+                BorderThickness = _borderThickness,
+                Focusable = false
             };
 
             return mainMessageScroller;
@@ -221,7 +224,8 @@ namespace BbcMicro.WPFDebugger
                 Foreground = _fgBrush,
                 FontSize = MAIN_FONT_SIZE,
                 Margin = _standardMargin,
-                Height = 280
+                Height = 280,
+                Focusable = false
             };
 
             return StackWithTitle("Disassembly", _disDisplay);
@@ -244,7 +248,8 @@ namespace BbcMicro.WPFDebugger
                 Foreground = _fgBrush,
                 FontSize = MAIN_FONT_SIZE,
                 Margin = _standardMargin,
-                Height = 107
+                Height = 107,
+                Focusable = false
             };
 
             return StackWithTitle("Stack", _stackDisplay); ;
@@ -267,7 +272,8 @@ namespace BbcMicro.WPFDebugger
                 Foreground = _fgBrush,
                 FontSize = MAIN_FONT_SIZE,
                 Margin = _standardMargin,
-                Height = 280
+                Height = 280,
+                Focusable = false
             };
 
             return StackWithTitle("Memory", _memDisplay);
@@ -414,6 +420,7 @@ namespace BbcMicro.WPFDebugger
         {
             _window.Dispatcher.BeginInvoke(new Action(() =>
             {
+                _inputBox.Focus();
                 _window.Show();
                 _showCallback?.Invoke(this);
             }));

@@ -2,7 +2,6 @@
 using System.IO;
 using System.Text;
 using BbcMicro.Cpu;
-using System.Windows.Input;
 using BbcMicro.WPF;
 using NLog;
 

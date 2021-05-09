@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AssemblyName>BbcMicro.SystemConstants</AssemblyName>
+    <RootNamespace>BbcMicro.SystemConstants</RootNamespace>
+    <Authors>Paul Harvey</Authors>
+    <Company>N/A</Company>
+    <Product />
+  </PropertyGroup>
+
+</Project>

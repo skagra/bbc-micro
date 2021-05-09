@@ -8,6 +8,7 @@ using Decoder = BbcMicro.Cpu.Decoder;
 
 namespace BbcMicro.WPFDebugger
 {
+    // TODO - Many possible threading issues!
     public sealed class Debugger
     {
         private readonly CPU _cpu;

@@ -13,6 +13,7 @@ using System.Windows;
 using System.Windows.Input;
 using BbcMicro.Screen;
 using BbcMicro.WPFDebugger;
+using BbcMicro.Diagnostics;
 
 namespace BBCMicro
 {
@@ -119,7 +120,7 @@ namespace BBCMicro
             debuggerDisplay.AddMessage("Starting the CPU");
             debuggerDisplay.Show();
 
-            cpu.PC = addressSpace.GetNativeWord(0xFFFC);
+            cpu.PC = addressSpace.GetNativeWord(BbcMicro.SystemConstants.CPU.RESET_VECTOR);
 
             // Start the CPU
             //Task.Run(() =>
@@ -142,6 +143,11 @@ namespace BBCMicro
 
             // Create the debugger
             var debugger = new Debugger(debuggerDisplay, cpu);
+
+            //var memMon = new MemoryMonitor(addressSpace);
+
+            //memMon.AddMonitor("vduScreenTopLeftAddressLow", vduScreenTopLeftAddressLow);
+            //memMon.AddMonitor("vduScreenTopLeftAddressHigh", vduScreenTopLeftAddressHigh);
 
             // Start the WPF application
             try

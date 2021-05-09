@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Memory\Memory.csproj" />
+    <ProjectReference Include="..\SystemConstants\SystemConstants.csproj" />
   </ItemGroup>
 
 </Project>

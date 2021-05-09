@@ -1,5 +1,5 @@
-﻿using BbcMicro.Cpu;
-using BbcMicro.Memory.Abstractions;
+﻿using BbcMicro.Memory.Abstractions;
+using BbcMicro.Memory.Extensions;
 using NLog;
 using System;
 using System.Threading;
@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using BbcMicro.SystemConstants;
 
 namespace BbcMicro.Screen
 {
@@ -25,8 +26,8 @@ namespace BbcMicro.Screen
             return _window;
         }
 
-        //private const int WINDOW_WIDTH = 1280;
-        //private const int WINDOW_HEIGHT = 1024;
+        private const int CANVAS_WIDTH = 1280;
+        private const int CANVAS_HEIGHT = 1024;
 
         private const int WINDOW_WIDTH = 1024;
         private const int WINDOW_HEIGHT = 768;
@@ -55,7 +56,8 @@ namespace BbcMicro.Screen
 
             // Create a writable bitmap to hold the screen
             _writeableBitmap = new WriteableBitmap(
-                (int)_window.Width, (int)_window.Height,
+                CANVAS_WIDTH, CANVAS_HEIGHT,
+                //(int)_window.Width, (int)_window.Height,
                 96, 96,
                 PixelFormats.Bgr32,
                 null);
@@ -182,8 +184,8 @@ namespace BbcMicro.Screen
                 BitMasks = bitMasks;
                 NumberOfXPixels = numberOfXPixels;
                 NumberOfYPixels = numberOfYPixels;
-                Transform = new MatrixTransform(new Matrix(WINDOW_WIDTH / (double)numberOfXPixels, 0, 0,
-                    WINDOW_HEIGHT / (double)numberOfYPixels, 0, 0));
+                Transform = new MatrixTransform(new Matrix(CANVAS_WIDTH / (double)numberOfXPixels, 0, 0,
+                    CANVAS_HEIGHT / (double)numberOfYPixels, 0, 0));
                 Rows = NumberOfYPixels / PixelsPerByte;
                 Cols = NumberOfXPixels / PixelsPerByte;
             }
@@ -277,15 +279,18 @@ namespace BbcMicro.Screen
             return modeInfo.Colours[colorIndex];
         }
 
+        private const ushort VDU_SCREEN_HIMEM = 0x8000;
+
+        // TODO - We might be able to derive all of the mode parameters from in memory values
         public void DrawScreen()
         {
-            var mode = _addressSpace.GetByte(OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
+            var mode = _addressSpace.GetByte(VDU.VDU_CURRENT_SCREEN_MODE);
 
             // TODO - just to stop crashes for now
             // A better hack would be to arrange to call .initialiseVDUVariablesAndSetMODE
             if (mode == 7)
             {
-                _addressSpace.SetByte(0, OS.MemoryLocations.VDU_CURRENT_SCREEN_MODE);
+                _addressSpace.SetByte(0, VDU.VDU_CURRENT_SCREEN_MODE);
                 mode = 0;
             }
 
@@ -295,7 +300,8 @@ namespace BbcMicro.Screen
             {
                 _image.RenderTransform = modeInfo.Transform;
 
-                var addr = modeInfo.ScreenBaseAddress;
+                // This is to deal with the changing base address as the screen scrolls
+                ushort addr = _addressSpace.GetNativeWord(VDU.VDU_SCREEN_TOP_LEFT_ADDRESS_LOW);
 
                 // Reserve the back buffer for updates.
                 _writeableBitmap.Lock();
@@ -304,6 +310,11 @@ namespace BbcMicro.Screen
                 {
                     for (int col = 0; col < modeInfo.Cols; col++)
                     {
+                        // This is to deal with the changing base address as the screen scrolls
+                        if (addr >= VDU_SCREEN_HIMEM)
+                        {
+                            addr = (ushort)(addr - modeInfo.ScreenMemorySize);
+                        }
                         // Each cell always contains 8 bytes - and always increases y by 1
                         // for each byte in the cell
                         for (int pixelByte = 0; pixelByte < 8; pixelByte++)
