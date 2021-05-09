@@ -13,7 +13,6 @@ using System.Windows;
 using System.Windows.Input;
 using BbcMicro.Screen;
 using BbcMicro.WPFDebugger;
-using BbcMicro.Diagnostics;
 
 namespace BBCMicro
 {
@@ -78,6 +77,9 @@ namespace BBCMicro
             // Create the WPF application
             var app = new Application();
 
+            // For debugging IRQ
+            var timerInterrupt = new TimerInterrupt(cpu);
+
             // Grab key events and send through to the buffer
             screen.GetWindow().KeyDown += new KeyEventHandler((sender, keyEventArgs) =>
             {
@@ -89,10 +91,14 @@ namespace BBCMicro
                     }
                 }
                 else
-
                 if (keyEventArgs.Key == Key.D && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     debuggerDisplay.Show();
+                }
+                else
+                if (keyEventArgs.Key == Key.I && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                {
+                    timerInterrupt.TriggerInterrupt();
                 }
                 else
                 {
@@ -110,8 +116,7 @@ namespace BBCMicro
             debuggerDisplay.AddMessage("Starting screen scanning");
             Task.Run(() =>
             {
-                // A frig to ensure we've booted before we start
-                // scanning the screen
+                // A frig to ensure we've booted before we start scanning the screen
                 Thread.Sleep(500);
                 screen.StartScan();
             });
@@ -143,11 +148,6 @@ namespace BBCMicro
 
             // Create the debugger
             var debugger = new Debugger(debuggerDisplay, cpu);
-
-            //var memMon = new MemoryMonitor(addressSpace);
-
-            //memMon.AddMonitor("vduScreenTopLeftAddressLow", vduScreenTopLeftAddressLow);
-            //memMon.AddMonitor("vduScreenTopLeftAddressHigh", vduScreenTopLeftAddressHigh);
 
             // Start the WPF application
             try

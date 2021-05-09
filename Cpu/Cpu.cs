@@ -4,11 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BbcMicro.Memory.Extensions;
+using NLog;
 
 namespace BbcMicro.Cpu
 {
     public sealed class CPU
     {
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+
         // Trap calls, optionally replacing their operation - useful for patching in OS routines
         // Processing stops when the first callback returns true to indicate it has handled the operation
         private List<Func<CPU, OpCode, AddressingMode, ushort, bool>> _interceptionCallbacks = new List<Func<CPU, OpCode, AddressingMode, ushort, bool>>();
@@ -72,60 +75,79 @@ namespace BbcMicro.Cpu
             // Is this a valid op code?
             try
             {
-                // Grab to opCode at PC
-                byte opCode = Memory.GetByte(PC);
-
-                // Find the decoder entry for the instruction
-                var decoded = _decoder.Decode(opCode);
-
-                // Calculate the actual operand using the addressing mode
-                var resolvedOperand = ResolveOperand((ushort)(PC + 1), decoded.addressingMode);
-
-                // Run pre-execution callbacks
-                _preExecutionCallbacks.ForEach(callback => callback(this, decoded.opCode, decoded.addressingMode));
-
-                // Keep a record of the current PC
-                var oldPC = PC;
-
-                // Calculate how many the current instruction and operand occupy
-                var pcDelta = (byte)(_decoder.GetAddressingModePCDelta(decoded.addressingMode) + 1);
-
-                // Interception callbacks
-                var intercepted = false;
-                foreach (var interceptionCallback in _interceptionCallbacks)
+                if (_interruptPending && !PIsSet(PFlags.I))
                 {
-                    // Run interception callbacks until first indicates it has been handled
-                    intercepted = interceptionCallback(this, decoded.opCode, decoded.addressingMode, resolvedOperand);
-                    if (intercepted)
-                    {
-                        break;
-                    }
-                }
-
-                // Was processing intercepted?
-                if (!intercepted)
-                {
-                    // No - then run standard instruction implementation
-                    PC += pcDelta;
-
-                    _implementations[(byte)decoded.opCode](resolvedOperand, decoded.addressingMode);
+                    _interruptPending = false;
+                    ProcessIRQ();
                 }
                 else
                 {
-                    // If the interception routine did not modify the PC, then skip past the current instruction
-                    if (oldPC == PC)
-                    {
-                        PC += pcDelta;
-                    }
-                }
+                    // Grab to opCode at PC
+                    byte opCode = Memory.GetByte(PC);
 
-                // Call post-execution callbacks
-                _postExecutionCallbacks.ForEach(callback => callback(this, decoded.opCode, decoded.addressingMode));
+                    // Find the decoder entry for the instruction
+                    var decoded = _decoder.Decode(opCode);
+
+                    // Calculate the actual operand using the addressing mode
+                    var resolvedOperand = ResolveOperand((ushort)(PC + 1), decoded.addressingMode);
+
+                    // Run pre-execution callbacks
+                    _preExecutionCallbacks.ForEach(callback => callback(this, decoded.opCode, decoded.addressingMode));
+
+                    // Keep a record of the current PC
+                    var oldPC = PC;
+
+                    // Calculate how many the current instruction and operand occupy
+                    var pcDelta = (byte)(_decoder.GetAddressingModePCDelta(decoded.addressingMode) + 1);
+
+                    // Interception callbacks
+                    var intercepted = false;
+                    foreach (var interceptionCallback in _interceptionCallbacks)
+                    {
+                        // Run interception callbacks until first indicates it has been handled
+                        intercepted = interceptionCallback(this, decoded.opCode, decoded.addressingMode, resolvedOperand);
+                        if (intercepted)
+                        {
+                            break;
+                        }
+                    }
+
+                    // Was processing intercepted?
+                    if (!intercepted)
+                    {
+                        // No - then run standard instruction implementation
+                        PC += pcDelta;
+
+                        _implementations[(byte)decoded.opCode](resolvedOperand, decoded.addressingMode);
+                    }
+                    else
+                    {
+                        // If the interception routine did not modify the PC, then skip past the current instruction
+                        if (oldPC == PC)
+                        {
+                            PC += pcDelta;
+                        }
+                    }
+
+                    // Call post-execution callbacks
+                    _postExecutionCallbacks.ForEach(callback => callback(this, decoded.opCode, decoded.addressingMode));
+                }
             }
             catch (Exception e)
             {
                 throw new CPUStatefulException(this, "Error processing instruction", e, true);
             }
+        }
+
+        private volatile bool _interruptPending = false;
+
+        // TODO
+        // This does not correctly model how the interrupt line actually work
+        // Interruts are triggered when the processes observes the line is low
+        // not when the state chages
+        public void TriggerIRQ()// Action cb)
+        {
+            _interruptPending = true;
         }
 
         public void Execute()
