@@ -12,6 +12,9 @@ namespace BbcMicro.Cpu
     {
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
+        public const byte S_MIN = 0x00;
+        public const byte S_MAX = 0xFF;
+
         // Trap calls, optionally replacing their operation - useful for patching in OS routines
         // Processing stops when the first callback returns true to indicate it has handled the operation
         private List<Func<CPU, OpCode, AddressingMode, ushort, bool>> _interceptionCallbacks = new List<Func<CPU, OpCode, AddressingMode, ushort, bool>>();
@@ -175,7 +178,7 @@ namespace BbcMicro.Cpu
             PReset(PFlags.B);
 
             // Jump via the vector
-            PC = Memory.GetNativeWord(SystemConstants.CPU.IRQ_VECTOR);
+            PC = Memory.GetNativeWord((ushort)SystemConstants.CPU.irqVector);
         }
 
         private void UpdateFlags(byte accordingToValue, PFlags flagsToUpdate)
@@ -402,7 +405,7 @@ namespace BbcMicro.Cpu
             PSet(PFlags.I);
 
             // Jump via the vector
-            PC = Memory.GetNativeWord(SystemConstants.CPU.IRQ_VECTOR);
+            PC = Memory.GetNativeWord((ushort)SystemConstants.CPU.irqVector);
         }
 
         /*
@@ -1042,7 +1045,7 @@ namespace BbcMicro.Cpu
         public ushort PC { get; set; }
 
         // Stack pointer
-        public byte S { get; set; } = SystemConstants.CPU.S_MAX;
+        public byte S { get; set; } = S_MAX;
 
         // Accumulator
         public byte A { get; set; }
@@ -1098,22 +1101,22 @@ namespace BbcMicro.Cpu
 
         public void PushByte(byte value)
         {
-            if (S == SystemConstants.CPU.S_MIN)
+            if (S == S_MIN)
             {
                 throw new CPUStatefulException(this, "Stack overflow", true);
             }
-            Memory.SetByte(value, (ushort)(SystemConstants.CPU.STACK_LOMEM + S));
+            Memory.SetByte(value, (ushort)(SystemConstants.CPU.stackLomem + S));
             S--;
         }
 
         public byte PopByte()
         {
-            if (S == SystemConstants.CPU.S_MAX)
+            if (S == S_MAX)
             {
                 throw new CPUStatefulException(this, "Stack underflow", true);
             }
             S++;
-            return Memory.GetByte((ushort)(SystemConstants.CPU.STACK_LOMEM + S));
+            return Memory.GetByte((ushort)(SystemConstants.CPU.stackLomem + S));
         }
 
         public IAddressSpace Memory { get; }

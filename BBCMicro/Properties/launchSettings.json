@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BBCMicro": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
+    }
+  }
+}

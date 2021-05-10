@@ -283,13 +283,13 @@ namespace BbcMicro.Screen
         // TODO - We might be able to derive all of the mode parameters from in memory values
         public void DrawScreen()
         {
-            var mode = _addressSpace.GetByte(VDU.VDU_CURRENT_SCREEN_MODE);
+            var mode = _addressSpace.GetByte((ushort)VDU.vduCurrentScreenMode);
 
             // TODO - just to stop crashes for now
             // A better hack would be to arrange to call .initialiseVDUVariablesAndSetMODE
             if (mode == 7)
             {
-                _addressSpace.SetByte(0, VDU.VDU_CURRENT_SCREEN_MODE);
+                _addressSpace.SetByte(0, (ushort)VDU.vduCurrentScreenMode);
                 mode = 0;
             }
 
@@ -300,7 +300,7 @@ namespace BbcMicro.Screen
                 _image.RenderTransform = modeInfo.Transform;
 
                 // This is to deal with the changing base address as the screen scrolls
-                ushort addr = _addressSpace.GetNativeWord(VDU.VDU_SCREEN_TOP_LEFT_ADDRESS_LOW);
+                ushort addr = _addressSpace.GetNativeWord((ushort)VDU.vduScreenTopLeftAddressLow);
 
                 // Reserve the back buffer for updates.
                 _writeableBitmap.Lock();

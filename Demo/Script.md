@@ -116,7 +116,7 @@ Exit `x`
 Now run again against core
 
 ```
-dotnet run -p Debugger a.out
+dotnet run -p Debugger core.bin
 ```
 
 And note we where we left of,  then start single stepping again. 

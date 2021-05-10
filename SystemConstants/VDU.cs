@@ -1,8 +1,9 @@
 ﻿namespace BbcMicro.SystemConstants
 {
-    public static class VDU
+    public enum VDU : ushort
     {
-        public const ushort VDU_SCREEN_TOP_LEFT_ADDRESS_LOW = 0x0350;
-        public const ushort VDU_CURRENT_SCREEN_MODE = 0x0355;
+        vduScreenTopLeftAddressLow = 0x0350,
+
+        vduCurrentScreenMode = 0x0355
     }
 }

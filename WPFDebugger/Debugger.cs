@@ -1,9 +1,14 @@
 ﻿using BbcMicro.Cpu;
 using BbcMicro.Cpu.Diagnostics;
+using BbcMicro.Cpu.Exceptions;
+using BbcMicro.Memory.Extensions;
+using BbcMicro.SystemConstants;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using CPU = BbcMicro.Cpu.CPU;
 using Decoder = BbcMicro.Cpu.Decoder;
 
 namespace BbcMicro.WPFDebugger
@@ -11,16 +16,25 @@ namespace BbcMicro.WPFDebugger
     // TODO - Many possible threading issues!
     public sealed class Debugger
     {
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+
         private readonly CPU _cpu;
         private readonly Disassembler _dis = new Disassembler();
         private readonly Decoder _decoder = new Decoder();
         private readonly DebuggerDisplay _display;
+
+        private string[] _symbols = new string[0xFFFF];
+
+        private volatile bool _tracing = false;
+        private volatile bool _break;
 
         public Debugger(DebuggerDisplay display, CPU cpu)
         {
             _display = display;
 
             _cpu = cpu;
+
+            LoadSymbols();
 
             AddCallbacks();
 
@@ -30,6 +44,25 @@ namespace BbcMicro.WPFDebugger
             _display.SetHideCallback(ShowCallback);
             _display.SetShowCallback(HideCallback);
             _display.SetCommandCallback(ProcessCommandLine);
+        }
+
+        private void LoadSymbols(Type theType)
+        {
+            var enumValues = theType.GetEnumValues();
+
+            foreach (var enumValue in enumValues)
+            {
+                var a = (ushort)enumValue;
+                _symbols[(ushort)enumValue] = enumValue.ToString();
+            }
+        }
+
+        private void LoadSymbols()
+        {
+            LoadSymbols(typeof(VDU));
+            LoadSymbols(typeof(VIA));
+            LoadSymbols(typeof(IRQ));
+            LoadSymbols(typeof(SystemConstants.CPU));
         }
 
         private void ShowCallback(DebuggerDisplay display)
@@ -84,6 +117,50 @@ namespace BbcMicro.WPFDebugger
                 memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
             }
             return (memory, _dis.Disassemble(address, _cpu.Memory));
+        }
+
+        private void Trace(ushort address)
+        {
+            (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
+
+            var memory = new byte[_decoder.GetAddressingModePCDelta(addressingMode) + 1];
+            memory[0] = _cpu.Memory.GetByte(_cpu.PC);
+
+            for (ushort pcOffset = 1; pcOffset < memory.Length; pcOffset++)
+            {
+                memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
+            }
+
+            var disString = _dis.Disassemble(address, _cpu.Memory);
+            var addrString = $"${address:X4}";
+            var memString = string.Join(" ", memory.Select(b => $"${b:X2}"));
+            var cpuString = _cpu.ToString();
+
+            ushort operandAddress = (ushort)(address + 1);
+            var operandValueString = addressingMode switch
+            {
+                AddressingMode.Accumulator => "",
+                AddressingMode.Immediate => "",
+                AddressingMode.Implied => "",
+                AddressingMode.Relative => $"(${_cpu.PC + 2 + (sbyte)_cpu.Memory.GetByte(operandAddress):X4})",
+                AddressingMode.Absolute => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetNativeWord(operandAddress)):X2})",
+                AddressingMode.ZeroPage => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetByte(operandAddress)):X2})",
+                AddressingMode.Indirect => $"(${_cpu.Memory.GetNativeWord(_cpu.Memory.GetNativeWord(operandAddress)):X4})",
+                AddressingMode.AbsoluteIndexedX => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(operandAddress) + _cpu.X)):X2})",
+                AddressingMode.AbsoluteIndexedY => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(operandAddress) + _cpu.Y)):X2})",
+                AddressingMode.ZeroPageIndexedX => $"(${_cpu.Memory.GetByte((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.X)):X2})",
+                AddressingMode.ZeroPageIndexedY => $"(${_cpu.Memory.GetByte((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.Y)):X2})",
+                AddressingMode.IndexedXIndirect => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetNativeWord((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.X))):X2})",
+                AddressingMode.IndirectIndexedY => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(_cpu.Memory.GetByte(operandAddress)) + _cpu.Y)):X2})",
+                _ => throw new CPUException($"Invalid addressing mode '{addressingMode}'")
+            };
+
+            var symbol = _symbols[_cpu.PC];
+            if (symbol != null)
+            {
+                _logger.Trace($"{symbol}:");
+            }
+            _logger.Trace($"{addrString,-5} {memString,-12} {disString,-11} {operandValueString,-8} {cpuString}");
         }
 
         private void UpdateDis()
@@ -167,6 +244,12 @@ namespace BbcMicro.WPFDebugger
                 return ParseDecInt(value, out parsed);
             }
         }
+
+        private const string TRON_CMD = "tron";
+        private const string TRON_USAGE = TRON_CMD + " - Start tracing execution";
+
+        private const string TROFF_CMD = "troff";
+        private const string TROFF_USAGE = TROFF_CMD + " - Stop tracing execution";
 
         private const string BREAK_CMD = "b";
         private const string BREAK_USAGE = BREAK_CMD + " - Break into execution";
@@ -511,8 +594,6 @@ namespace BbcMicro.WPFDebugger
             UpdateDis();
         }
 
-        private volatile bool _break;
-
         private void DumpCore()
         {
             CoreDumper.DumpCore(_cpu);
@@ -542,6 +623,8 @@ namespace BbcMicro.WPFDebugger
             //_display.AddMessage(CLEAR_MM_USAGE);
             _display.AddMessage(LM_USGE);
             _display.AddMessage(LD_USAGE);
+            _display.AddMessage(TRON_USAGE);
+            _display.AddMessage(TROFF_USAGE);
         }
 
         private void ProcessCommandLine(string commandLine, DebuggerDisplay source)
@@ -555,12 +638,26 @@ namespace BbcMicro.WPFDebugger
 
             switch (commandParts.ElementAt(0).ToLower())
             {
+                case TRON_CMD:
+                    _tracing = true;
+                    _display.AddMessage("Enabled execution tracing");
+                    break;
+
+                case TROFF_CMD:
+                    _tracing = false;
+                    _display.AddMessage("Disabled execution treacing");
+                    break;
+
                 case BREAK_CMD:
                     _display.AddMessage("Breaking into execution");
                     _break = true;
                     break;
 
                 case STEP_IN_CMD:
+                    if (_tracing)
+                    {
+                        Trace(_cpu.PC);
+                    }
                     _cpu.ExecuteNextInstruction();
                     break;
 

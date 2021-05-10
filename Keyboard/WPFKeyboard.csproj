@@ -9,4 +9,8 @@
     <Company>N/A</Company>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="nlog" Version="4.7.9" />
+  </ItemGroup>
+
 </Project>

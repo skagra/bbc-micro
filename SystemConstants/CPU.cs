@@ -1,15 +1,10 @@
 ﻿namespace BbcMicro.SystemConstants
 {
-    public static class CPU
+    public enum CPU : ushort
     {
-        public const ushort RESET_VECTOR = 0xFFFC;
-
-        public const ushort STACK_HIMEM = 0x01FF;
-        public const ushort STACK_LOMEM = 0x0100;
-
-        public const byte S_MIN = 0x00;
-        public const byte S_MAX = 0xFF;
-
-        public const ushort IRQ_VECTOR = 0xFFFE;
+        stackLomem = 0x0100,
+        stackHimem = 0x01FF,
+        resetVector = 0xFFFC,
+        irqVector = 0xFFFE
     }
 }
