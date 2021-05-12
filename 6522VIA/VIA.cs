@@ -59,7 +59,7 @@ namespace BbcMicro.BbcMicro.VIA
         private void KeyPressCallback()
         {
             // Translate windows key to BBC keycode and store
-            // Maybe just if scanning and keyboard interrupts on?
+            // Maybe just if scanning
         }
 
         private void WriteCallback(ushort address, IAddressSpace memory)
@@ -96,24 +96,19 @@ namespace BbcMicro.BbcMicro.VIA
             // NB we need to add a set will get recursion here!
             if (address == (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake)
             {
-                // Look for a single key?
-                if (!_keyboardAutoscanning)
-                {
-                    /*
-                     * A is key to test , on exit A has top bit set if pressed
-                     */
+                // Looks like and exact match sets the high bit of a
+                // and a column match the low bit of the interupt register
+                /*
+                 * A is key to test , on exit A has top bit set if pressed
+                 */
 
-                    if (Keyboard.IsKeyDown(Key.A)) // TODO - probably need to buffer up key events.
-                    {
-                        memory.SetByte(0x80 | 00 /* internal key number */, (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake);
-                    }
-                    else
-                    {
-                        memory.SetByte(0x00, (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake);
-                    }
+                if (Keyboard.IsKeyDown(Key.A)) // TODO - probably need to buffer up key events.
+                {
+                    memory.SetByte(0x80 | 00 /* internal key number */, (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake);
                 }
                 else
                 {
+                    memory.SetByte(0x00, (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake);
                 }
             }
         }
