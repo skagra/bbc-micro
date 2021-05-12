@@ -62,28 +62,6 @@ namespace BbcMicro.WPFDebugger
             LoadSymbols(typeof(SystemConstants.CPU));
         }
 
-        private void ShowCallback(DebuggerDisplay display)
-        {
-            AddCallbacks();
-        }
-
-        private void HideCallback(DebuggerDisplay display)
-        {
-            RemoveCallbacks();
-        }
-
-        private void AddCallbacks()
-        {
-            _cpu.Memory.AddSetByteCallback(MemoryChangedCallback);
-            _cpu.AddPostExecutionCallback(CpuChangedCallback);
-        }
-
-        private void RemoveCallbacks()
-        {
-            _cpu.Memory.RemoveSetByteCallback(MemoryChangedCallback);
-            _cpu.RemovePostExecutionCallback(CpuChangedCallback);
-        }
-
         private void UpdateCPU()
         {
             var stack = new byte[0XFF - _cpu.S];
@@ -530,11 +508,39 @@ namespace BbcMicro.WPFDebugger
             }
         }
 
+        private volatile bool _running = false;
+
+        private void AddCallbacks()
+        {
+            _cpu.Memory.AddSetByteCallback(MemoryChangedCallback);
+            _cpu.AddPostExecutionCallback(CpuChangedCallback);
+        }
+
+        private void RemoveCallbacks()
+        {
+            _cpu.Memory.RemoveSetByteCallback(MemoryChangedCallback);
+            _cpu.RemovePostExecutionCallback(CpuChangedCallback);
+        }
+
+        private void ShowCallback(DebuggerDisplay display)
+        {
+            if (!_running)
+            {
+                AddCallbacks();
+            }
+        }
+
+        private void HideCallback(DebuggerDisplay display)
+        {
+        }
+
         public void Execute(bool stopAfterRts)
         {
+            _running = true;
+
             // Clear all and stop updates
+            _display.Hide();
             RemoveCallbacks();
-            //_display.Hide();
             _display.Background();
             _display.ClearDis();
             _display.ClearMem();
@@ -585,15 +591,16 @@ namespace BbcMicro.WPFDebugger
                 _break = false;
             }
 
+            _running = false;
+
             AddCallbacks();
-
-            // _display.Show();
-
             _display.Foreground();
-
+            AddCallbacks();
             UpdateStack();
             UpdateCPU();
             UpdateDis();
+
+            _display.Show();
         }
 
         private void DumpCore()

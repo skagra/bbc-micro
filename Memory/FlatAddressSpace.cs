@@ -30,7 +30,10 @@ namespace BbcMicro.Memory
 
         public void AddSetByteCallback(Action<byte, byte, ushort> callback)
         {
-            _setByteCallbacks.Add(callback);
+            if (!_setByteCallbacks.Contains(callback))
+            {
+                _setByteCallbacks.Add(callback);
+            }
         }
 
         public void RemoveSetByteCallback(Action<byte, byte, ushort> callback)

@@ -50,12 +50,18 @@ namespace BbcMicro.Cpu
 
         public void AddInterceptionCallback(Func<CPU, OpCode, AddressingMode, ushort, bool> callback)
         {
-            _interceptionCallbacks.Add(callback);
+            if (!_interceptionCallbacks.Contains(callback))
+            {
+                _interceptionCallbacks.Add(callback);
+            }
         }
 
         public void AddPreExecutionCallback(Action<CPU, OpCode, AddressingMode> callback)
         {
-            _preExecutionCallbacks.Add(callback);
+            if (!_preExecutionCallbacks.Contains(callback))
+            {
+                _preExecutionCallbacks.Add(callback);
+            }
         }
 
         public void RemovePreExecutionCallback(Action<CPU, OpCode, AddressingMode> callback)
@@ -65,7 +71,10 @@ namespace BbcMicro.Cpu
 
         public void AddPostExecutionCallback(Action<CPU, OpCode, AddressingMode> callback)
         {
-            _postExecutionCallbacks.Add(callback);
+            if (!_postExecutionCallbacks.Contains(callback))
+            {
+                _postExecutionCallbacks.Add(callback);
+            }
         }
 
         public void RemovePostExecutionCallback(Action<CPU, OpCode, AddressingMode> callback)
