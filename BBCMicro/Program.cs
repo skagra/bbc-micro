@@ -78,14 +78,16 @@ namespace BBCMicro
             debuggerDisplay.AddMessage("Creating CPU");
             var cpu = new CPU(addressSpace);
 
-            // Load images for OS and Basic
+            // Load images
             if (coreFile != null)
             {
+                // Core file
                 var loader = new CoreFileLoader(cpu);
                 cpu.PC = loader.Load(coreFile).EntryPoint;
             }
             else
             {
+                // OS and/or Language
                 var loader = new ROMLoader();
 
                 debuggerDisplay.AddMessage($"Loading OS ROM from '{osRom}'");
@@ -96,6 +98,7 @@ namespace BBCMicro
 
                 cpu.PC = addressSpace.GetNativeWord((ushort)BbcMicro.SystemConstants.CPU.resetVector);
             }
+
             // Create the keyboard emulation for WPF
             debuggerDisplay.AddMessage("Creating keyboard");
             var keyboardEmu = new WPFKeyboardEmu();
@@ -116,7 +119,7 @@ namespace BBCMicro
             var timerInterrupt = new TimerInterrupt(cpu);
 
             // Grab key events and send through to the buffer
-            screen.GetWindow().KeyDown += new KeyEventHandler((sender, keyEventArgs) =>
+            screen.AddKeyDownCallback((sender, keyEventArgs) =>
             {
                 if (keyEventArgs.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {

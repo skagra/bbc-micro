@@ -1,6 +1,6 @@
 # Timed Sums
 
-**Broken until time works in the emalator**
+**Broken until time works in the emulator**
 
 ```
 10 PRINT "SEE HOW MANY SUMS YOU" 
@@ -192,6 +192,7 @@
 ```
 
 # Persian Carpet
+
 ```
 10 REM PERSIAN
 20 REM ACORN COMPUTERS

@@ -22,11 +22,15 @@ namespace BbcMicro.WPFDebugger
         private readonly Disassembler _dis = new Disassembler();
         private readonly Decoder _decoder = new Decoder();
         private readonly DebuggerDisplay _display;
+        private readonly string[] _symbols = new string[0xFFFF];
 
-        private string[] _symbols = new string[0xFFFF];
-
+        private volatile bool _running = false;
         private volatile bool _tracing = false;
         private volatile bool _break;
+
+        /*
+         * Initialization --->
+         */
 
         public Debugger(DebuggerDisplay display, CPU cpu)
         {
@@ -44,9 +48,33 @@ namespace BbcMicro.WPFDebugger
             _display.SetCommandCallback(ProcessCommandLine);
         }
 
-        private void LoadSymbols(Type theType)
+        private void AddCallbacks()
         {
-            var enumValues = theType.GetEnumValues();
+            _cpu.Memory.AddSetByteCallback(MemoryChangedCallback);
+            _cpu.AddPostExecutionCallback(CpuChangedCallback);
+        }
+
+        private void RemoveCallbacks()
+        {
+            _cpu.Memory.RemoveSetByteCallback(MemoryChangedCallback);
+            _cpu.RemovePostExecutionCallback(CpuChangedCallback);
+        }
+
+        private void ShowCallback(DebuggerDisplay display)
+        {
+            if (!_running)
+            {
+                AddCallbacks();
+            }
+        }
+
+        private void HideCallback(DebuggerDisplay display)
+        {
+        }
+
+        private void LoadSymbols<T>() where T : Enum
+        {
+            var enumValues = typeof(T).GetEnumValues();
 
             foreach (var enumValue in enumValues)
             {
@@ -56,105 +84,10 @@ namespace BbcMicro.WPFDebugger
 
         private void LoadSymbols()
         {
-            LoadSymbols(typeof(VDU));
-            LoadSymbols(typeof(VIA));
-            LoadSymbols(typeof(IRQ));
-            LoadSymbols(typeof(SystemConstants.CPU));
-        }
-
-        private void UpdateCPU()
-        {
-            var stack = new byte[0XFF - _cpu.S];
-
-            for (var offset = 0; offset < stack.Length; offset++)
-            {
-                stack[offset] = _cpu.Memory.GetByte((ushort)(0X1FF - offset));
-            }
-
-            _display.UpdateCpu(new ProcessorState
-            {
-                PC = _cpu.PC,
-                S = _cpu.S,
-                A = _cpu.A,
-                X = _cpu.X,
-                Y = _cpu.Y,
-                P = _cpu.P
-            }, stack.Reverse().ToArray());
-        }
-
-        private (byte[] memory, string dis) GetDis(ushort address)
-        {
-            (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
-
-            var memory = new byte[_decoder.GetAddressingModePCDelta(addressingMode) + 1];
-            memory[0] = _cpu.Memory.GetByte(_cpu.PC);
-
-            for (ushort pcOffset = 1; pcOffset < memory.Length; pcOffset++)
-            {
-                memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
-            }
-            return (memory, _dis.Disassemble(address, _cpu.Memory));
-        }
-
-        private void Trace(ushort address)
-        {
-            (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
-
-            var memory = new byte[_decoder.GetAddressingModePCDelta(addressingMode) + 1];
-            memory[0] = _cpu.Memory.GetByte(_cpu.PC);
-
-            for (ushort pcOffset = 1; pcOffset < memory.Length; pcOffset++)
-            {
-                memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
-            }
-
-            var disString = _dis.Disassemble(address, _cpu.Memory);
-            var addrString = $"${address:X4}";
-            var memString = string.Join(" ", memory.Select(b => $"${b:X2}"));
-            var cpuString = _cpu.ToString();
-
-            ushort operandAddress = (ushort)(address + 1);
-            var operandValueString = addressingMode switch
-            {
-                AddressingMode.Accumulator => "",
-                AddressingMode.Immediate => "",
-                AddressingMode.Implied => "",
-                AddressingMode.Relative => $"(${_cpu.PC + 2 + (sbyte)_cpu.Memory.GetByte(operandAddress):X4})",
-                AddressingMode.Absolute => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetNativeWord(operandAddress)):X2})",
-                AddressingMode.ZeroPage => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetByte(operandAddress)):X2})",
-                AddressingMode.Indirect => $"(${_cpu.Memory.GetNativeWord(_cpu.Memory.GetNativeWord(operandAddress)):X4})",
-                AddressingMode.AbsoluteIndexedX => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(operandAddress) + _cpu.X)):X2})",
-                AddressingMode.AbsoluteIndexedY => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(operandAddress) + _cpu.Y)):X2})",
-                AddressingMode.ZeroPageIndexedX => $"(${_cpu.Memory.GetByte((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.X)):X2})",
-                AddressingMode.ZeroPageIndexedY => $"(${_cpu.Memory.GetByte((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.Y)):X2})",
-                AddressingMode.IndexedXIndirect => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetNativeWord((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.X))):X2})",
-                AddressingMode.IndirectIndexedY => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(_cpu.Memory.GetByte(operandAddress)) + _cpu.Y)):X2})",
-                _ => throw new CPUException($"Invalid addressing mode '{addressingMode}'")
-            };
-
-            var symbol = _symbols[_cpu.PC];
-            if (symbol != null)
-            {
-                _logger.Trace($"{symbol}:");
-            }
-            _logger.Trace($"{addrString,-5} {memString,-12} {disString,-11} {operandValueString,-8} {cpuString}");
-        }
-
-        private void UpdateDis()
-        {
-            (var memory, var dis) = GetDis(_cpu.PC);
-            _display.AddDis(_cpu.PC, memory, dis);
-        }
-
-        private void UpdateStack()
-        {
-            var stack = new byte[0XFF - _cpu.S];
-
-            for (var offset = 0; offset < stack.Length; offset++)
-            {
-                stack[offset] = _cpu.Memory.GetByte((ushort)(0X1FF - offset));
-            }
-            _display.UpdateStack(stack.Reverse().ToArray());
+            LoadSymbols<VDU>();
+            LoadSymbols<VIA>();
+            LoadSymbols<IRQ>();
+            LoadSymbols<SystemConstants.CPU>();
         }
 
         private void MemoryChangedCallback(byte newVal, byte oldVal, ushort address)
@@ -169,58 +102,13 @@ namespace BbcMicro.WPFDebugger
             UpdateStack();
         }
 
-        private void Error(string value = "Error")
-        {
-            _display.AddMessage(value, false, true);
-        }
+        /*
+         * <--- Initialization
+         */
 
-        private readonly List<ushort> _breakPoints = new List<ushort>();
-
-        private bool ParseHexWord(string value, out ushort word)
-        {
-            var ok = ushort.TryParse(value,
-                        System.Globalization.NumberStyles.HexNumber,
-                        null,
-                        out word);
-
-            if (!ok)
-            {
-                Error($"Could not parse '{value}' as hex.");
-            }
-
-            return ok;
-        }
-
-        private bool ParseDecInt(string value, out ushort parsed)
-        {
-            var ok = ushort.TryParse(value, out parsed);
-
-            if (!ok)
-            {
-                Error($"Could not parse '{value}' as base 10 integer.");
-            }
-
-            return ok;
-        }
-
-        private bool ParseNumber(string value, out ushort parsed)
-        {
-            var lcValue = value.ToLower().Trim();
-
-            if (lcValue.StartsWith("$"))
-            {
-                return ParseHexWord(value.Substring(1), out parsed);
-            }
-            else
-            if (lcValue.StartsWith("0x"))
-            {
-                return ParseHexWord(value.Substring(2), out parsed);
-            }
-            else
-            {
-                return ParseDecInt(value, out parsed);
-            }
-        }
+        /*
+         * ---> Command parsing
+         */
 
         private const string TRON_CMD = "tron";
         private const string TRON_USAGE = TRON_CMD + " - Start tracing execution";
@@ -293,6 +181,277 @@ namespace BbcMicro.WPFDebugger
 
         private const string HELP_CMD = "h";
 
+        private void Error(string value = "Error")
+        {
+            _display.AddMessage(value, false, true);
+        }
+
+        private bool ParseHex(string value, out ushort word)
+        {
+            var ok = ushort.TryParse(value,
+                        System.Globalization.NumberStyles.HexNumber,
+                        null,
+                        out word);
+
+            if (!ok)
+            {
+                Error($"Could not parse '{value}' as hex.");
+            }
+
+            return ok;
+        }
+
+        private bool ParseDec(string value, out ushort parsed)
+        {
+            var ok = ushort.TryParse(value, out parsed);
+
+            if (!ok)
+            {
+                Error($"Could not parse '{value}' as base 10 integer.");
+            }
+
+            return ok;
+        }
+
+        private bool ParseNumber(string value, out ushort parsed)
+        {
+            var lcValue = value.ToLower().Trim();
+
+            if (lcValue.StartsWith("$"))
+            {
+                return ParseHex(value[1..], out parsed);
+            }
+            else
+            if (lcValue.StartsWith("0x"))
+            {
+                return ParseHex(value[2..], out parsed);
+            }
+            else
+            {
+                return ParseDec(value, out parsed);
+            }
+        }
+
+        private void ProcessCommandLine(string commandLine, DebuggerDisplay source)
+        {
+            var commandParts = commandLine.Split(" ").Select(word => word.Trim()).Where(word => word.Length > 0).ToList();
+            if (commandParts.Count == 0)
+            {
+                // Default command - single step
+                commandParts = new List<string> { STEP_IN_CMD };
+            }
+
+            switch (commandParts.ElementAt(0).ToLower())
+            {
+                case TRON_CMD:
+                    _tracing = true;
+                    _display.AddMessage("Enabled execution tracing");
+                    break;
+
+                case TROFF_CMD:
+                    _tracing = false;
+                    _display.AddMessage("Disabled execution tracing");
+                    break;
+
+                case BREAK_CMD:
+                    _display.AddMessage("Breaking into execution");
+                    _break = true;
+                    break;
+
+                case STEP_IN_CMD:
+                    if (_tracing)
+                    {
+                        Trace(_cpu.PC);
+                    }
+                    _cpu.ExecuteNextInstruction();
+                    break;
+
+                case RUN_CMD:
+                    _display.AddMessage("Running until breakpoint");
+                    Execute(false);
+                    break;
+
+                case RUN_TO_RTS_CMD:
+                    _display.AddMessage("Returning from subroutine");
+                    Execute(true);
+                    break;
+
+                case SET_CMD:
+                    Set(commandParts);
+                    break;
+
+                case SET_BP_CMD:
+                    SetBreakPoint(commandParts);
+                    break;
+
+                case LIST_BP_CMD:
+                    ListBreakPoints(commandParts);
+                    break;
+
+                case CLEAR_BP_CMD:
+                    ClearBreakPoint(commandParts);
+                    break;
+
+                case LM_CMD:
+                    ListMemory(commandParts);
+                    break;
+
+                case LD_CMD:
+                    ListDis(commandParts);
+                    break;
+
+                case C_CMD:
+                    _display.AddMessage("Dumping core");
+                    DumpCore();
+                    break;
+
+                case HELP_CMD:
+                    Help();
+                    break;
+
+                default:
+                    Error($"No such command '{commandLine}'");
+                    break;
+            }
+        }
+
+        /*
+         * <--- Command parsing
+         */
+
+        /*
+         * CPU display --->
+         */
+
+        private void UpdateCPU()
+        {
+            var stack = new byte[0XFF - _cpu.S];
+
+            for (var offset = 0; offset < stack.Length; offset++)
+            {
+                stack[offset] = _cpu.Memory.GetByte((ushort)(0X1FF - offset));
+            }
+
+            _display.UpdateCpu(new ProcessorState
+            {
+                PC = _cpu.PC,
+                S = _cpu.S,
+                A = _cpu.A,
+                X = _cpu.X,
+                Y = _cpu.Y,
+                P = _cpu.P
+            }, stack.Reverse().ToArray());
+        }
+
+        /*
+         * <--- CPU display
+         */
+
+        /*
+         * Disassembly display --->
+         */
+
+        private (byte[] memory, string dis) GetDis(ushort address)
+        {
+            (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
+
+            var memory = new byte[_decoder.GetAddressingModePCDelta(addressingMode) + 1];
+            memory[0] = _cpu.Memory.GetByte(_cpu.PC);
+
+            for (ushort pcOffset = 1; pcOffset < memory.Length; pcOffset++)
+            {
+                memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
+            }
+            return (memory, _dis.Disassemble(address, _cpu.Memory));
+        }
+
+        private void UpdateDis()
+        {
+            (var memory, var dis) = GetDis(_cpu.PC);
+            _display.AddDis(_cpu.PC, memory, dis);
+        }
+
+        /*
+         * <--- Disassembly display
+         */
+
+        /*
+         * Execution tracing --->
+         */
+
+        private void Trace(ushort address)
+        {
+            (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
+
+            var memory = new byte[_decoder.GetAddressingModePCDelta(addressingMode) + 1];
+            memory[0] = _cpu.Memory.GetByte(_cpu.PC);
+
+            for (ushort pcOffset = 1; pcOffset < memory.Length; pcOffset++)
+            {
+                memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
+            }
+
+            var disString = _dis.Disassemble(address, _cpu.Memory);
+            var addrString = $"${address:X4}";
+            var memString = string.Join(" ", memory.Select(b => $"${b:X2}"));
+            var cpuString = _cpu.ToString();
+
+            ushort operandAddress = (ushort)(address + 1);
+            var operandValueString = addressingMode switch
+            {
+                AddressingMode.Accumulator => "",
+                AddressingMode.Immediate => "",
+                AddressingMode.Implied => "",
+                AddressingMode.Relative => $"(${_cpu.PC + 2 + (sbyte)_cpu.Memory.GetByte(operandAddress):X4})",
+                AddressingMode.Absolute => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetNativeWord(operandAddress)):X2})",
+                AddressingMode.ZeroPage => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetByte(operandAddress)):X2})",
+                AddressingMode.Indirect => $"(${_cpu.Memory.GetNativeWord(_cpu.Memory.GetNativeWord(operandAddress)):X4})",
+                AddressingMode.AbsoluteIndexedX => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(operandAddress) + _cpu.X)):X2})",
+                AddressingMode.AbsoluteIndexedY => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(operandAddress) + _cpu.Y)):X2})",
+                AddressingMode.ZeroPageIndexedX => $"(${_cpu.Memory.GetByte((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.X)):X2})",
+                AddressingMode.ZeroPageIndexedY => $"(${_cpu.Memory.GetByte((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.Y)):X2})",
+                AddressingMode.IndexedXIndirect => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetNativeWord((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.X))):X2})",
+                AddressingMode.IndirectIndexedY => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(_cpu.Memory.GetByte(operandAddress)) + _cpu.Y)):X2})",
+                _ => throw new CPUException($"Invalid addressing mode '{addressingMode}'")
+            };
+
+            var symbol = _symbols[_cpu.PC];
+            if (symbol != null)
+            {
+                _logger.Trace($"{symbol}:");
+            }
+            _logger.Trace($"{addrString,-5} {memString,-12} {disString,-11} {operandValueString,-8} {cpuString}");
+        }
+
+        /*
+        * <--- Execution tracing
+        */
+
+        /*
+         * Stack display --->
+         */
+
+        private void UpdateStack()
+        {
+            var stack = new byte[0XFF - _cpu.S];
+
+            for (var offset = 0; offset < stack.Length; offset++)
+            {
+                stack[offset] = _cpu.Memory.GetByte((ushort)(0X1FF - offset));
+            }
+            _display.UpdateStack(stack.Reverse().ToArray());
+        }
+
+        /*
+         * <--- Stack display
+         */
+
+        /*
+         * Breakpoints --->
+         */
+
+        private readonly List<ushort> _breakPoints = new List<ushort>();
+
         private void SetBreakPoint(List<string> command)
         {
             if (command.Count <= 2)
@@ -336,7 +495,7 @@ namespace BbcMicro.WPFDebugger
         {
             if (command.Count == 2)
             {
-                if (ParseDecInt(command[1], out var operand))
+                if (ParseDec(command[1], out var operand))
                 {
                     if (operand < _breakPoints.Count)
                     {
@@ -354,6 +513,14 @@ namespace BbcMicro.WPFDebugger
                 Error(CLEAR_BP_USAGE);
             }
         }
+
+        /*
+         * <--- Breakpoints
+         */
+
+        /*
+         * Disassembly of memory region --->
+         */
 
         private void ListDis(List<string> command)
         {
@@ -397,6 +564,14 @@ namespace BbcMicro.WPFDebugger
                 Error(LD_USAGE);
             }
         }
+
+        /*
+         * <--- Disassembly of memory region
+         */
+
+        /*
+         * List memory region --->
+         */
 
         private void ListMemory(List<string> command)
         {
@@ -445,6 +620,14 @@ namespace BbcMicro.WPFDebugger
                 Error(LM_USGE);
             }
         }
+
+        /*
+         * <--- List memory region
+         */
+
+        /*
+         * Set a register or memory location value --->
+         */
 
         private void Set(List<string> command)
         {
@@ -508,31 +691,13 @@ namespace BbcMicro.WPFDebugger
             }
         }
 
-        private volatile bool _running = false;
+        /*
+         * <--- Set a register or memory location value
+         */
 
-        private void AddCallbacks()
-        {
-            _cpu.Memory.AddSetByteCallback(MemoryChangedCallback);
-            _cpu.AddPostExecutionCallback(CpuChangedCallback);
-        }
-
-        private void RemoveCallbacks()
-        {
-            _cpu.Memory.RemoveSetByteCallback(MemoryChangedCallback);
-            _cpu.RemovePostExecutionCallback(CpuChangedCallback);
-        }
-
-        private void ShowCallback(DebuggerDisplay display)
-        {
-            if (!_running)
-            {
-                AddCallbacks();
-            }
-        }
-
-        private void HideCallback(DebuggerDisplay display)
-        {
-        }
+        /*
+         * Execution --->
+         */
 
         public void Execute(bool stopAfterRts)
         {
@@ -603,10 +768,26 @@ namespace BbcMicro.WPFDebugger
             _display.Show();
         }
 
+        /*
+         * <--- Execution
+         */
+
+        /*
+         * Dump a core file --->
+         */
+
         private void DumpCore()
         {
             CoreDumper.DumpCore(_cpu);
         }
+
+        /*
+         * <--- Dump a core file
+         */
+
+        /*
+         * Print help text --->
+         */
 
         private void Help()
         {
@@ -636,87 +817,8 @@ namespace BbcMicro.WPFDebugger
             _display.AddMessage(TROFF_USAGE);
         }
 
-        private void ProcessCommandLine(string commandLine, DebuggerDisplay source)
-        {
-            var commandParts = commandLine.Split(" ").Select(word => word.Trim()).ToList();
-            if (commandParts.Count == 0 || (commandParts.Count == 1 && commandParts[0].Length == 0))
-            {
-                // Default command
-                commandParts = new List<string> { STEP_IN_CMD };
-            }
-
-            switch (commandParts.ElementAt(0).ToLower())
-            {
-                case TRON_CMD:
-                    _tracing = true;
-                    _display.AddMessage("Enabled execution tracing");
-                    break;
-
-                case TROFF_CMD:
-                    _tracing = false;
-                    _display.AddMessage("Disabled execution treacing");
-                    break;
-
-                case BREAK_CMD:
-                    _display.AddMessage("Breaking into execution");
-                    _break = true;
-                    break;
-
-                case STEP_IN_CMD:
-                    if (_tracing)
-                    {
-                        Trace(_cpu.PC);
-                    }
-                    _cpu.ExecuteNextInstruction();
-                    break;
-
-                case RUN_CMD:
-                    _display.AddMessage("Running until breakpoint");
-                    Execute(false);
-                    break;
-
-                case RUN_TO_RTS_CMD:
-                    _display.AddMessage("Returning from subroutine");
-                    Execute(true);
-                    break;
-
-                case SET_CMD:
-                    Set(commandParts);
-                    break;
-
-                case SET_BP_CMD:
-                    SetBreakPoint(commandParts);
-                    break;
-
-                case LIST_BP_CMD:
-                    ListBreakPoints(commandParts);
-                    break;
-
-                case CLEAR_BP_CMD:
-                    ClearBreakPoint(commandParts);
-                    break;
-
-                case LM_CMD:
-                    ListMemory(commandParts);
-                    break;
-
-                case LD_CMD:
-                    ListDis(commandParts);
-                    break;
-
-                case C_CMD:
-                    _display.AddMessage("Dumping core");
-                    DumpCore();
-                    break;
-
-                case HELP_CMD:
-                    Help();
-                    break;
-
-                default:
-                    Error($"No such command '{commandLine}'");
-                    break;
-            }
-        }
+        /*
+         * <--- Print help text
+         */
     }
 }

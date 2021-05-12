@@ -9,22 +9,13 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using BbcMicro.SystemConstants;
+using System.Windows.Input;
 
 namespace BbcMicro.Screen
 {
     public class GenericScreen
     {
-        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
-
-        private WriteableBitmap _writeableBitmap;
-        private readonly Window _window;
-        private readonly Image _image;
-        private readonly IAddressSpace _addressSpace;
-
-        public Window GetWindow()
-        {
-            return _window;
-        }
+        private const ushort VDU_SCREEN_HIMEM = 0x8000;
 
         private const int CANVAS_WIDTH = 1280;
         private const int CANVAS_HEIGHT = 1024;
@@ -32,7 +23,18 @@ namespace BbcMicro.Screen
         private const int WINDOW_WIDTH = 1024;
         private const int WINDOW_HEIGHT = 768;
 
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+
+        private readonly Window _window;
+        private readonly Image _image;
+        private readonly IAddressSpace _addressSpace;
+        private readonly WriteableBitmap _writeableBitmap;
         private readonly int _frameSleepTime;
+
+        public void AddKeyDownCallback(Action<object, KeyEventArgs> callback)
+        {
+            _window.KeyDown += new KeyEventHandler(callback);
+        }
 
         public GenericScreen(IAddressSpace addressSpace, int frequency = 25)
         {
@@ -86,7 +88,9 @@ namespace BbcMicro.Screen
             });
         }
 
-        // Pixel colors
+        /*
+         * Pixel colors
+         */
 
         private const int RED = 255 << 16;
         private const int GREEN = 255 << 8;
@@ -277,8 +281,6 @@ namespace BbcMicro.Screen
 
             return modeInfo.Colours[colorIndex];
         }
-
-        private const ushort VDU_SCREEN_HIMEM = 0x8000;
 
         // TODO - We might be able to derive all of the mode parameters from in memory values
         public void DrawScreen()
