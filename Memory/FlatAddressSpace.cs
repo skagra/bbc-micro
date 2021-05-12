@@ -12,6 +12,11 @@ namespace BbcMicro.Memory
         private readonly List<Action<byte, byte, ushort>> _setByteCallbacks =
             new List<Action<byte, byte, ushort>>();
 
+        public FlatAddressSpace()
+        {
+            Array.Fill(_memory, (byte)0);
+        }
+
         public byte GetByte(ushort address)
         {
             return _memory[address];

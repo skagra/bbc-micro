@@ -8,7 +8,6 @@
     <Company>N/A</Company>
     <PackageIcon></PackageIcon>
     <ApplicationIcon>Icon.ico</ApplicationIcon>
-    <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
   </PropertyGroup>
 
   <ItemGroup>

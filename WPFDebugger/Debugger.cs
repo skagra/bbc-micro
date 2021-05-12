@@ -36,13 +36,11 @@ namespace BbcMicro.WPFDebugger
 
             LoadSymbols();
 
-            AddCallbacks();
-
             UpdateCPU();
             UpdateDis();
 
-            _display.SetHideCallback(ShowCallback);
-            _display.SetShowCallback(HideCallback);
+            _display.SetHideCallback(HideCallback);
+            _display.SetShowCallback(ShowCallback);
             _display.SetCommandCallback(ProcessCommandLine);
         }
 
@@ -52,7 +50,6 @@ namespace BbcMicro.WPFDebugger
 
             foreach (var enumValue in enumValues)
             {
-                var a = (ushort)enumValue;
                 _symbols[(ushort)enumValue] = enumValue.ToString();
             }
         }
@@ -67,10 +64,12 @@ namespace BbcMicro.WPFDebugger
 
         private void ShowCallback(DebuggerDisplay display)
         {
+            AddCallbacks();
         }
 
         private void HideCallback(DebuggerDisplay display)
         {
+            RemoveCallbacks();
         }
 
         private void AddCallbacks()
@@ -531,10 +530,11 @@ namespace BbcMicro.WPFDebugger
             }
         }
 
-        private void Execute(bool stopAfterRts)
+        public void Execute(bool stopAfterRts)
         {
             // Clear all and stop updates
             RemoveCallbacks();
+            //_display.Hide();
             _display.Background();
             _display.ClearDis();
             _display.ClearMem();
@@ -586,6 +586,8 @@ namespace BbcMicro.WPFDebugger
             }
 
             AddCallbacks();
+
+            // _display.Show();
 
             _display.Foreground();
 
