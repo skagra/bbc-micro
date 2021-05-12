@@ -2,8 +2,15 @@
 
 # Demo 1 - 6502 Emulator
 
-Goint to demostrate 6502 emulation via the debugger using
+Going to demonstrate 6502 emulation via the debugger using
 this simple *"Hello World"* assembly language programme:
+
+* Pull up code
+* Indicate segments
+* Go to end and point at null terminated string
+* And point at the vector and explain how it works
+* Then walk through the code 
+  * Note: call to OSWRCH as an example of an intercepted OS call
 
 ```
 /*
@@ -63,55 +70,47 @@ hello:      DC "Hello World"
 printvec:   DS 2
 ```
 
-Explain the programme.
-
-Assemble it into machine code:
+* Assemble it into machine code:
 
 ```
 dasm BBCMicro\Asm\HelloWorldJsr.asm -f2 -IBBCMicro\Asm
 ```
 
-Dir output file `a.out`.
+* Dir output file `a.out`.
 
-Open `a.out` in binary editor and explain some of the format.
-
-Load the machine code into the emulator:
+* Open `a.out` in binary editor and explain some of the format.
+  * Segments - Little endian entry point then length
+  * Point out the JSR main for example
+  * And point to the inline data for "Hello World"
+ 
+* Load the machine code into the emulator:
 
 ```
 dotnet run -p Debugger a.out
 ```
 
-Describe each of the "windows"
+* Pull up code beside debugger
+* Describe each of the "windows"
+  * Code (disassembly)
+  * Processor 
+  * Memory
+  * Stack
+  * Debugger output
+  * Input
+  * Programme output
 
-* Code (disassembly)
-* Processor 
-* Memory
-* Stack
-* Debugger output
-* Input
-* Programme output
-
-Pull up code beside debugger.
-
-* `h` - help
-* `ld 408` - and compare to listing
-* `lm 500` - and compart to listing
-
-Now we can single step throug the programme.
-
-* Explain display changes as it goes
-* Make reference to output characters
-* Continue until first couple of characters printed.
-
-Dump a core `c` - explain what a core is, we'll come back to this later!
-
-`t` - Run to return
-
-Show some context and compare to listing:
-
-`ld 416 6 `
-
-Exit `x`
+* Some commands
+  * `h` - help
+  * `ld 408` - and compare to listing - `LDY #$0`
+  * `lm 500` - and compare to listing - "Hello World" data
+* Now we can single step through the programme.
+  * Explain display changes as it goes
+  * Make reference to output characters
+  * Continue until first couple of characters printed.
+* Dump a core `c` - explain what a core is, we'll come back to this later!
+  * Note current state - registers and "Hello...    
+* `t` - Run to return
+* Exit `x`
 
 Now run again against core
 
@@ -119,8 +118,8 @@ Now run again against core
 dotnet run -p Debugger core.bin
 ```
 
-And note we where we left of,  then start single stepping again. 
-Note the rest of the output characters.
+* Note we where we left off,  then start single stepping again. 
+* Note the rest of the output characters.
 
 # Demo 2 - BBC Emulator
 
@@ -130,15 +129,13 @@ Note the rest of the output characters.
 dotnet run -p BBCMicro
 ```
 
-Talk through the load and boot process.
-
-* Creates memory
-* Created emulated CPU
-* OS ROM paged in
-* Language (BBC Basic) ROM paged in
-* Boot (hard reset CPU => direct via 0xFFFC)
-
-Explain we are seeing the emulated screen.
+* Talk through the load and boot process.
+  * Creates memory
+  * Created emulated CPU
+  * OS ROM paged in
+  * Language (BBC Basic) ROM paged in
+  * Boot (hard reset CPU => direct via 0xFFFC)
+* Explain we are seeing the emulated screen.
 
 We are now going to write a basic programme:
 
@@ -164,18 +161,17 @@ You can see the stored programme.
 RUN
 ```
 
-We are executing the programme:
-
-* Basic programme loaded into emulate memory
-* Executed by BBC basic interpreter in ROM
-* With calls to OS
-* Executed by emulated 6502 CPU
-* Displaying on screen via emulated 6845 CRTC
-* Emulation in C#
-* Compiled down to byte code IL
-* Interpeted and JIT'd by dotnet 
-* Running on OS Windows
-* On x86 machine code/CPU
+* We are executing the programme:
+* Basic programme loaded into emulator memory
+  * Executed by BBC basic interpreter in ROM
+  * On the BBC OS in ROM
+  * Executed by emulated 6502 CPU
+  * Displaying on screen via emulated 6845 CRTC
+  * All implemented in C#
+  * Compiled down to byte code IL
+  * Interpreted and JIT'd by dotnet 
+  * Running on OS Windows
+  * On x86 machine code/CPU
 
 Let's try another:
 
