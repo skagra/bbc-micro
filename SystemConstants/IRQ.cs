@@ -22,6 +22,9 @@
         irq1CheckSystemVIAKeyboard = 0xde72,
         restoreRegistersAndReturnFromInterrupt = 0xde82,
         eventEntryPoint = 0xe494,
-        irq2Handler = 0xde89
+        irq2Handler = 0xde89,
+        keyboardInterruptRoutine = 0xf065,
+        scanKeyboard = 0xf0d1,
+        interrogateKeyboard = 0xf02a
     }
 }

@@ -2,6 +2,10 @@
 {
     public enum VIA : ushort
     {
-        systemViaInterruptEnableRegister = 0xFE4E
+        systemVIARegisterB = 0xFE40,
+        systemVIADataDirectionRegisterA = 0xFE43,
+        systemVIAInterruptFlagRegister = 0xFE4D,
+        systemViaInterruptEnableRegister = 0xFE4E,
+        systemVIARegisterANoHandshake = 0xFE4F
     }
 }

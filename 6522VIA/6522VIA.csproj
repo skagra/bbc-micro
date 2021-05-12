@@ -1,8 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>_6522VIA</RootNamespace>
+    <RootNamespace>BbcMicro.VIA</RootNamespace>
+    <AssemblyName>BbcMicro.VIA</AssemblyName>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Memory\Memory.csproj" />
+    <ProjectReference Include="..\SystemConstants\SystemConstants.csproj" />
+  </ItemGroup>
 
 </Project>
