@@ -351,7 +351,7 @@ namespace BbcMicro.WPFDebugger
          * Disassembly display --->
          */
 
-        private (byte[] memory, string dis) GetDis(ushort address)
+        private (string label, byte[] memory, string dis) GetDis(ushort address)
         {
             (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
 
@@ -362,12 +362,19 @@ namespace BbcMicro.WPFDebugger
             {
                 memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
             }
-            return (memory, _dis.Disassemble(address, _cpu.Memory));
+
+            var label = _symbols[_cpu.PC];
+
+            return (label, memory, _dis.Disassemble(address, _cpu.Memory));
         }
 
         private void UpdateDis()
         {
-            (var memory, var dis) = GetDis(_cpu.PC);
+            (var label, var memory, var dis) = GetDis(_cpu.PC);
+            if (label != null)
+            {
+                _display.AddDis($":{label}");
+            }
             _display.AddDis(_cpu.PC, memory, dis);
         }
 
@@ -547,7 +554,11 @@ namespace BbcMicro.WPFDebugger
                 {
                     try
                     {
-                        (var memory, var dis) = GetDis(address);
+                        (var label, var memory, var dis) = GetDis(address);
+                        if (label != null)
+                        {
+                            _display.AddMessage($":{label}");
+                        }
                         _display.AddMessage($"${address:X4} {dis}");
                         address += (ushort)(memory.Length);
                     }
