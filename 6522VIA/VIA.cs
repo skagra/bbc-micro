@@ -1,13 +1,16 @@
-﻿using BbcMicro.Memory.Abstractions;
-using System;
+﻿using BbcMicro.Cpu;
+using NLog;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace BbcMicro.BbcMicro.VIA
 {
     public sealed class VIA
     {
+        private readonly Logger _logger = LogManager.GetCurrentClassLogger();
+
         // The least significant nibble is for writing,
         // and the most significant four bits for reading.
         private enum RegisterBValues : byte
@@ -46,7 +49,19 @@ namespace BbcMicro.BbcMicro.VIA
             AnalogueConversionCompleted = 0b0001_0000,
             Timer2HasTimedOut = 0b0010_0000,
             Timer1HasTimedOut = 0b0100_0000, // <---
-            MasterInterruptFlag = 0b1000_000 // <---
+            MasterInterruptFlag = 0b1000_0000 // <---
+        }
+
+        private enum IERFlags : byte
+        {
+            KeyPressedInterrupt = 0b0000_0001, // <---
+            VerticalSyncOccurred = 0b0000_0010, // <---
+            ShiftRegisterTimeout = 0b0000_0100,
+            LightPenStrobeOffScreen = 0b0000_1000,
+            AnalogueConversionCompleted = 0b0001_0000,
+            Timer2HasTimedOut = 0b0010_0000,
+            Timer1HasTimedOut = 0b0100_0000, // <---
+            EnableInterruptFlag = 0b1000_0000 // <---
         }
 
         private readonly Dictionary<Key, (int row, int col)> SystemKeyToBBCKey = new Dictionary<Key, (int row, int col)>
@@ -55,25 +70,98 @@ namespace BbcMicro.BbcMicro.VIA
         };
 
         private volatile bool _keyboardAutoscanning = true;
+        private volatile Key _latestKey = Key.None;
+        private volatile bool _keyboardInterruptsEnabled = true;
 
-        private void KeyPressCallback()
+        private readonly CPU _cpu;
+
+        public VIA(CPU cpu)
         {
-            // Translate windows key to BBC keycode and store
-            // Maybe just if scanning
+            _cpu = cpu;
+            _cpu.Memory.AddSetByteCallback(WriteCallback);
+            // _cpu.Memory.SetByte(0, 0x027B);
         }
 
-        private void WriteCallback(ushort address, IAddressSpace memory)
+        private const ushort acia6850StatusRegister = 0XFE08;
+
+        public void KeyPressCallback(object sender, KeyEventArgs e)
         {
-            // Enable/disable interrupts
-            // Bit set = disable
+            if (_keyboardAutoscanning)
+            {
+                //  _cpu.Memory.SetByte(0b0000_0000, acia6850StatusRegister, false);
+
+                _latestKey = e.Key;
+                if (_keyboardInterruptsEnabled)
+                {
+                    _cpu.Memory.SetByte((byte)(//_cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister) |
+                        (byte)IFRFlags.KeyPressedInterrupt |
+                        (byte)IFRFlags.MasterInterruptFlag),
+                        (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister,
+                        false);
+
+                    _cpu.Memory.SetByte(0b0000_0000, acia6850StatusRegister);
+                    _cpu.Memory.SetByte(0xFf, (ushort)SystemConstants.VIA.systemViaInterruptEnableRegister);
+
+                    _cpu.TriggerIRQ();
+                }
+            }
+        }
+
+        private bool flipper = false;
+
+        public void StartTimers()
+        {
+            Task.Run(() =>
+            {
+                while (true)
+                {
+                    Thread.Sleep(10000);
+                    TriggerInterrupt();
+                }
+            });
+        }
+
+        public void TriggerInterrupt()
+
+        {
+            // Re-enable all interrupts (frig)
+            //_cpu.Memory.SetByte(0xFF, (ushort)SystemConstants.VIA.systemViaInterruptEnableRegister, false);
+
+            _cpu.Memory.SetByte(0b0000_0000, acia6850StatusRegister, false);
+
+            if (flipper)
+            {
+                // 100Hz timer interrupt 0b1100_0000
+                _cpu.Memory.SetByte(0b1100_0000, (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister, false);
+            }
+            else
+            {
+                _cpu.Memory.SetByte(0b0000_0010, (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister, false);
+            }
+            flipper = !flipper;
+            _cpu.TriggerIRQ();
+        }
+
+        // Should have addr space in the CB
+        private void WriteCallback(byte oldVal, byte newVale, ushort address)
+        {
+            //// Enable/disable interrupts
+            //// EnableInterruptFlag - set to enable/reset to disable
             if (address == (ushort)SystemConstants.VIA.systemViaInterruptEnableRegister)
             {
+                var ierValue = _cpu.Memory.GetByte(address);
+                var enabled = (ierValue & (byte)IERFlags.EnableInterruptFlag) != 0;
+
+                if ((ierValue & (byte)IERFlags.KeyPressedInterrupt) != 0)
+                {
+                    _keyboardInterruptsEnabled = enabled;
+                }
             }
             else
             // Turn keyboard scanning off and on
             if (address == (ushort)SystemConstants.VIA.systemVIARegisterB)
             {
-                var viaRegisterBValue = memory.GetByte((ushort)SystemConstants.VIA.systemVIARegisterB);
+                var viaRegisterBValue = _cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemVIARegisterB);
                 switch (viaRegisterBValue)
                 {
                     // This might be wrong - I should just be looking at the relevant bite
@@ -96,20 +184,41 @@ namespace BbcMicro.BbcMicro.VIA
             // NB we need to add a set will get recursion here!
             if (address == (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake)
             {
-                // Looks like and exact match sets the high bit of a
-                // and a column match the low bit of the interupt register
                 /*
-                 * A is key to test , on exit A has top bit set if pressed
+                 * A is key / column to test , on exit A has top bit set if pressed
                  */
 
-                if (Keyboard.IsKeyDown(Key.A)) // TODO - probably need to buffer up key events.
+                //if (!_keyboardAutoscanning)
+                //{
+                var imp = _cpu.Memory.GetByte(0xFE40);
+                _logger.Debug($"{imp:X2}");
+                if (imp == 0b01111111)
                 {
-                    memory.SetByte(0x80 | 00 /* internal key number */, (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake);
-                }
-                else
-                {
-                    memory.SetByte(0x00, (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake);
+                    var aRegValue = _cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemVIARegisterANoHandshake);
+
+                    // Specific key match
+                    if (_latestKey == Key.A) // TODO - probably need to buffer up key events.
+                    {
+                        _cpu.Memory.SetByte((byte)(0x80 | aRegValue),
+                            (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake,
+                            false);
+                    }
+                    else
+                    {
+                        _cpu.Memory.SetByte(0,
+                            (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake, false);
+                    }
+
+                    // Column match - seems from the code to want the LSB or the interrupt register to be set!
+                    // Column in Least signifcant bits
+                    //var column = aRegValue & 0x0F;
+                    //if (column == 1)
+                    //{ // A column
+                    //    _cpu.Memory.SetByte(0x01, (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister, false);
+                    //}
                 }
             }
+            // }
         }
     }
+}

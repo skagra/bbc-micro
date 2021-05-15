@@ -16,6 +16,7 @@ using BbcMicro.WPFDebugger;
 using CommandLine;
 using System.Collections.Generic;
 using CommandLine.Text;
+using BbcMicro.BbcMicro.VIA;
 
 namespace BBCMicro
 {
@@ -55,6 +56,7 @@ namespace BBCMicro
                 WithNotParsed(errors => ShowHelpOrError(errors));
         }
 
+        [STAThread]
         private static void Run(Options options)
         {
             var logger = LogManager.GetCurrentClassLogger();
@@ -116,39 +118,43 @@ namespace BBCMicro
             var app = new Application();
 
             // For debugging IRQ
-            var timerInterrupt = new TimerInterrupt(cpu);
+            //var timerInterrupt = new TimerInterrupt(cpu);
 
             // Grab key events and send through to the buffer
             screen.AddKeyDownCallback((sender, keyEventArgs) =>
             {
-                if (keyEventArgs.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-                {
-                    if (Clipboard.ContainsText())
-                    {
-                        keyboardEmu.PushToBuffer(Clipboard.GetText());
-                    }
-                }
-                else
+                //    if (keyEventArgs.Key == Key.V && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                //    {
+                //        if (Clipboard.ContainsText())
+                //        {
+                //            keyboardEmu.PushToBuffer(Clipboard.GetText());
+                //        }
+                //    }
+                //    else
                 if (keyEventArgs.Key == Key.D && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
                 {
                     debuggerDisplay.Show();
                 }
-                else
-                if (keyEventArgs.Key == Key.I && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-                {
-                    timerInterrupt.TriggerInterrupt();
-                }
-                else
-                {
-                    keyboardEmu.PushToBuffer(new WPFKeyDetails
-                    {
-                        CapsLock = Keyboard.IsKeyToggled(Key.CapsLock),
-                        Key = keyEventArgs.Key,
-                        Modifiers = Keyboard.Modifiers
-                    });
-                }
-                keyEventArgs.Handled = true;
+                //    else
+                //    if (keyEventArgs.Key == Key.I && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                //    {
+                //        timerInterrupt.TriggerInterrupt();
+                //    }
+                //    else
+                //    {
+                //        keyboardEmu.PushToBuffer(new WPFKeyDetails
+                //        {
+                //            CapsLock = Keyboard.IsKeyToggled(Key.CapsLock),
+                //            Key = keyEventArgs.Key,
+                //            Modifiers = Keyboard.Modifiers
+                //        });
+                //    }
+                //    keyEventArgs.Handled = true;
             });
+
+            var via = new VIA(cpu);
+            // screen.AddKeyDownCallback(via.KeyPressCallback);
+            via.StartTimers();
 
             // Start scanning screen memory and drawing the emulated screen
             debuggerDisplay.AddMessage("Starting screen scanning");

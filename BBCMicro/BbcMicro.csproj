@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\6522VIA\6522VIA.csproj" />
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
     <ProjectReference Include="..\Image\Image.csproj" />
     <ProjectReference Include="..\Investigation\Diagnostics.csproj" />

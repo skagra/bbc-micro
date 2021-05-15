@@ -183,9 +183,6 @@ namespace BbcMicro.Cpu
             // Mask interrupts
             PSet(PFlags.I);
 
-            // Clear the BRK flag TODO: Don't know if this is needed or correct even
-            PReset(PFlags.B);
-
             // Jump via the vector
             PC = Memory.GetNativeWord((ushort)SystemConstants.CPU.irqVector);
         }

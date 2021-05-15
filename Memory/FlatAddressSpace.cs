@@ -22,10 +22,13 @@ namespace BbcMicro.Memory
             return _memory[address];
         }
 
-        public void SetByte(byte value, ushort address)
+        public void SetByte(byte value, ushort address, bool igoreCallbacks = false)
         {
-            _memory[address] = value;
-            _setByteCallbacks.ForEach(callback => callback(value, _memory[address], address));
+            if (!igoreCallbacks)
+            {
+                _memory[address] = value;
+                _setByteCallbacks.ForEach(callback => callback(value, _memory[address], address));
+            }
         }
 
         public void AddSetByteCallback(Action<byte, byte, ushort> callback)

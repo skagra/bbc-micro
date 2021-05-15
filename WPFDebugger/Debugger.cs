@@ -704,7 +704,7 @@ namespace BbcMicro.WPFDebugger
             _running = true;
 
             // Clear all and stop updates
-            _display.Hide();
+          //  _display.Hide();
             RemoveCallbacks();
             _display.Background();
             _display.ClearDis();

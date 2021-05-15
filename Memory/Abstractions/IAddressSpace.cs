@@ -4,7 +4,7 @@ namespace BbcMicro.Memory.Abstractions
 {
     public interface IAddressSpace
     {
-        void SetByte(byte value, ushort address);
+        void SetByte(byte value, ushort address, bool igoreCallbacks = false);
 
         byte GetByte(ushort address);
 

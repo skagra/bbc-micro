@@ -312,7 +312,7 @@ namespace BbcMicro.WPFDebugger
                     textBox.Clear();
                     e.Handled = true;
 
-                    Task.Run(() =>
+                    Task.Run(() =>  
                     {
                         _callback?.Invoke(text, this);
                     });
