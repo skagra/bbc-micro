@@ -1,5 +1,4 @@
 ﻿using BbcMicro.Memory.Abstractions;
-using System.Text;
 using BbcMicro.Memory.Extensions;
 using BbcMicro.Cpu.Exceptions;
 
@@ -14,7 +13,15 @@ namespace BbcMicro.Cpu
 
         public class DisassembledInstruction
         {
+            public DisassembledInstruction(string disassembly, byte[] memory, string label)
+            {
+                Disassembly = disassembly;
+                Memory = memory;
+                Label = label;
+            }
+
             public byte[] Memory { get; }
+
             public string Label { get; }
 
             public string Disassembly { get; }
@@ -51,57 +58,70 @@ namespace BbcMicro.Cpu
             return symbol;
         }
 
-        private string GetResolvedOperand(AddressingMode addressingMode, ushort address)
+        private string AddrOrSymbolWord(ushort address)
         {
-            var operandAddress = (ushort)(address + 1);
-
-            return addressingMode switch
-            {
-                AddressingMode.Accumulator => "",
-                AddressingMode.Immediate => "",
-                AddressingMode.Implied => "",
-                AddressingMode.Relative => $"(${address + 2 + (sbyte)_memory.GetByte(operandAddress):X4})",
-                AddressingMode.Absolute => $"(${_memory.GetByte(_memory.GetNativeWord(operandAddress)):X2})",
-                AddressingMode.ZeroPage => $"(${_memory.GetByte(_memory.GetByte(operandAddress)):X2})",
-                AddressingMode.Indirect => $"(${_memory.GetNativeWord(_memory.GetNativeWord(operandAddress)):X4})",
-                AddressingMode.AbsoluteIndexedX => $"(${_memory.GetByte((ushort)(_memory.GetNativeWord(operandAddress) + _cpu.X)):X2})",
-                AddressingMode.AbsoluteIndexedY => $"(${_memory.GetByte((ushort)(_memory.GetNativeWord(operandAddress) + _cpu.Y)):X2})",
-                AddressingMode.ZeroPageIndexedX => $"(${_memory.GetByte((byte)(_memory.GetByte(operandAddress) + _cpu.X)):X2})",
-                AddressingMode.ZeroPageIndexedY => $"(${_memory.GetByte((byte)(_memory.GetByte(operandAddress) + _cpu.Y)):X2})",
-                AddressingMode.IndexedXIndirect => $"(${_memory.GetByte(_memory.GetNativeWord((byte)(_memory.GetByte(operandAddress) + _cpu.X))):X2})",
-                AddressingMode.IndirectIndexedY => $"(${_memory.GetByte((ushort)(_memory.GetNativeWord(_memory.GetByte(operandAddress)) + _cpu.Y)):X2})",
-                _ => throw new CPUException($"Invalid addressing mode '{addressingMode}'")
-            };
+            return GetSymbol(address) ?? $"${address:X4}";
         }
 
-        public string Disassemble(ushort address)
+        private string AddrOrSymbolByte(byte address)
         {
-            (var opCode, var addressingMode) = _decoder.Decode(_memory.GetByte(address));
+            return GetSymbol(address) ?? $"${address:X2}";
+        }
 
-            var result = new StringBuilder();
+        //private string GetResolvedOperand(AddressingMode addressingMode, ushort address)
+        //{
+        //    var operandAddress = (ushort)(address + 1);
 
-            result.Append($"{opCode} ");
+        //    return addressingMode switch
+        //    {
+        //        AddressingMode.Accumulator => "",
+        //        AddressingMode.Immediate => "",
+        //        AddressingMode.Implied => "",
+        //        AddressingMode.Relative => $"(${address + 2 + (sbyte)_memory.GetByte(operandAddress):X4})",
+        //        AddressingMode.Absolute => $"(${_memory.GetByte(_memory.GetNativeWord(operandAddress)):X2})",
+        //        AddressingMode.ZeroPage => $"(${_memory.GetByte(_memory.GetByte(operandAddress)):X2})",
+        //        AddressingMode.Indirect => $"(${_memory.GetNativeWord(_memory.GetNativeWord(operandAddress)):X4})",
+        //        AddressingMode.AbsoluteIndexedX => $"(${_memory.GetByte((ushort)(_memory.GetNativeWord(operandAddress) + _cpu.X)):X2})",
+        //        AddressingMode.AbsoluteIndexedY => $"(${_memory.GetByte((ushort)(_memory.GetNativeWord(operandAddress) + _cpu.Y)):X2})",
+        //        AddressingMode.ZeroPageIndexedX => $"(${_memory.GetByte((byte)(_memory.GetByte(operandAddress) + _cpu.X)):X2})",
+        //        AddressingMode.ZeroPageIndexedY => $"(${_memory.GetByte((byte)(_memory.GetByte(operandAddress) + _cpu.Y)):X2})",
+        //        AddressingMode.IndexedXIndirect => $"(${_memory.GetByte(_memory.GetNativeWord((byte)(_memory.GetByte(operandAddress) + _cpu.X))):X2})",
+        //        AddressingMode.IndirectIndexedY => $"(${_memory.GetByte((ushort)(_memory.GetNativeWord(_memory.GetByte(operandAddress)) + _cpu.Y)):X2})",
+        //        _ => throw new CPUException($"Invalid addressing mode '{addressingMode}'")
+        //    };
+        //}
 
+        private string GetDisassembly(OpCode opCode, AddressingMode addressingMode, ushort address)
+        {
             ushort operandAddress = (ushort)(address + 1);
-            result.Append(addressingMode switch
+            var operand = addressingMode switch
             {
                 AddressingMode.Accumulator => "",
                 AddressingMode.Immediate => $"#${_memory.GetByte(operandAddress):X2}",
                 AddressingMode.Implied => "",
                 AddressingMode.Relative => $"${_memory.GetByte(operandAddress):X2}",
-                AddressingMode.Absolute => $"${_memory.GetNativeWord(operandAddress):X4}",
-                AddressingMode.ZeroPage => $"${_memory.GetByte(operandAddress):X2}",
-                AddressingMode.Indirect => $"(${_memory.GetNativeWord(operandAddress):X4})",
-                AddressingMode.AbsoluteIndexedX => $"${_memory.GetNativeWord(operandAddress):X4},X",
-                AddressingMode.AbsoluteIndexedY => $"${_memory.GetNativeWord(operandAddress):X4},Y",
-                AddressingMode.ZeroPageIndexedX => $"${_memory.GetByte(operandAddress):X2},X",
-                AddressingMode.ZeroPageIndexedY => $"${_memory.GetByte(operandAddress):X2},Y",
-                AddressingMode.IndexedXIndirect => $"(${_memory.GetByte(operandAddress):X2},X)",
-                AddressingMode.IndirectIndexedY => $"(${_memory.GetByte(operandAddress):X2}),Y",
+                AddressingMode.Absolute => $"{AddrOrSymbolWord(_memory.GetNativeWord(operandAddress))}",
+                AddressingMode.ZeroPage => $"{AddrOrSymbolByte(_memory.GetByte(operandAddress))}",
+                AddressingMode.Indirect => $"({AddrOrSymbolWord(_memory.GetNativeWord(operandAddress))})",
+                AddressingMode.AbsoluteIndexedX => $"{AddrOrSymbolWord(_memory.GetNativeWord(operandAddress))},X",
+                AddressingMode.AbsoluteIndexedY => $"{AddrOrSymbolWord(_memory.GetNativeWord(operandAddress))},Y",
+                AddressingMode.ZeroPageIndexedX => $"{AddrOrSymbolByte(_memory.GetByte(operandAddress))},X",
+                AddressingMode.ZeroPageIndexedY => $"{AddrOrSymbolByte(_memory.GetByte(operandAddress))},Y",
+                AddressingMode.IndexedXIndirect => $"({AddrOrSymbolByte(_memory.GetByte(operandAddress))},X)",
+                AddressingMode.IndirectIndexedY => $"({AddrOrSymbolByte(_memory.GetByte(operandAddress))}),Y",
                 _ => throw new CPUException($"Invalid addressing mode '{addressingMode}'")
-            });
+            };
 
-            return result.ToString();
+            return $"{opCode} {operand}";
+        }
+
+        public DisassembledInstruction Disassemble(ushort address)
+        {
+            (var opCode, var addressingMode) = _decoder.Decode(_memory.GetByte(address));
+
+            return new DisassembledInstruction(disassembly: GetDisassembly(opCode, addressingMode, address),
+                label: GetSymbol(address),
+                memory: GetMemory(addressingMode, address));
         }
     }
 }
