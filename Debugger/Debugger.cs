@@ -1,5 +1,5 @@
 ﻿using BbcMicro.Cpu;
-using BbcMicro.Cpu.Diagnostics;
+using BbcMicro.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -201,7 +201,7 @@ namespace BbcMicro.Debugger
 
                 if (command.Count() == 2)
                 {
-                    ok = ParseSymHexWord(command[1], out breakpointAddress);
+                    ok = ParseHexWord(command[1], out breakpointAddress);
                 }
 
                 if (ok)

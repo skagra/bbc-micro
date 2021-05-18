@@ -1,5 +1,4 @@
-﻿using BbcMicro.Cpu.Diagnostics;
-using System;
+﻿using System;
 using System.Linq;
 using System.Text;
 using static BbcMicro.Cpu.CPU;

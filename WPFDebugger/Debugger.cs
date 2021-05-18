@@ -1,6 +1,6 @@
 ﻿using BbcMicro.Cpu;
-using BbcMicro.Cpu.Diagnostics;
 using BbcMicro.Cpu.Exceptions;
+using BbcMicro.Diagnostics;
 using BbcMicro.Memory.Extensions;
 using BbcMicro.SystemConstants;
 using NLog;
@@ -22,7 +22,7 @@ namespace BbcMicro.WPFDebugger
         private readonly Disassembler _dis;
         private readonly Decoder _decoder = new Decoder();
         private readonly DebuggerDisplay _display;
-        private readonly string[] _symbols = new string[0xFFFF];
+        private readonly Symbols _symbols = new Symbols();
 
         private volatile bool _running = false;
         private volatile bool _tracing = false;
@@ -37,7 +37,6 @@ namespace BbcMicro.WPFDebugger
             _display = display;
 
             _cpu = cpu;
-            LoadSymbols();
             _dis = new Disassembler(cpu.Memory, _symbols);
 
             UpdateCPU();
@@ -70,24 +69,6 @@ namespace BbcMicro.WPFDebugger
 
         private void HideCallback(DebuggerDisplay display)
         {
-        }
-
-        private void LoadSymbols<T>() where T : Enum
-        {
-            var enumValues = typeof(T).GetEnumValues();
-
-            foreach (var enumValue in enumValues)
-            {
-                _symbols[(ushort)enumValue] = enumValue.ToString();
-            }
-        }
-
-        private void LoadSymbols()
-        {
-            LoadSymbols<VDU>();
-            LoadSymbols<VIA>();
-            LoadSymbols<IRQ>();
-            LoadSymbols<SystemConstants.CPU>();
         }
 
         private void MemoryChangedCallback(byte newVal, byte oldVal, ushort address)

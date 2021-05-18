@@ -2,7 +2,6 @@
 using BbcMicro.Memory.Abstractions;
 using Xunit.Abstractions;
 using BbcMicro.Memory.Extensions;
-using BbcMicro.Cpu.Diagnostics;
 using BbcMicro.Memory;
 
 namespace BbcMicro.CpuTests

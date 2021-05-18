@@ -1,15 +1,17 @@
 ﻿using BbcMicro.Memory.Abstractions;
 using BbcMicro.Memory.Extensions;
 using BbcMicro.Cpu.Exceptions;
+using BbcMicro.Cpu;
+using BbcMicro.SystemConstants;
 
-namespace BbcMicro.Cpu
+namespace BbcMicro.Diagnostics
 {
     public sealed class Disassembler
     {
         private static readonly Decoder _decoder = new Decoder();
 
         private readonly IAddressSpace _memory;
-        private readonly string[] _symbols;
+        private readonly Symbols _symbols;
 
         public class DisassembledInstruction
         {
@@ -27,7 +29,7 @@ namespace BbcMicro.Cpu
             public string Disassembly { get; }
         }
 
-        public Disassembler(IAddressSpace addressSpace, string[] symbols = null)
+        public Disassembler(IAddressSpace addressSpace, Symbols symbols = null)
         {
             _memory = addressSpace;
             _symbols = symbols;
@@ -52,7 +54,7 @@ namespace BbcMicro.Cpu
 
             if (_symbols != null)
             {
-                symbol = _symbols[address];
+                symbol = _symbols.GetSymbol(address);
             }
 
             return symbol;
