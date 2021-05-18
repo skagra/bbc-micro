@@ -31,7 +31,10 @@ namespace BbcMicro.SystemConstants
             LoadSymbols<VDU>();
             LoadSymbols<VIA>();
             LoadSymbols<IRQ>();
-            LoadSymbols<SystemConstants.CPU>();
+            LoadSymbols<CPU>();
+            LoadSymbols<Vectors>();
+            LoadSymbols<ACIA>();
+            LoadSymbols<OS>();
         }
     }
 }

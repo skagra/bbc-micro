@@ -13,6 +13,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{7A60722D-B40E-4461-831F-B1BFFBB20F94}"
 	ProjectSection(SolutionItems) = preProject
 		Docs\Notes.md = Docs\Notes.md
+		Docs\os120_acme.a = Docs\os120_acme.a
 		README.md = README.md
 		Docs\SceenMemoryMap.pptx = Docs\SceenMemoryMap.pptx
 	EndProjectSection
@@ -52,7 +53,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Timers", "Timers\Timers.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WPFDebugger", "WPFDebugger\WPFDebugger.csproj", "{A7158BDD-0947-4D27-BAE5-C6C8598E0EC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SystemConstants", "SystemConstants\SystemConstants.csproj", "{6B446884-C4D1-46DE-9CB6-3065C66E184D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SystemConstants", "SystemConstants\SystemConstants.csproj", "{6B446884-C4D1-46DE-9CB6-3065C66E184D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
