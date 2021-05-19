@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace BbcMicro.Cpu.Diagnostics
+namespace BbcMicro.Cpu
 {
     public sealed class CoreDumper
     {

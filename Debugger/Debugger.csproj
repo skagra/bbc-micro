@@ -13,6 +13,7 @@
     <ProjectReference Include="..\ConsoleWindowing\ConsoleWindowing.csproj" />
     <ProjectReference Include="..\Cpu\Cpu.csproj" />
     <ProjectReference Include="..\Image\Image.csproj" />
+    <ProjectReference Include="..\Investigation\Diagnostics.csproj" />
     <ProjectReference Include="..\Memory\Memory.csproj" />
     <ProjectReference Include="..\OS\OS.csproj" />
     <ProjectReference Include="..\Screen\Screen.csproj" />

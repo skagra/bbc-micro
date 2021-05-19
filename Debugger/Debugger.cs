@@ -1,5 +1,5 @@
 ﻿using BbcMicro.Cpu;
-using BbcMicro.Cpu.Diagnostics;
+using BbcMicro.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,13 +11,15 @@ namespace BbcMicro.Debugger
     public sealed class Debugger
     {
         private readonly CPU _cpu;
-        private readonly Disassembler _dis = new Disassembler();
+        private readonly Disassembler _dis;
         private readonly Decoder _decoder = new Decoder();
         private readonly Display _display = new Display();
 
         public Debugger(CPU cpu)
         {
             _cpu = cpu;
+            _dis = new Disassembler(cpu.Memory);
+
             _cpu.Memory.AddSetByteCallback((newVal, oldVal, address) =>
                 DisplayMemory(newVal, oldVal, address));
             _cpu.AddPostExecutionCallback(DisplayCallback);
@@ -57,13 +59,15 @@ namespace BbcMicro.Debugger
             {
                 memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
             }
-            return (memory, _dis.Disassemble(address, _cpu.Memory));
+            //  return (memory, _dis.Disassemble(address, _cpu.Memory));
+
+            return (memory, "");
         }
 
         private void UpdateDis()
         {
-            (var memory, var dis) = GetDis(_cpu.PC);
-            _display.WriteDis(_cpu.PC, memory, dis);
+            // (var memory, var dis) = GetDis(_cpu.PC);
+            // _display.WriteDis(_cpu.PC, memory, dis);
         }
 
         private void DisplayMemory(byte newVal, byte oldVal, ushort address)
@@ -111,7 +115,7 @@ namespace BbcMicro.Debugger
             return ok;
         }
 
-        private bool ParseHDecInt(string value, out int parsed)
+        private bool ParseHexDecInt(string value, out int parsed)
         {
             var ok = int.TryParse(value, out parsed);
 
@@ -231,7 +235,7 @@ namespace BbcMicro.Debugger
         {
             if (command.Count == 2)
             {
-                if (ParseHDecInt(command[1], out var operand))
+                if (ParseHexDecInt(command[1], out var operand))
                 {
                     if (operand < _breakPoints.Count)
                     {

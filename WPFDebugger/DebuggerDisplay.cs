@@ -522,7 +522,7 @@ namespace BbcMicro.WPFDebugger
          * Disassembly window --->
          */
 
-        public void AddDis(ushort address, byte[] memory, string dis)
+        public void AddDis(string label)
         {
             _window.Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -530,11 +530,16 @@ namespace BbcMicro.WPFDebugger
                 {
                     _disDisplay.Items.RemoveAt(0);
                 }
-                var formattedMemory = string.Join(" ", memory.Select(m => $"0x{m:X2}"));
-                _disDisplay.Items.Add(new RefString($"0x{address,-7:X4} {formattedMemory,-16} {dis}"));
+                _disDisplay.Items.Add(new RefString(label));
                 _disDisplay.UpdateLayout();
                 _disDisplay.ScrollIntoView(_disDisplay.Items.GetItemAt(_disDisplay.Items.Count - 1));
             }));
+        }
+
+        public void AddDis(ushort address, byte[] memory, string dis)
+        {
+            var formattedMemory = string.Join(" ", memory.Select(m => $"0x{m:X2}"));
+            AddDis($"0x{address,-7:X4} {formattedMemory,-16} {dis}");
         }
 
         public void ClearDis()

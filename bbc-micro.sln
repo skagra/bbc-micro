@@ -13,6 +13,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{7A60722D-B40E-4461-831F-B1BFFBB20F94}"
 	ProjectSection(SolutionItems) = preProject
 		Docs\Notes.md = Docs\Notes.md
+		Docs\os120_acme.a = Docs\os120_acme.a
 		README.md = README.md
 		Docs\SceenMemoryMap.pptx = Docs\SceenMemoryMap.pptx
 	EndProjectSection

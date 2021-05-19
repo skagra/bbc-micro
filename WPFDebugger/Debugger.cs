@@ -1,6 +1,6 @@
 ﻿using BbcMicro.Cpu;
-using BbcMicro.Cpu.Diagnostics;
 using BbcMicro.Cpu.Exceptions;
+using BbcMicro.Diagnostics;
 using BbcMicro.Memory.Extensions;
 using BbcMicro.SystemConstants;
 using NLog;
@@ -19,10 +19,10 @@ namespace BbcMicro.WPFDebugger
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
         private readonly CPU _cpu;
-        private readonly Disassembler _dis = new Disassembler();
+        private readonly Disassembler _dis;
         private readonly Decoder _decoder = new Decoder();
         private readonly DebuggerDisplay _display;
-        private readonly string[] _symbols = new string[0xFFFF];
+        private readonly Symbols _symbols = new Symbols();
 
         private volatile bool _running = false;
         private volatile bool _tracing = false;
@@ -37,8 +37,7 @@ namespace BbcMicro.WPFDebugger
             _display = display;
 
             _cpu = cpu;
-
-            LoadSymbols();
+            _dis = new Disassembler(cpu.Memory, _symbols);
 
             UpdateCPU();
             UpdateDis();
@@ -50,7 +49,7 @@ namespace BbcMicro.WPFDebugger
 
         private void AddCallbacks()
         {
-            _cpu.Memory.AddSetByteCallback(MemoryChangedCallback);
+            //  _cpu.Memory.AddSetByteCallback(MemoryChangedCallback);
             _cpu.AddPostExecutionCallback(CpuChangedCallback);
         }
 
@@ -70,24 +69,6 @@ namespace BbcMicro.WPFDebugger
 
         private void HideCallback(DebuggerDisplay display)
         {
-        }
-
-        private void LoadSymbols<T>() where T : Enum
-        {
-            var enumValues = typeof(T).GetEnumValues();
-
-            foreach (var enumValue in enumValues)
-            {
-                _symbols[(ushort)enumValue] = enumValue.ToString();
-            }
-        }
-
-        private void LoadSymbols()
-        {
-            LoadSymbols<VDU>();
-            LoadSymbols<VIA>();
-            LoadSymbols<IRQ>();
-            LoadSymbols<SystemConstants.CPU>();
         }
 
         private void MemoryChangedCallback(byte newVal, byte oldVal, ushort address)
@@ -351,24 +332,31 @@ namespace BbcMicro.WPFDebugger
          * Disassembly display --->
          */
 
-        private (byte[] memory, string dis) GetDis(ushort address)
-        {
-            (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
+        //private (string label, byte[] memory, string dis) GetDis(ushort address)
+        //{
+        //    (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
 
-            var memory = new byte[_decoder.GetAddressingModePCDelta(addressingMode) + 1];
-            memory[0] = _cpu.Memory.GetByte(_cpu.PC);
+        //    var memory = new byte[_decoder.GetAddressingModePCDelta(addressingMode) + 1];
+        //    memory[0] = _cpu.Memory.GetByte(_cpu.PC);
 
-            for (ushort pcOffset = 1; pcOffset < memory.Length; pcOffset++)
-            {
-                memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
-            }
-            return (memory, _dis.Disassemble(address, _cpu.Memory));
-        }
+        //    for (ushort pcOffset = 1; pcOffset < memory.Length; pcOffset++)
+        //    {
+        //        memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
+        //    }
+
+        //    var label = _symbols[_cpu.PC];
+
+        //    return (label, memory, _dis.Disassemble(address, _cpu.Memory));
+        //}
 
         private void UpdateDis()
         {
-            (var memory, var dis) = GetDis(_cpu.PC);
-            _display.AddDis(_cpu.PC, memory, dis);
+            var dis = _dis.Disassemble(_cpu.PC);
+            if (dis.Label != null)
+            {
+                _display.AddDis($":{dis.Label}");
+            }
+            _display.AddDis(_cpu.PC, dis.Memory, dis.Disassembly);
         }
 
         /*
@@ -381,46 +369,47 @@ namespace BbcMicro.WPFDebugger
 
         private void Trace(ushort address)
         {
-            (var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
+            //(var opCode, var addressingMode) = _decoder.Decode(_cpu.Memory.GetByte(address));
 
-            var memory = new byte[_decoder.GetAddressingModePCDelta(addressingMode) + 1];
-            memory[0] = _cpu.Memory.GetByte(_cpu.PC);
+            //var memory = new byte[_decoder.GetAddressingModePCDelta(addressingMode) + 1];
+            //memory[0] = _cpu.Memory.GetByte(_cpu.PC);
 
-            for (ushort pcOffset = 1; pcOffset < memory.Length; pcOffset++)
+            //for (ushort pcOffset = 1; pcOffset < memory.Length; pcOffset++)
+            //{
+            //    memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
+            //}
+
+            //var disString = _dis.Disassemble(address, _cpu.Memory);
+            //var addrString = $"${address:X4}";
+            //var memString = string.Join(" ", memory.Select(b => $"${b:X2}"));
+            //var cpuString = _cpu.ToString();
+
+            //ushort operandAddress = (ushort)(address + 1);
+            //var operandValueString = addressingMode switch
+            //{
+            //    AddressingMode.Accumulator => "",
+            //    AddressingMode.Immediate => "",
+            //    AddressingMode.Implied => "",
+            //    AddressingMode.Relative => $"(${_cpu.PC + 2 + (sbyte)_cpu.Memory.GetByte(operandAddress):X4})",
+            //    AddressingMode.Absolute => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetNativeWord(operandAddress)):X2})",
+            //    AddressingMode.ZeroPage => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetByte(operandAddress)):X2})",
+            //    AddressingMode.Indirect => $"(${_cpu.Memory.GetNativeWord(_cpu.Memory.GetNativeWord(operandAddress)):X4})",
+            //    AddressingMode.AbsoluteIndexedX => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(operandAddress) + _cpu.X)):X2})",
+            //    AddressingMode.AbsoluteIndexedY => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(operandAddress) + _cpu.Y)):X2})",
+            //    AddressingMode.ZeroPageIndexedX => $"(${_cpu.Memory.GetByte((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.X)):X2})",
+            //    AddressingMode.ZeroPageIndexedY => $"(${_cpu.Memory.GetByte((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.Y)):X2})",
+            //    AddressingMode.IndexedXIndirect => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetNativeWord((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.X))):X2})",
+            //    AddressingMode.IndirectIndexedY => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(_cpu.Memory.GetByte(operandAddress)) + _cpu.Y)):X2})",
+            //    _ => throw new CPUException($"Invalid addressing mode '{addressingMode}'")
+            //};
+
+            var dis = _dis.Disassemble(_cpu.PC);
+            if (dis.Label != null)
             {
-                memory[pcOffset] = _cpu.Memory.GetByte((ushort)(_cpu.PC + pcOffset));
+                _logger.Trace($"{dis.Label}:");
             }
-
-            var disString = _dis.Disassemble(address, _cpu.Memory);
-            var addrString = $"${address:X4}";
-            var memString = string.Join(" ", memory.Select(b => $"${b:X2}"));
-            var cpuString = _cpu.ToString();
-
-            ushort operandAddress = (ushort)(address + 1);
-            var operandValueString = addressingMode switch
-            {
-                AddressingMode.Accumulator => "",
-                AddressingMode.Immediate => "",
-                AddressingMode.Implied => "",
-                AddressingMode.Relative => $"(${_cpu.PC + 2 + (sbyte)_cpu.Memory.GetByte(operandAddress):X4})",
-                AddressingMode.Absolute => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetNativeWord(operandAddress)):X2})",
-                AddressingMode.ZeroPage => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetByte(operandAddress)):X2})",
-                AddressingMode.Indirect => $"(${_cpu.Memory.GetNativeWord(_cpu.Memory.GetNativeWord(operandAddress)):X4})",
-                AddressingMode.AbsoluteIndexedX => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(operandAddress) + _cpu.X)):X2})",
-                AddressingMode.AbsoluteIndexedY => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(operandAddress) + _cpu.Y)):X2})",
-                AddressingMode.ZeroPageIndexedX => $"(${_cpu.Memory.GetByte((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.X)):X2})",
-                AddressingMode.ZeroPageIndexedY => $"(${_cpu.Memory.GetByte((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.Y)):X2})",
-                AddressingMode.IndexedXIndirect => $"(${_cpu.Memory.GetByte(_cpu.Memory.GetNativeWord((byte)(_cpu.Memory.GetByte(operandAddress) + _cpu.X))):X2})",
-                AddressingMode.IndirectIndexedY => $"(${_cpu.Memory.GetByte((ushort)(_cpu.Memory.GetNativeWord(_cpu.Memory.GetByte(operandAddress)) + _cpu.Y)):X2})",
-                _ => throw new CPUException($"Invalid addressing mode '{addressingMode}'")
-            };
-
-            var symbol = _symbols[_cpu.PC];
-            if (symbol != null)
-            {
-                _logger.Trace($"{symbol}:");
-            }
-            _logger.Trace($"{addrString,-5} {memString,-12} {disString,-11} {operandValueString,-8} {cpuString}");
+            var memString = string.Join(" ", dis.Memory.Select(b => $"${b:X2}"));
+            _logger.Trace($"{address:X4,-5} {memString,-12} {dis.Disassembly,-11} {_cpu}");
         }
 
         /*
@@ -547,9 +536,13 @@ namespace BbcMicro.WPFDebugger
                 {
                     try
                     {
-                        (var memory, var dis) = GetDis(address);
+                        var dis = _dis.Disassemble(_cpu.PC);
+                        if (dis.Label != null)
+                        {
+                            _display.AddMessage($":{dis.Label}");
+                        }
                         _display.AddMessage($"${address:X4} {dis}");
-                        address += (ushort)(memory.Length);
+                        address += (ushort)(dis.Memory.Length);
                     }
                     catch (Exception)
                     {
@@ -704,7 +697,7 @@ namespace BbcMicro.WPFDebugger
             _running = true;
 
             // Clear all and stop updates
-          //  _display.Hide();
+            //  _display.Hide();
             RemoveCallbacks();
             _display.Background();
             _display.ClearDis();
