@@ -11,8 +11,7 @@ namespace BbcMicro.BbcMicro.VIA
     {
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-        // The least significant nibble is for writing,
-        // and the most significant four bits for reading.
+        // The least significant nibble is for writing, and the most significant four bits for reading.
         private enum RegisterBValues : byte
         {
             EnableSoundChip = 0x00,
@@ -86,25 +85,24 @@ namespace BbcMicro.BbcMicro.VIA
 
         public void KeyPressCallback(object sender, KeyEventArgs e)
         {
-            if (_keyboardAutoscanning)
-            {
-                //  _cpu.Memory.SetByte(0b0000_0000, acia6850StatusRegister, false);
+            //if (_keyboardAutoscanning)
+            //{
+            // _cpu.Memory.SetByte(0b0000_0000, acia6850StatusRegister, false);
 
-                _latestKey = e.Key;
-                if (_keyboardInterruptsEnabled)
-                {
-                    _cpu.Memory.SetByte((byte)(//_cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister) |
-                        (byte)IFRFlags.KeyPressedInterrupt |
-                        (byte)IFRFlags.MasterInterruptFlag),
-                        (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister,
-                        true);
+            _latestKey = e.Key;
+            //if (_keyboardInterruptsEnabled)
+            //{
+            _cpu.Memory.SetByte((byte)(//_cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister) |
+                (byte)IFRFlags.KeyPressedInterrupt |
+                (byte)IFRFlags.MasterInterruptFlag),
+                (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister,
+                true);
 
-                    _cpu.Memory.SetByte(0b0000_0000, acia6850StatusRegister);
-                    _cpu.Memory.SetByte(0xFf, (ushort)SystemConstants.VIA.systemViaInterruptEnableRegister);
+            _cpu.Memory.SetByte(0b0000_0000, acia6850StatusRegister);
+            _cpu.Memory.SetByte(0xFF, (ushort)SystemConstants.VIA.systemViaInterruptEnableRegister);
 
-                    _cpu.TriggerIRQ();
-                }
-            }
+            _cpu.TriggerIRQ();
+            // } }
         }
 
         private bool flipper = false;
@@ -149,15 +147,17 @@ namespace BbcMicro.BbcMicro.VIA
             // _logger.Debug($"Write callback");
             //// Enable/disable interrupts
             //// EnableInterruptFlag - set to enable/reset to disable
+
             if (address == (ushort)SystemConstants.VIA.systemViaInterruptEnableRegister)
             {
                 var ierValue = _cpu.Memory.GetByte(address);
                 var enabled = (ierValue & (byte)IERFlags.EnableInterruptFlag) != 0;
 
-                //if ((ierValue & (byte)IERFlags.KeyPressedInterrupt) != 0)
-                //{
-                //    _keyboardInterruptsEnabled = enabled;
-                //}
+                if ((ierValue & (byte)IERFlags.KeyPressedInterrupt) == 0)
+                {
+                    _keyboardInterruptsEnabled = enabled;
+                }
+                _keyboardInterruptsEnabled = true;
             }
             else
             // Turn keyboard scanning off and on
@@ -182,8 +182,7 @@ namespace BbcMicro.BbcMicro.VIA
             }
             else
             // Read the keyboard
-            // TODO: Special handling for DIP switches
-            // NB we need to add a set will get recursion here!
+            // TODO: Special handling for DIP switches NB we need to add a set will get recursion here!
             if (address == (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake)
             {
                 /*
@@ -198,27 +197,40 @@ namespace BbcMicro.BbcMicro.VIA
                 //{
                 var aRegValue = _cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemVIARegisterANoHandshake);
 
-                _logger.Debug($"A {aRegValue:X2}");
+                _logger.Debug("Entering key test --->");
+                _logger.Debug($"systemVIARegisterANoHandshake={aRegValue:X2}");
 
                 // Specific key match
-                if (_latestKey == Key.A) // TODO - probably need to buffer up key events.
+                if (_latestKey == Key.A && aRegValue == 0x41) // TODO - probably need to buffer up key events.
                 {
+                    _logger.Debug($"Latest key is an A so setting systemVIARegisterANoHandshake to {(byte)(0x80 | aRegValue):X2}");
+
                     _cpu.Memory.SetByte((byte)(0x80 | aRegValue),
-                        (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake,
-                        true);
+                    (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake,
+                    true);
                 }
                 else
                 {
-                    _cpu.Memory.SetByte(0,
-                        (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake, true);
+                    _logger.Debug($"Latest key is not an A so setting systemVIARegisterANoHandshake to {(byte)((byte)(0x7F & aRegValue)):X2}");
+                    _cpu.Memory.SetByte((byte)(0x7F & aRegValue),
+                        (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake,
+                        true);
                 }
 
-                // Column match - seems from the code to want the LSB or the interrupt register to be set!
-                // Column in Least signifcant bits
+                // Column match - seems from the code to want the LSB or the interrupt register to
+                // be set! Column in Least significant bits
                 var column = aRegValue & 0x0F;
+                _logger.Debug("Testing for column number={0}", column);
                 if (column == 1)
-                { // A column
+                {
+                    _logger.Debug("Column number==1, so found and setting (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister to 0x01");
                     _cpu.Memory.SetByte(0x01, (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister, true);
+                }
+                else
+                {
+                    _logger.Debug("Column number!=1, so NOT found and setting (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister to 0x00");
+
+                    _cpu.Memory.SetByte(0x00, (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister, true);
                 }
             }
             //}
