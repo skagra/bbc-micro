@@ -19,7 +19,7 @@ namespace BbcMicro.OS
             // https://tobylobster.github.io/mos/mos/S-s3.html#SP20
             // Bit 7 needs to be clear to flag a hard reset
             // https://tobylobster.github.io/mos/mos/S-s10.html#SP3
-            addressSpace.SetByte(0x0, (ushort)VIA.systemViaInterruptEnableRegister);
+            //  addressSpace.SetByte(0x0, (ushort)VIA.systemViaInterruptEnableRegister);
         }
 
         public OperatingSystem(IAddressSpace addressSpace, OSMode osMode, WPFKeyboardEmu keyboardEmu = null)
@@ -30,7 +30,7 @@ namespace BbcMicro.OS
             {
                 //   var keyboardInput = new KeyboardInput(keyboardEmu);
                 //   _interceptorDispatcher.AddInterceptor(EntryPoints.INTERROGATE_KEYBOARD, keyboardInput.INTERROGATE_KEYBOARD_WFP);
-                //   _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, keyboardInput.OSRDCH_WPF);
+                // _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, keyboardInput.OSRDCH_WPF);
             }
             else
             {

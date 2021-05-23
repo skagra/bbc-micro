@@ -182,6 +182,7 @@ namespace BbcMicro.Cpu
 
             // Mask interrupts
             PSet(PFlags.I);
+            PReset(PFlags.B);
 
             // Jump via the vector
             PC = Memory.GetNativeWord((ushort)SystemConstants.CPU.irqVector);

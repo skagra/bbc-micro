@@ -131,6 +131,8 @@ namespace BbcMicro.BbcMicro.VIA
             _cpu = cpu;
             _cpu.Memory.AddSetByteCallback(WriteCallback);
             _cpu.Memory.AddGetByteCallback(ReadCallback);
+
+            /// cpu.Memory.SetByte(0x00, (ushort)SystemConstants.ACIA.acia6850StatusRegister, true);
         }
 
         private byte? ReadCallback(ushort address)
@@ -146,11 +148,11 @@ namespace BbcMicro.BbcMicro.VIA
             {
                 result = ReadIER();
             }
-            else
-            if (address == (ushort)SystemConstants.VIA.systemVIARegisterB)
-            {
-                result = ReadB();
-            }
+            //else
+            //if (address == (ushort)SystemConstants.VIA.systemVIARegisterB)
+            //{
+            //    result = ReadB();
+            //}
             else
             if (address == (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake)
             {
@@ -167,14 +169,14 @@ namespace BbcMicro.BbcMicro.VIA
         private byte ReadB()
         {
             byte result = 0x0;
-            if (_keyboardAutoscanning)
-            {
-                result |= (byte)RegisterBValues.EnableKeyboardAutoScanning;
-            }
-            else
-            {
-                result |= (byte)RegisterBValues.DisableKeyboardAutoScanning;
-            }
+            //if (_keyboardAutoscanning)
+            //{
+            //    result |= (byte)RegisterBValues.EnableKeyboardAutoScanning;
+            //}
+            //else
+            //{
+            //    result |= (byte)RegisterBValues.DisableKeyboardAutoScanning;
+            //}
             return result;
         }
 
@@ -193,6 +195,8 @@ namespace BbcMicro.BbcMicro.VIA
                     _logger.Debug("Raising keyboard interrupt");
 
                     _keyboardInterruptActive = true;
+                    _cpu.Memory.SetByte(0b0000_0000, (ushort)SystemConstants.ACIA.acia6850StatusRegister, true);
+
                     _cpu.TriggerIRQ();
                 }
             }
@@ -208,8 +212,8 @@ namespace BbcMicro.BbcMicro.VIA
                     Thread.Sleep(100);
                     if (_timer1InterruptsEnabled)
                     {
-                        //_timer1InterruptActive = true;
-                        //TriggerTimer1Interrupt();
+                        _timer1InterruptActive = true;
+                        TriggerTimer1Interrupt();
                     }
                 }
             });
@@ -309,6 +313,8 @@ namespace BbcMicro.BbcMicro.VIA
                 // Keyboard DIP switches
                 if (targetKeyByte >= 0x02 && targetKeyByte <= 0x09)
                 {
+                    _logger.Debug("DIP Switch");
+
                     _registerAout = (byte)(0x7F & targetKeyByte);
                     if (targetKeyByte >= 0x07 && targetKeyByte <= 0x09)
                     {
@@ -387,7 +393,7 @@ namespace BbcMicro.BbcMicro.VIA
             _logger.Debug("Entering EnableOrDisableInterrupts --->");
             var ierValue = _cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemViaInterruptEnableRegister, true);
 
-            var enabling = (ierValue & 0x80) != 0; // WRONG
+            var enabling = (ierValue & 0x80) != 0;
             _logger.Debug($"Enabling = {enabling}");
 
             if ((ierValue & (byte)IERFlags.KeyPressedInterrupt) != 0)
