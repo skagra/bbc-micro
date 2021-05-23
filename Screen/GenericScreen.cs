@@ -291,6 +291,7 @@ namespace BbcMicro.Screen
             // A better hack would be to arrange to call .initialiseVDUVariablesAndSetMODE
             if (mode == 7)
             {
+                _logger.Warn("MODE 7");
                 _addressSpace.SetByte(0, (ushort)VDU.vduCurrentScreenMode);
                 mode = 0;
             }

@@ -17,15 +17,10 @@ namespace BbcMicro.Memory
             Array.Fill(_memory, (byte)0);
         }
 
-        public byte GetByte(ushort address)
-        {
-            return _memory[address];
-        }
-
-        public void SetByte(byte value, ushort address, bool igoreCallbacks = false)
+        public void SetByte(byte value, ushort address, bool ingoreCallbacks = false)
         {
             _memory[address] = value;
-            if (!igoreCallbacks)
+            if (!ingoreCallbacks)
             {
                 _setByteCallbacks.ForEach(callback => callback(value, _memory[address], address));
             }
@@ -69,6 +64,33 @@ namespace BbcMicro.Memory
             }
 
             return result.ToString();
+        }
+
+        public byte GetByte(ushort address, bool ignoreCallbacks = false)
+        {
+            byte result = _memory[address];
+
+            if (!ignoreCallbacks)
+            {
+                foreach (var callback in _readByteCallbacks)
+                {
+                    var substituteValue = callback(address);
+                    if (substituteValue != null)
+                    {
+                        result = (byte)substituteValue;
+                        break;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private readonly List<Func<ushort, byte?>> _readByteCallbacks = new List<Func<ushort, byte?>>();
+
+        public void AddGetByteCallback(Func<ushort, byte?> callback)
+        {
+            _readByteCallbacks.Add(callback);
         }
     }
 }

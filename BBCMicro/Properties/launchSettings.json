@@ -1,8 +1,7 @@
 {
   "profiles": {
     "BBCMicro": {
-      "commandName": "Project",
-      "commandLineArgs": "-d"
+      "commandName": "Project"
     }
   }
 }

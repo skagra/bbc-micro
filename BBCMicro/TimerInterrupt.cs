@@ -36,7 +36,7 @@ namespace BBCMicro
             }
             else
             {
-                _cpu.Memory.SetByte(0b0000_0010, systemVIAInterruptFlagRegister);
+                _cpu.Memory.SetByte(0b1000_0010, systemVIAInterruptFlagRegister);
             }
             flipper = !flipper;
             _cpu.TriggerIRQ();
