@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="nlog" Version="4.7.9" />
+    <PackageReference Include="nlog" Version="4.7.10" />
   </ItemGroup>
 
 </Project>

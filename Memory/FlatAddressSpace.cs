@@ -17,15 +17,34 @@ namespace BbcMicro.Memory
             Array.Fill(_memory, (byte)0);
         }
 
-        public byte GetByte(ushort address)
+        public byte GetByte(ushort address, bool ignoreCallbacks = false)
         {
-            return _memory[address];
+            var result = _memory[address];
+
+            if (!ignoreCallbacks)
+            {
+                foreach (var callback in _getByteCallback)
+                {
+                    var cbValue = callback(address);
+                    if (cbValue != null)
+                    {
+                        result = (byte)cbValue;
+                        break;
+                    }
+                }
+            }
+
+            return result;
         }
 
-        public void SetByte(byte value, ushort address)
+        public void SetByte(byte value, ushort address, bool ignoreCallbacks = false)
         {
             _memory[address] = value;
-            _setByteCallbacks.ForEach(callback => callback(value, _memory[address], address));
+
+            if (!ignoreCallbacks)
+            {
+                _setByteCallbacks.ForEach(callback => callback(value, _memory[address], address));
+            }
         }
 
         public void AddSetByteCallback(Action<byte, byte, ushort> callback)
@@ -66,6 +85,13 @@ namespace BbcMicro.Memory
             }
 
             return result.ToString();
+        }
+
+        private List<Func<ushort, byte?>> _getByteCallback = new List<Func<ushort, byte?>>();
+
+        public void AddGetByteCallback(Func<ushort, byte?> callback)
+        {
+            _getByteCallback.Add(callback);
         }
     }
 }

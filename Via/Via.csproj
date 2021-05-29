@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="nlog" Version="4.7.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Cpu\Cpu.csproj" />
+    <ProjectReference Include="..\Memory\Memory.csproj" />
+    <ProjectReference Include="..\SystemConstants\SystemConstants.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -28,9 +28,9 @@ namespace BbcMicro.OS
 
             if (osMode == OSMode.WPF)
             {
-                var keyboardInput = new KeyboardInput(keyboardEmu);
-                _interceptorDispatcher.AddInterceptor(EntryPoints.INTERROGATE_KEYBOARD, keyboardInput.INTERROGATE_KEYBOARD_WFP);
-                _interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, keyboardInput.OSRDCH_WPF);
+                //var keyboardInput = new KeyboardInput(keyboardEmu);
+                //_interceptorDispatcher.AddInterceptor(EntryPoints.INTERROGATE_KEYBOARD, keyboardInput.INTERROGATE_KEYBOARD_WFP);
+                //_interceptorDispatcher.AddInterceptor(EntryPoints.OSRDCH, keyboardInput.OSRDCH_WPF);
             }
             else
             {

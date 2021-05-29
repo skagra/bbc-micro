@@ -409,7 +409,7 @@ namespace BbcMicro.WPFDebugger
                 _logger.Trace($"{dis.Label}:");
             }
             var memString = string.Join(" ", dis.Memory.Select(b => $"${b:X2}"));
-            _logger.Trace($"{address:X4,-5} {memString,-12} {dis.Disassembly,-11} {_cpu}");
+            _logger.Trace($"${address,-5:X4} {memString,-12} {dis.Disassembly,-11} {_cpu}");
         }
 
         /*

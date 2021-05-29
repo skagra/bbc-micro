@@ -36,6 +36,11 @@ namespace BbcMicro.Screen
             _window.KeyDown += new KeyEventHandler(callback);
         }
 
+        public void AddKeyUpCallback(Action<object, KeyEventArgs> callback)
+        {
+            _window.KeyUp += new KeyEventHandler(callback);
+        }
+
         public GenericScreen(IAddressSpace addressSpace, int frequency = 25)
         {
             _addressSpace = addressSpace;
