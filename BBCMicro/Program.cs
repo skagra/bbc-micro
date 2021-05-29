@@ -117,7 +117,7 @@ namespace BBCMicro
             var app = new Application();
 
             // For debugging IRQ
-            var timerInterrupt = new TimerInterrupt(cpu);
+            //var timerInterrupt = new TimerInterrupt(cpu);
 
             // Grab key events and send through to the buffer
             screen.AddKeyDownCallback((sender, keyEventArgs) =>
@@ -154,7 +154,7 @@ namespace BBCMicro
             var via = new VIA(cpu);
             screen.AddKeyDownCallback(via.KeyPressCallback);
             screen.AddKeyUpCallback(via.KeyUpCallback);
-            //via.StartTimers();
+            via.StartTimers();
 
             // Start scanning screen memory and drawing the emulated screen
             debuggerDisplay.AddMessage("Starting screen scanning");

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BbcMicro.Memory.Extensions;
 using NLog;
+using System.Threading;
 
 namespace BbcMicro.Cpu
 {
@@ -87,9 +88,8 @@ namespace BbcMicro.Cpu
             // Is this a valid op code?
             try
             {
-                if (_interruptPending && !PIsSet(PFlags.I))
+                if (_notifiedInqs.Count > 0 && !PIsSet(PFlags.I))
                 {
-                    _interruptPending = false;
                     ProcessIRQ();
                 }
                 else
@@ -151,15 +151,41 @@ namespace BbcMicro.Cpu
             }
         }
 
-        private volatile bool _interruptPending = false;
+        private Mutex _notifiedInqsMutex = new Mutex();
+        private HashSet<string> _notifiedInqs = new HashSet<string>();
 
-        // TODO
-        // This does not correctly model how the interrupt line actually work
-        // Interruts are triggered when the processes observes the line is low
-        // not when the state chages
-        public void TriggerIRQ()// Action cb)
+        public void NofityIRQ(string irqType)
         {
-            _interruptPending = true;
+            _notifiedInqsMutex.WaitOne();
+            try
+            {
+                _notifiedInqs.Add(irqType);
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+            finally
+            {
+                _notifiedInqsMutex.ReleaseMutex();
+            }
+        }
+
+        public void DeNotifyIRQ(string irqType)
+        {
+            _notifiedInqsMutex.WaitOne();
+            try
+            {
+                _notifiedInqs.Remove(irqType);
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+            finally
+            {
+                _notifiedInqsMutex.ReleaseMutex();
+            }
         }
 
         public void Execute()

@@ -39,7 +39,7 @@ namespace BBCMicro
                 _cpu.Memory.SetByte(0b0000_0010, systemVIAInterruptFlagRegister);
             }
             flipper = !flipper;
-            _cpu.TriggerIRQ();
+            _cpu.NofityIRQ("XX"); //TODO
         }
 
         public void StartTimer()
