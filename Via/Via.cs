@@ -12,7 +12,6 @@ namespace BbcMicro.BbcMicro.VIA
     {
         private readonly Logger _logger = LogManager.GetCurrentClassLogger();
 
-        // The least significant nibble is for writing, and the most significant four bits for reading.
         private enum RegisterBValues : byte
         {
             EnableSoundChip = 0x00,
@@ -32,13 +31,6 @@ namespace BbcMicro.BbcMicro.VIA
             TurnOffCapsLockLed = 0x0E,
             TurnOffShiftLockLed = 0x0F
         }
-
-        /*
-         * DDRA
-         * When reading the keyboard, DDRA is set to (%011111111). The key to read is written
-         * into bits 0-6 of .systemVIARegisterANoHandshake, and the 'pressed' state of that
-         * key is then read from bit 7.
-         */
 
         private enum IFRFlags : byte
         {
@@ -76,9 +68,189 @@ namespace BbcMicro.BbcMicro.VIA
 
         private readonly CPU _cpu;
 
-        private byte _ifr = 0x0;
+        public VIA(CPU cpu)
+        {
+            _cpu = cpu;
+            _cpu.Memory.AddSetByteCallback(WriteCallback);
+            _cpu.Memory.AddGetByteCallback(ReadCallback);
+        }
 
-        public byte ReadIER()
+        /*
+         * System VIA, Register B ($FE40).
+         *
+         * https://tobylobster.github.io/mos/mos/S-s3.html#SP10
+         *
+         *  The bottom four bits are used for writing, and the top four bits are used for reading.
+         *    (See .systemVIADataDirectionRegisterB)
+         *
+         *    Values 0-15 can be written to System VIA Register B (Output):
+         *
+         *        Value   Effect
+         *        -------------------------
+         *        0       Enable sound chip
+         *        1       Enable Read Speech
+         *        2       Enable Write Speech
+         *        3       Disable Keyboard auto scanning
+         *        4       Hardware scrolling - set C0=0 (See below)
+         *        5       Hardware scrolling - set C1=0 (See below)
+         *        6       Turn on CAPS LOCK LED
+         *        7       Turn on SHIFT LOCK LED
+         *        8       Disable sound chip
+         *        9       Disable Read Speech
+         *        10      Disable Write Speech
+         *        11      Enable Keyboard auto scanning
+         *        12      Hardware scrolling - set C0=1 (See below)
+         *        13      Hardware scrolling - set C1=1 (See below)
+         *        14      Turn off CAPS LOCK LED
+         *        15      Turn off SHIFT LOCK LED
+         *
+         * The values of C0 and C1 together determine the start scroll address for the screen:
+         *
+         *        C0   C1      Screen       Used in
+         *                     Address   Regular MODEs
+         *        ------------------------------------
+         *         0    0      $4000           3
+         *         0    1      $5800          4,5
+         *         1    0      $6000           6
+         *         1    1      $3000         0,1,2
+         *
+         * When reading from this address the top four bits are read:
+         *
+         * bit 7:    Speech processor 'ready' signal
+         * bit 6:    Speech processor 'interrupt' signal
+         * bit 4-5:  joystick buttons (bit is zero when button pressed)
+         */
+
+        private void WriteB(byte viaRegisterBValue)
+        {
+            if ((viaRegisterBValue & (byte)RegisterBValues.DisableKeyboardAutoScanning) != 0)
+            {
+                _keyboardAutoscanning = false;
+            }
+            if ((viaRegisterBValue & (byte)RegisterBValues.EnableKeyboardAutoScanning) != 0)
+            {
+                _keyboardAutoscanning = true;
+            }
+        }
+
+        private byte ReadB()
+        {
+            return 0b0011_0000;
+        }
+
+        /*
+         * System VIA, Data Direction Register B ($FE42) (aka 'DDRB').
+         *
+         * https://tobylobster.github.io/mos/mos/S-s3.html#SP12
+         *
+         * When writing data into Register B (.systemVIARegisterB), the bits that are set on DDRB
+         * indicate which bits are actually written into Register B. The bits that are clear on DDRB
+         * are used to read from Register B.
+        *
+         * DDRB is only written once on startup where it is initialised to %00001111
+         * (see .setUpSystemVIA) and the OS expects it to remain that way. Only the bottom four bits
+         * of .systemVIARegisterB are used when writing, and only the upper four bits are read from
+         * .systemVIARegisterB. See .systemVIARegisterB.
+         */
+
+        private byte ReadDDRB()
+        {
+            return 0b0000_1111;
+        }
+
+        /*
+         * System VIA, Data Direction Register A ($FE43) (aka 'DDRA').
+         *
+         * https://tobylobster.github.io/mos/mos/S-s3.html#SP13
+         *
+         * The keyboard, sound and speech systems use Data Direction Register A. Each bit of DDRA
+         * indicates whether data can be written or read on that bit when data is accessed via
+         * .systemVIARegisterANoHandshake. This is similar to DDRB. Unlike DDRB, the OS modifies
+         * DDRA frequently to set the appropriate bits for accessing the device (often in the IRQ
+         * interrupt code). Once set, data is read or written to .systemVIARegisterANoHandshake as
+         * needed. See .systemVIARegisterANoHandshake.
+         *
+         * Sound:    When outputting sound, DDRA is set to %11111111 meaning all bits of data
+         *           that are subsequently written to .systemVIARegisterANoHandshake are output bits.
+         *           (See .sendToSoundChipFlagsAreadyPushed)
+         *
+         * Speech:   For speech, DDRA is set to %00000000 (for reading) or %11111111 (for writing) as
+         * needed. (See .readWriteSpeechProcessorPushedFlags)
+         *
+         * Keyboard: When reading the keyboard, DDRA is set to (%011111111). The key to read is written
+         *           into bits 0-6 of .systemVIARegisterANoHandshake, and the 'pressed' state of that
+         *           key is then read from bit 7.
+         *           (See .interrogateKeyboard)
+         *           (See .scanKeyboard)
+         */
+
+        private byte _DDRA = 0x0;
+
+        private void WriteDDRA(byte ddraValue)
+        {
+            if (ddraValue != 0b0111_11111)
+            {
+                if (_logger.IsDebugEnabled)
+                {
+                    _logger.Warn($"DDRA set to a value other than for reading the keyboard {ddraValue:X2}");
+                }
+            }
+            _DDRA = ddraValue;
+        }
+
+        private byte ReadDDRA()
+        {
+            return _DDRA;
+        }
+
+        /*
+         * System VIA, Interrupt Enable Register ($FE4E) (aka 'IER').
+         *
+         * https://tobylobster.github.io/mos/mos/S-s3.html#SP20
+         *
+         * Each bit controls whether an interrupt is enabled or disabled.
+         *
+         * bit 0 = key pressed interrupt
+         * bit 1 = vertical sync occurred
+         * bit 2 = shift register timeout (unused)
+         * bit 3 = light pen strobe off screen
+         * bit 4 = analogue conversion completed
+         * bit 5 = timer 2 timed out (used for speech)
+         * bit 6 = timer 1 timed out (100Hz signal)
+         * bit 7 = enable/disable interrupt value (see below)
+         *
+         * Writing:
+         * --------
+         * To enable  an interrupt, write a byte with the top bit set   and set the desired bit(s) (0-6).
+         * To disable an interrupt, write a byte with the top bit clear and set the desired bit(s) (0-6).
+         *
+         * Reading:
+         * --------
+         * Bits 0-6 are read as expected.
+         * Bit 7 is always set when read.
+         *
+         */
+
+        private void WriteIER(byte ierValue)
+        {
+            var enabling = (ierValue & 0x80) != 0;
+
+            if ((ierValue & (byte)IERFlags.KeyPressedInterrupt) != 0)
+            {
+                _logger.Debug($"Keyboard interrupt enabled={enabling}");
+                _keyboardInterruptsEnabled = enabling;
+            }
+            if ((ierValue & (byte)IERFlags.Timer1HasTimedOut) != 0)
+            {
+                _timer1InterruptsEnabled = enabling;
+            }
+            if ((ierValue & (byte)IERFlags.VerticalSyncOccurred) != 0)
+            {
+                _verticalSyncInterruptsEnabled = enabling;
+            }
+        }
+
+        private byte ReadIER()
         {
             byte result = 0x80;
 
@@ -98,40 +270,134 @@ namespace BbcMicro.BbcMicro.VIA
             return result;
         }
 
-        //public byte ReadIFR()
-        //{
-        //    byte result = 0x00;
+        /*
+         * https://tobylobster.github.io/mos/mos/S-s3.html#SP20
+         *
+         * System VIA, Interrupt Flag Register ($FE4D) (aka 'IFR').
+         *
+         *   bit 0 = key pressed interrupt
+         *   bit 1 = vertical sync occurred
+         *   bit 2 = shift register timeout (unused)
+         *   bit 3 = lightpen strobe off screen
+         *   bit 4 = analogue conversion completed
+         *   bit 5 = timer 2 has timed out (used for speech)
+         *   bit 6 = timer 1 has timed out (100Hz signal)
+         *   bit 7 = (when reading) master interrupt flag (0-6 invalid if clear)
+         *
+         * Used in interrupt code:
+         *
+         * Reading
+         * -------
+         * If bit 7 is set then the System VIA caused the current interrupt. The remaining bits can
+         * then be checked to see the exact cause.
+         *
+         * Writing
+         * -------
+         * Clear bit 7 and set a bit 0-6 to clear that interrupt.
+         *
+         */
 
-        //    if (_keyboardInterruptActive)
-        //    {
-        //        result |= (byte)IFRFlags.KeyPressedInterrupt;
-        //    }
-
-        //    if (_timer1InterruptActive)
-        //    {
-        //        result |= (byte)IFRFlags.Timer1HasTimedOut;
-        //    }
-
-        //    if (_verticalSyncInterruptActive)
-        //    {
-        //        result |= (byte)IFRFlags.VerticalSyncOccurred;
-        //    }
-
-        //    if (result != 0x0)
-        //    {
-        //        result |= (byte)IFRFlags.MasterInterruptFlag;
-        //    }
-
-        //    _logger.Debug($"IFR={result:X2}");
-
-        //    return result;
-        //}
-
-        public VIA(CPU cpu)
+        private void WriteIFR(byte ifrValue)
         {
-            _cpu = cpu;
-            _cpu.Memory.AddSetByteCallback(WriteCallback);
-            _cpu.Memory.AddGetByteCallback(ReadCallback);
+            var clearing = (ifrValue & (byte)IFRFlags.MasterInterruptFlag) == 0;
+            if (clearing)
+            {
+                if ((ifrValue & (byte)IFRFlags.KeyPressedInterrupt) != 0)
+                {
+                    _logger.Debug("Clearing keyboard interrupt");
+                    _cpu.DeNotifyIRQ(IRQ_TYPE_KEYBOARD);
+                    _keyboardInterruptActive = false;
+                }
+                else if ((ifrValue & (byte)IFRFlags.Timer1HasTimedOut) != 0)
+                {
+                    _cpu.DeNotifyIRQ(IRQ_TYPE_TIMER_1);
+                    _timer1InterruptActive = false;
+                }
+                else
+                if ((ifrValue & (byte)IFRFlags.VerticalSyncOccurred) != 0)
+                {
+                    _cpu.DeNotifyIRQ(IRQ_TYPE_VERITCAL_SYNC);
+                    _verticalSyncInterruptActive = false;
+                }
+            }
+        }
+
+        private byte ReadIFR()
+        {
+            byte result = 0x00;
+
+            if (_keyboardInterruptsEnabled || _keyboardAutoscanning || !_keyboardInterruptActive)
+            {
+                if (_keyboardInterruptActive)
+                {
+                    result |= (byte)IFRFlags.KeyPressedInterrupt;
+                }
+
+                if (_timer1InterruptActive)
+                {
+                    result |= (byte)IFRFlags.Timer1HasTimedOut;
+                }
+
+                if (_verticalSyncInterruptActive)
+                {
+                    result |= (byte)IFRFlags.VerticalSyncOccurred;
+                }
+
+                if (result != 0x0)
+                {
+                    result |= (byte)IFRFlags.MasterInterruptFlag;
+                }
+            }
+            else
+            {
+                // Column scanning
+                var targetColumn = _AIncoming & 0x0F;
+
+                _logger.Debug($"targetColumn = {targetColumn:X2}, PC={_cpu.PC:X4}");
+
+                if (_keyMap.TryGetValue(_lastKey, out var downKeyByte))
+                {
+                    var _latestColumn = (downKeyByte & 0x0F);
+                    _logger.Debug($"latestColumn = {_latestColumn:X2}");
+
+                    if (_latestColumn == targetColumn)
+                    {
+                        _logger.Debug($"Column match");
+                        result = (byte)IFRFlags.KeyPressedInterrupt;
+                    }
+                }
+            }
+            return result;
+        }
+
+        private byte _AIncoming;
+
+        private void WriteCallback(byte newVal, byte oldVal, ushort address)
+        {
+            if (address == (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister)
+            {
+                WriteIFR(newVal);
+            }
+            else
+            if (address == (ushort)SystemConstants.VIA.systemViaInterruptEnableRegister)
+            {
+                WriteIER(newVal);
+            }
+            else
+            if (address == (ushort)SystemConstants.VIA.systemVIARegisterB)
+            {
+                WriteB(newVal);
+            }
+            else
+            if (address == (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake)
+            {
+                _AIncoming = newVal;
+                _logger.Debug($"Setting _AIncomging to {newVal}");
+            }
+            if (address == (ushort)SystemConstants.VIA.systemVIADataDirectionRegisterA)
+            {
+                WriteDDRA(newVal);
+            }
         }
 
         private byte? ReadCallback(ushort address)
@@ -140,12 +406,8 @@ namespace BbcMicro.BbcMicro.VIA
 
             if (address == (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister)
             {
-                //result = ReadIFR();
-                result = _ifr;
-                if (_ifr != 0)
-                {
-                    result |= 0x80;
-                }
+                result = ReadIFR();
+                // _logger.Debug($"Returning IFR as {result:X2}");
             }
             else
             if (address == (ushort)SystemConstants.VIA.systemViaInterruptEnableRegister)
@@ -162,6 +424,7 @@ namespace BbcMicro.BbcMicro.VIA
             {
                 result = ReadA();
             }
+
             return result;
         }
 
@@ -170,37 +433,7 @@ namespace BbcMicro.BbcMicro.VIA
             return KeyPress();
         }
 
-        private byte ReadB()
-        {
-            byte result = 0x00;
-            //if (_keyboardAutoscanning)
-            //{
-            //    result |= (byte)RegisterBValues.EnableKeyboardAutoScanning;
-            //}
-            //else
-            //{
-            //    result |= (byte)RegisterBValues.DisableKeyboardAutoScanning;
-            //}
-
-            result = 0b0011_0000;
-
-            return result;
-        }
-
-        //public HashSet<Key> _keys = new HashSet<Key>();
-        //public HashSet<Key> _safeKeys = new HashSet<Key>();
-
         private Key _lastKey = Key.None;
-
-        // Thre is a issue here - as we need to see a concistent views of
-        // keyboard as we process the keypress
-        // Maybe copy keydown on disable scanning?
-        public void KeyUpCallback(object sender, KeyEventArgs e)
-        {
-            //_logger.Debug($"Removing key {e.Key}");
-
-            //_keys.Remove(e.Key);
-        }
 
         private const string IRQ_TYPE_KEYBOARD = "KEYBOARD";
         private const string IRQ_TYPE_TIMER_1 = "TIMER_1";
@@ -208,7 +441,7 @@ namespace BbcMicro.BbcMicro.VIA
 
         public void KeyPressCallback(object sender, KeyEventArgs e)
         {
-            _logger.Debug("Keypressed callback");
+            _logger.Debug("Key pressed callback");
             _logger.Debug($"_keyboardInterruptsEnabled={_keyboardInterruptsEnabled}");
             _logger.Debug($"_keyboardAutoscanning={_keyboardAutoscanning}");
             _logger.Debug($"_keyboardInterruptActive={_keyboardInterruptActive}");
@@ -222,43 +455,9 @@ namespace BbcMicro.BbcMicro.VIA
                 {
                     _logger.Debug("Raising keyboard interrupt");
                     _keyboardInterruptActive = true;
-                    _ifr |= (byte)IFRFlags.KeyPressedInterrupt;
                     _cpu.NofityIRQ(IRQ_TYPE_KEYBOARD);
                 }
             }
-        }
-
-        public void StartTimers()
-        {
-            Task.Run(() =>
-            {
-                while (true)
-                {
-                    Thread.Sleep(10);
-                    if (_timer1InterruptsEnabled)
-                    {
-                        _timer1InterruptActive = true;
-                        _ifr |= (byte)IFRFlags.Timer1HasTimedOut;
-
-                        _cpu.NofityIRQ(IRQ_TYPE_TIMER_1);
-                    }
-                }
-            });
-
-            Task.Run(() =>
-            {
-                while (true)
-                {
-                    Thread.Sleep(20);
-                    if (_verticalSyncInterruptsEnabled)
-                    {
-                        _verticalSyncInterruptActive = true;
-                        _ifr |= (byte)IFRFlags.VerticalSyncOccurred;
-
-                        _cpu.NofityIRQ(IRQ_TYPE_VERITCAL_SYNC);
-                    }
-                }
-            });
         }
 
         private static readonly Dictionary<Key, byte> _keyMap = new Dictionary<Key, byte> {
@@ -308,42 +507,25 @@ namespace BbcMicro.BbcMicro.VIA
             { Key.OemBackslash, 0x78 }, { Key.Right, 0x79 }
         };
 
-        private Key CodeToKey(byte code)
-        {
-            Key result = Key.None;
-            foreach (var kp in _keyMap)
-            {
-                if (kp.Value == code)
-                {
-                    result = kp.Key;
-                    break;
-                }
-            }
-
-            return result;
-        }
-
         // 0-9 are actually used for column scan
         // Maye specific keys are -ive (top bit set)
         private byte KeyPress()
         {
             _logger.Debug("Entering KeyPress--->");
-
-            _logger.Debug($"_lastKey={_lastKey}");
+            _logger.Debug($"PC={_cpu.PC:X4}");
 
             byte result = 0x0;
 
-            var dataDirection =
-                _cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemVIADataDirectionRegisterA, false);
-            _logger.Debug($"systemVIADataDirectionRegisterA={dataDirection:X2}");
+            _logger.Debug($"_lastKey={_lastKey}");
 
-            var targetKeyByte = _aReg;
-
+            var targetKeyByte = _AIncoming;
             _logger.Debug($"targetKeyByte = {targetKeyByte:X2}");
 
-            if (dataDirection == 0x7F)
+            var dataDirection = ReadDDRA();
+            _logger.Debug($"systemVIADataDirectionRegisterA={dataDirection:X2}");
+
+            if (dataDirection == 0b0111_1111)
             {
-                // Keyboard DIP switches ... how do we tell this from scanning?
                 if (targetKeyByte >= 0x02 && targetKeyByte <= 0x09)
                 {
                     _logger.Debug("DIP Switch");
@@ -359,34 +541,13 @@ namespace BbcMicro.BbcMicro.VIA
                     // Specific key match
                     result = (byte)(0x7F & targetKeyByte);
 
-                    if (_keyMap.TryGetValue(_lastKey, out var downKeyByte2))
+                    if (_keyMap.TryGetValue(_lastKey, out var lastKeyByte))
                     {
-                        if (downKeyByte2 == targetKeyByte)
+                        if (lastKeyByte == targetKeyByte)
                         {
-                            _logger.Debug("Exact match");
+                            _logger.Debug("Exact match for pressed key");
                             result = (byte)(0x80 | targetKeyByte);
                         }
-                    }
-
-                    _logger.Debug($"Setting systemVIARegisterANoHandshake to {result:X2}");
-                }
-
-                // Column scanning
-                var targetColumn = targetKeyByte & 0x0F;
-
-                _logger.Debug($"targetColumn = {targetColumn:X2}");
-
-                _keyboardInterruptActive = false; /// NO
-                _ifr &= ((byte)IFRFlags.KeyPressedInterrupt ^ 0xFF);
-                if (_keyMap.TryGetValue(_lastKey, out var downKeyByte))
-                {
-                    var _latestColumn = (downKeyByte & 0x0F);
-                    _logger.Debug($"latestColumn = {_latestColumn:X2}");
-                    if (_latestColumn == targetColumn)
-                    {
-                        _logger.Debug($"Column match");
-                        _keyboardInterruptActive = true;
-                        _ifr |= (byte)IFRFlags.KeyPressedInterrupt;
                     }
                 }
             }
@@ -396,94 +557,33 @@ namespace BbcMicro.BbcMicro.VIA
             return result;
         }
 
-        private void ClearInterrupt(byte ifrValue)
+        public void StartTimers()
         {
-            // var ifrValue = _cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister, true);
-
-            var clearing = (ifrValue & (byte)IFRFlags.MasterInterruptFlag) == 0;
-            if (clearing)
+            Task.Run(() =>
             {
-                if ((ifrValue & (byte)IFRFlags.KeyPressedInterrupt) != 0)
+                while (true)
                 {
-                    _logger.Debug("Clearing keyboard interrupt");
-                    _cpu.DeNotifyIRQ(IRQ_TYPE_KEYBOARD);
-                    _keyboardInterruptActive = false;
+                    Thread.Sleep(10);
+                    if (_timer1InterruptsEnabled)
+                    {
+                        _timer1InterruptActive = true;
+                        _cpu.NofityIRQ(IRQ_TYPE_TIMER_1);
+                    }
                 }
-                else if ((ifrValue & (byte)IFRFlags.Timer1HasTimedOut) != 0)
+            });
+
+            Task.Run(() =>
+            {
+                while (true)
                 {
-                    _cpu.DeNotifyIRQ(IRQ_TYPE_TIMER_1);
-                    _timer1InterruptActive = false;
+                    Thread.Sleep(20);
+                    if (_verticalSyncInterruptsEnabled)
+                    {
+                        _verticalSyncInterruptActive = true;
+                        _cpu.NofityIRQ(IRQ_TYPE_VERITCAL_SYNC);
+                    }
                 }
-                else
-                if ((ifrValue & (byte)IFRFlags.VerticalSyncOccurred) != 0)
-                {
-                    _cpu.DeNotifyIRQ(IRQ_TYPE_VERITCAL_SYNC);
-                    _verticalSyncInterruptActive = false;
-                }
-            }
-        }
-
-        private void EnableOrDisableInterrupts()
-        {
-            _logger.Debug("Entering EnableOrDisableInterrupts --->");
-            var ierValue = _cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemViaInterruptEnableRegister, true);
-
-            var enabling = (ierValue & 0x80) != 0;
-            _logger.Debug($"Enabling = {enabling}");
-
-            if ((ierValue & (byte)IERFlags.KeyPressedInterrupt) != 0)
-            {
-                _logger.Debug("Keyboard interrupt");
-                _keyboardInterruptsEnabled = enabling;
-            }
-            if ((ierValue & (byte)IERFlags.Timer1HasTimedOut) != 0)
-            {
-                _logger.Debug("Timer 1 interrupt");
-                _timer1InterruptsEnabled = enabling;
-            }
-            if ((ierValue & (byte)IERFlags.VerticalSyncOccurred) != 0)
-            {
-                _logger.Debug("Vertical Sync interrupt");
-                _verticalSyncInterruptsEnabled = enabling;
-            }
-
-            _logger.Debug("<--- Leaving EnableOrDisableInterrupts");
-        }
-
-        private byte _aReg = 0x0;
-
-        private void WriteCallback(byte newVal, byte oldVal, ushort address)
-        {
-            if (address == (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister)
-            {
-                ClearInterrupt(newVal);
-            }
-            else
-            if (address == (ushort)SystemConstants.VIA.systemViaInterruptEnableRegister)
-            {
-                EnableOrDisableInterrupts();
-            }
-            else
-            // Turn keyboard scanning off and on
-            if (address == (ushort)SystemConstants.VIA.systemVIARegisterB)
-            {
-                var viaRegisterBValue = _cpu.Memory.GetByte((ushort)SystemConstants.VIA.systemVIARegisterB, true);
-
-                if ((viaRegisterBValue & (byte)RegisterBValues.DisableKeyboardAutoScanning) != 0)
-                {
-                    _keyboardAutoscanning = false;
-                }
-                if ((viaRegisterBValue & (byte)RegisterBValues.EnableKeyboardAutoScanning) != 0)
-                {
-                    _keyboardAutoscanning = true;
-                }
-            }
-            else
-            // Read the keyboard
-            if (address == (ushort)SystemConstants.VIA.systemVIARegisterANoHandshake)
-            {
-                _aReg = newVal;
-            }
+            });
         }
     }
 }

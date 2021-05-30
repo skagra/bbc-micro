@@ -153,7 +153,6 @@ namespace BBCMicro
 
             var via = new VIA(cpu);
             screen.AddKeyDownCallback(via.KeyPressCallback);
-            screen.AddKeyUpCallback(via.KeyUpCallback);
             via.StartTimers();
 
             // Start scanning screen memory and drawing the emulated screen
