@@ -65,7 +65,6 @@ namespace BbcMicro.BbcMicro.VIA
         }
 
         private volatile bool _keyboardAutoscanning = true;
-        //private volatile Key _latestKey = Key.None;
 
         private volatile bool _keyboardInterruptsEnabled = false;
         private volatile bool _timer1InterruptsEnabled = false;
@@ -74,9 +73,10 @@ namespace BbcMicro.BbcMicro.VIA
         private volatile bool _keyboardInterruptActive = false;
         private volatile bool _timer1InterruptActive = false;
         private volatile bool _verticalSyncInterruptActive = false;
-        // private volatile byte _registerAout = 0x00;
 
         private readonly CPU _cpu;
+
+        private byte _ifr = 0x0;
 
         public byte ReadIER()
         {
@@ -98,34 +98,34 @@ namespace BbcMicro.BbcMicro.VIA
             return result;
         }
 
-        public byte ReadIFR()
-        {
-            byte result = 0x00;
+        //public byte ReadIFR()
+        //{
+        //    byte result = 0x00;
 
-            if (_keyboardInterruptActive)
-            {
-                result |= (byte)IFRFlags.KeyPressedInterrupt;
-            }
+        //    if (_keyboardInterruptActive)
+        //    {
+        //        result |= (byte)IFRFlags.KeyPressedInterrupt;
+        //    }
 
-            if (_timer1InterruptActive)
-            {
-                result |= (byte)IFRFlags.Timer1HasTimedOut;
-            }
+        //    if (_timer1InterruptActive)
+        //    {
+        //        result |= (byte)IFRFlags.Timer1HasTimedOut;
+        //    }
 
-            if (_verticalSyncInterruptActive)
-            {
-                result |= (byte)IFRFlags.VerticalSyncOccurred;
-            }
+        //    if (_verticalSyncInterruptActive)
+        //    {
+        //        result |= (byte)IFRFlags.VerticalSyncOccurred;
+        //    }
 
-            if (result != 0x0)
-            {
-                result |= (byte)IFRFlags.MasterInterruptFlag;
-            }
+        //    if (result != 0x0)
+        //    {
+        //        result |= (byte)IFRFlags.MasterInterruptFlag;
+        //    }
 
-            _logger.Debug($"IFR={result:X2}");
+        //    _logger.Debug($"IFR={result:X2}");
 
-            return result;
-        }
+        //    return result;
+        //}
 
         public VIA(CPU cpu)
         {
@@ -140,7 +140,12 @@ namespace BbcMicro.BbcMicro.VIA
 
             if (address == (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister)
             {
-                result = ReadIFR();
+                //result = ReadIFR();
+                result = _ifr;
+                if (_ifr != 0)
+                {
+                    result |= 0x80;
+                }
             }
             else
             if (address == (ushort)SystemConstants.VIA.systemViaInterruptEnableRegister)
@@ -217,6 +222,7 @@ namespace BbcMicro.BbcMicro.VIA
                 {
                     _logger.Debug("Raising keyboard interrupt");
                     _keyboardInterruptActive = true;
+                    _ifr |= (byte)IFRFlags.KeyPressedInterrupt;
                     _cpu.NofityIRQ(IRQ_TYPE_KEYBOARD);
                 }
             }
@@ -232,6 +238,8 @@ namespace BbcMicro.BbcMicro.VIA
                     if (_timer1InterruptsEnabled)
                     {
                         _timer1InterruptActive = true;
+                        _ifr |= (byte)IFRFlags.Timer1HasTimedOut;
+
                         _cpu.NofityIRQ(IRQ_TYPE_TIMER_1);
                     }
                 }
@@ -245,6 +253,8 @@ namespace BbcMicro.BbcMicro.VIA
                     if (_verticalSyncInterruptsEnabled)
                     {
                         _verticalSyncInterruptActive = true;
+                        _ifr |= (byte)IFRFlags.VerticalSyncOccurred;
+
                         _cpu.NofityIRQ(IRQ_TYPE_VERITCAL_SYNC);
                     }
                 }
@@ -367,7 +377,7 @@ namespace BbcMicro.BbcMicro.VIA
                 _logger.Debug($"targetColumn = {targetColumn:X2}");
 
                 _keyboardInterruptActive = false; /// NO
-
+                _ifr &= ((byte)IFRFlags.KeyPressedInterrupt ^ 0xFF);
                 if (_keyMap.TryGetValue(_lastKey, out var downKeyByte))
                 {
                     var _latestColumn = (downKeyByte & 0x0F);
@@ -376,6 +386,7 @@ namespace BbcMicro.BbcMicro.VIA
                     {
                         _logger.Debug($"Column match");
                         _keyboardInterruptActive = true;
+                        _ifr |= (byte)IFRFlags.KeyPressedInterrupt;
                     }
                 }
             }
@@ -441,7 +452,7 @@ namespace BbcMicro.BbcMicro.VIA
 
         private byte _aReg = 0x0;
 
-        private void WriteCallback(byte oldVal, byte newVal, ushort address)
+        private void WriteCallback(byte newVal, byte oldVal, ushort address)
         {
             if (address == (ushort)SystemConstants.VIA.systemVIAInterruptFlagRegister)
             {

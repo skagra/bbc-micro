@@ -39,11 +39,12 @@ namespace BbcMicro.Memory
 
         public void SetByte(byte value, ushort address, bool ignoreCallbacks = false)
         {
+            var oldValue = _memory[address];
             _memory[address] = value;
 
             if (!ignoreCallbacks)
             {
-                _setByteCallbacks.ForEach(callback => callback(value, _memory[address], address));
+                _setByteCallbacks.ForEach(callback => callback(value, oldValue, address));
             }
         }
 
